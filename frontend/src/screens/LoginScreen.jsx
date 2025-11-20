@@ -11,8 +11,9 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Your backend IP
-  const API_URL = "http://10.254.12.133:5000/api/auth/login";
+  // Correct backend IP (SAME as Register)
+  const API_URL = "https://informedly-unoverruled-kimberely.ngrok-free.dev/api/auth/login";
+
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -34,10 +35,7 @@ export default function LoginScreen({ navigation }) {
 
       if (response.status === 200) {
         setMessage("Login Successful! 🌿");
-
-        // Navigate to Home after success
         setTimeout(() => navigation.navigate("Home"), 1200);
-
       } else {
         setMessage(data.message || "Invalid credentials!");
       }
