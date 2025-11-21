@@ -1,18 +1,24 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ImageBackground } from 'react-native';
 
 export default function WelcomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       {/* Background with environmental elements */}
-      <View style={styles.backgroundElements}>
+      {/* <View style={styles.backgroundElements}>
         <View style={styles.tree1}></View>
         <View style={styles.tree2}></View>
         <View style={styles.bush1}></View>
         <View style={styles.bush2}></View>
         <View style={styles.cloud1}></View>
         <View style={styles.cloud2}></View>
-      </View>
+      </View> */}
+
+      <ImageBackground
+        source={require('../assets/welcomebg.webp')}  // <-- your background image
+        style={styles.bg}
+        resizeMode="cover"
+      ></ImageBackground>
 
       {/* Main Content */}
       <View style={styles.content}>
@@ -21,9 +27,9 @@ export default function WelcomeScreen({ navigation }) {
           <Text style={styles.badgeText}>🌱</Text>
         </View>
 
-        <Text style={styles.welcome}>Welcome</Text>
+        <Text style={styles.welcome}>Welcome to </Text>
         <Text style={styles.title}>
-          to <Text style={styles.bold}>VRIKSHAMITRA!</Text>
+          <Text style={styles.bold}>VRIKSHAMITRA!</Text>
         </Text>
 
         <Text style={styles.subtitle}>
@@ -31,23 +37,32 @@ export default function WelcomeScreen({ navigation }) {
           Games, Challenges, Videos, Quizzes!
         </Text>
 
+        <TouchableOpacity
+          style={styles.gameButton}
+          onPress={() => navigation.navigate('Register')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.gameButtonText}>Let’s Start!</Text>
+        </TouchableOpacity>
+
+
         {/* Updated Button - Now goes to Register */}
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={styles.button}
           onPress={() => navigation.navigate('Register')}
         >
           <Text style={styles.buttonText}>Let's Start!</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Achievement Preview */}
-        <View style={styles.achievementPreview}>
+        {/* <View style={styles.achievementPreview}>
           <Text style={styles.achievementTitle}>First Achievements Await!</Text>
           <View style={styles.achievementIcons}>
             <Text style={styles.achievementIcon}>🌿</Text>
             <Text style={styles.achievementIcon}>💧</Text>
             <Text style={styles.achievementIcon}>🐾</Text>
           </View>
-        </View>
+        </View> */}
       </View>
     </View>
   );
@@ -58,6 +73,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f5c3a'
   },
+  bg: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    top: 0,
+    left: 0,
+  },
+
   backgroundElements: {
     position: 'absolute',
     width: '100%',
@@ -162,21 +185,31 @@ const styles = StyleSheet.create({
   },
   bold: {
     fontWeight: 'bold',
-    color: '#ffd166',
+    color: '#ffffffff',
   },
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+    position: 'relative',
+  },
+
+ 
+
   subtitle: {
     color: '#e8f4f8',
     marginTop: 20,
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 18,
+    textAlign: 'justify',
     lineHeight: 24,
     backgroundColor: 'rgba(255,255,255,0.1)',
     padding: 15,
     borderRadius: 12,
     overflow: 'hidden',
+    width: 250,          // ← added
+    alignSelf: 'center' // ← keeps it centered
   },
   button: {
-    backgroundColor: '#FF4D4D',
+    backgroundColor: '#e71010ff',
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 30,
@@ -213,4 +246,39 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
   },
+
+  gameButton: {
+    marginTop: 100,
+    backgroundColor: '#ff4d6d',          // base pink
+    paddingVertical: 10,
+    paddingHorizontal: 50,
+    borderRadius: 40,
+    alignItems: 'center',
+
+    // glossy top highlight
+    borderTopWidth: 8,
+    borderTopColor: '#ff758f',
+
+    // inner shadow
+    borderBottomWidth: 8,
+    borderBottomColor: '#c9184a',
+
+    // slight 3D effect
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+
+  gameButtonText: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+    fontFamily: 'sans-serif',
+  },
+
 });
