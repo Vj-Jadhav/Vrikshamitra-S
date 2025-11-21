@@ -12,7 +12,9 @@ export default function LoginScreen({ navigation }) {
   const [message, setMessage] = useState("");
 
   // Correct backend IP (SAME as Register)
-  const API_URL = "https://informedly-unoverruled-kimberely.ngrok-free.dev/api/auth/login";
+const API_URL = "http://192.168.45.133:5000/api/auth/login";
+
+
 
 
   const handleLogin = async () => {
