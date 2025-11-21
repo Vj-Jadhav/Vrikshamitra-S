@@ -13,7 +13,7 @@ export default function RegisterScreen({ navigation }) {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // success / error
 
-  const API_URL = "http://192.168.45.133:5000/api/auth/register";
+  const API_URL = "http://192.168.30.237:5000/api/auth/register";
 
 
 
