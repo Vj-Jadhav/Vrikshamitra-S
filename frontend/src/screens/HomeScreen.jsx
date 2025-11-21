@@ -1,526 +1,521 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  Image
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import Svg, { Path } from "react-native-svg";
+
+
+// Imported Images
+import ArVr from '../assets/ArVr.jpg';
+import CommunityWatch from '../assets/CommunityWatch.png';
+import EarthHeroes from '../assets/EarthHeroes.jpg';
+import PlantDetective from '../assets/PlantDetective.png';
 
 export default function HomeScreen({ navigation }) {
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#1b5e20" />
-      <ScrollView style={styles.container}>
-        
-        {/* Profile Header Section */}
-        <View style={styles.profileHeader}>
-          <View style={styles.profileInfo}>
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatar}>🌿</Text>
-              <View style={styles.levelBadge}>
-                <Text style={styles.levelText}>Lvl 5</Text>
-              </View>
-            </View>
-            <View style={styles.userInfo}>
-              <Text style={styles.welcomeText}>Welcome back,</Text>
-              <Text style={styles.userName}>Nandini Deshmukh</Text>
-              <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>350</Text>
-                  <Text style={styles.statLabel}>Points</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>12</Text>
-                  <Text style={styles.statLabel}>Streak</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>8</Text>
-                  <Text style={styles.statLabel}>Badges</Text>
-                </View>
-              </View>
-            </View>
+    <View style={styles.container}>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.appName}>VRIKSHAMITRA</Text>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.notificationIcon}>
+            <Text style={styles.bellIcon}>🔔</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.profileIcon}>
+            <Image 
+              source={{ uri: 'https://via.placeholder.com/40' }} 
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+
+        {/* Welcome Card */}
+        <View style={styles.welcomeCard}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.welcomeText}>Welcome,</Text>
+            <Text style={styles.userName}>Nandini Deshmukh</Text>
           </View>
-          
-          {/* Progress Bar */}
-          <View style={styles.xpContainer}>
-            <Text style={styles.xpText}>XP: 350/500</Text>
-            <View style={styles.xpBar}>
-              <View style={styles.xpFill} />
-            </View>
+
+          <View style={styles.rankBadge}>
+            <Text style={styles.rankText}>RANK : 3</Text>
           </View>
+
+          <Text style={styles.characterEmoji}>🌺</Text>
         </View>
 
-        <View style={styles.divider} />
+        {/* Level Bar */}
+        <View style={styles.levelContainer}>
+          <View style={styles.levelBar}>
+            {["Lv 1", "Lv 2", "Lv 3", "Lv 4", "Lv 5"].map((item, index) => (
+              <View
+                key={index}
+                style={[styles.levelItem, index === 1 && styles.levelActive]}
+              >
+                <Text
+                  style={index === 1 ? styles.levelTextActive : styles.levelTextInactive}
+                >
+                  {item}
+                </Text>
+              </View>
+            ))}
+          </View>
 
-        {/* App Title */}
-        <View style={styles.appTitleContainer}>
-          <Text style={styles.appTitle}>VRIKSHAMITRA</Text>
+          <View style={styles.progressBar}>
+            <View style={styles.progressFill} />
+          </View>
+
+          <View style={styles.ecoPointsRow}>
+            <Text style={styles.coinIcon}>🪙</Text>
+            <Text style={styles.ecoPointsText}>2571 Eco-Points Collected</Text>
+          </View>
         </View>
+{/* Learning Module & Rewards Cards */}
+<View style={styles.moduleCardsContainer}>
 
-        {/* Recent Activities Section */}
+  {/* Learning Module */}
+  <TouchableOpacity 
+    style={styles.learningModuleCard}
+    onPress={() => navigation.navigate("LearningModuleScreen")}
+  >
+    <View style={styles.moduleIcon}>
+      <Text style={styles.moduleIconText}>▶️</Text>
+    </View>
+    <Text style={styles.moduleTitle}>Learning{'\n'}Module</Text>
+  </TouchableOpacity>
+
+  {/* Rewards & Leaderboard */}
+  <TouchableOpacity 
+    style={styles.rewardsCard}
+    onPress={() => navigation.navigate("LeaderboardScreen")}   // ⭐ Link added here
+  >
+    <View style={styles.rewardsHeader}>
+      <Text style={styles.starIcon}>⭐⭐</Text>
+    </View>
+
+    <View style={styles.rewardsIcon}>
+      <Text style={styles.rewardsIconText}>🏆</Text>
+    </View>
+
+    <Text style={styles.rewardsTitle}>Rewards &{'\n'}Leaderboard</Text>
+  </TouchableOpacity>
+
+</View>
+
+
+        {/* Fun and Educational Games */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>RECENT ACTIVITIES</Text>
-          
-          {/* Global Warning Card */}
-          <View style={styles.activityCard}>
-            <View style={styles.activityHeader}>
-              <Text style={styles.activityMainTitle}>GLOBAL WARNING</Text>
-              <View style={styles.tag}>
-                <Text style={styles.tagText}>CLORAL WARNING</Text>
-              </View>
-            </View>
-            
-            <View style={styles.activityContent}>
-              <Text style={styles.learnText}>Learn:</Text>
-              <Text style={styles.description}>
-                What is Global Warming & how to save earth?
-              </Text>
-              
-              <View style={styles.details}>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailIcon}>⭐</Text>
-                  <Text style={styles.detailText}>3 points</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailIcon}>⏱️</Text>
-                  <Text style={styles.detailText}>15 min</Text>
-                </View>
-              </View>
-              
-              <TouchableOpacity style={styles.learnButton}>
-                <Text style={styles.learnButtonText}>Start Learning</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <Text style={styles.sectionTitle}>Fun and Educational Games</Text>
 
-          {/* Sinister Seeds Card */}
-          <View style={styles.activityCard}>
-            <View style={styles.activityHeader}>
-              <Text style={styles.activityMainTitle}>SINISTER SEEDS</Text>
-              <View style={[styles.tag, styles.gameTag]}>
-                <Text style={styles.tagText}>CARD HUNT GAME</Text>
-              </View>
-            </View>
+          <View style={styles.gamesGrid}>
             
-            <View style={styles.activityContent}>
-              <Text style={styles.gameDescription}>
-                Hunt for invasive plant species in your area
-              </Text>
-              
-              <View style={styles.gameRewards}>
-                <View style={styles.rewardItem}>
-                  <Text style={styles.rewardIcon}>🏆</Text>
-                  <Text style={styles.rewardText}>50 XP</Text>
+            {/* Nature Quiz */}
+            <TouchableOpacity style={styles.gameCard}>
+              <View style={[styles.gameCardInner, { backgroundColor: '#7FBF7F' }]}>
+                <View style={styles.gameImageContainer}>
+                  <Image source={EarthHeroes} style={styles.gameImage} />
                 </View>
-                <View style={styles.rewardItem}>
-                  <Text style={styles.rewardIcon}>🪙</Text>
-                  <Text style={styles.rewardText}>Eco Coins</Text>
+                </View>
+            </TouchableOpacity>
+            {/* Plant Detectives */}
+            <TouchableOpacity style={styles.gameCard}>
+              <View style={[styles.gameCardInner, { backgroundColor: '#6B9B6B' }]}>
+                <View style={styles.gameImageContainer}>
+                  <Image source={PlantDetective} style={styles.gameImage} />
+                </View>
+                </View>
+            </TouchableOpacity>
+
+            {/* AR/VR Game */}
+            <TouchableOpacity style={styles.gameCard}>
+              <View style={[styles.gameCardInner, { backgroundColor: '#5A8A7A' }]}>
+                <View style={styles.gameImageContainer}>
+                  <Image source={ArVr} style={styles.gameImage} />
+                </View>
+                </View>
+            </TouchableOpacity>
+
+            {/* Community Watch */}
+            <TouchableOpacity style={styles.gameCard}>
+              <View style={[styles.gameCardInner, { backgroundColor: '#A67C7C' }]}>
+                <View style={styles.gameImageContainer}>
+                  <Image source={CommunityWatch} style={styles.gameImage} />
                 </View>
               </View>
-              
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionButtonText}>CLICK PHOTO FILE COMPLAINT</Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
+
           </View>
         </View>
 
-        {/* AR/VR Game Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AR/VR GAME</Text>
-          
-          <View style={styles.gameCard}>
-            <View style={styles.gameHeader}>
-              <Text style={styles.gameTitle}>FLORA, FANA EXPLORE</Text>
-              <View style={styles.vrBadge}>
-                <Text style={styles.vrBadgeText}>VR</Text>
-              </View>
-            </View>
-            
-            <Text style={styles.gameSubtitle}>Explore nature in Virtual Reality</Text>
-            
-            <View style={styles.navigationGrid}>
-              <TouchableOpacity style={styles.navButton}>
-                <Text style={styles.navButtonIcon}>🏠</Text>
-                <Text style={styles.navButtonText}>Home</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.navButton}>
-                <Text style={styles.navButtonIcon}>🎮</Text>
-                <Text style={styles.navButtonText}>Games</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.navButton}>
-                <Text style={styles.navButtonIcon}>📚</Text>
-                <Text style={styles.navButtonText}>Learn</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.navButton}>
-                <Text style={styles.navButtonIcon}>⚡</Text>
-                <Text style={styles.navButtonText}>Challenges</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpace} />
-
+        <View style={{ height: 30 }} />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* Bottom Navigation */}
+      
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
+    <Svg width={26} height={26} viewBox="0 0 512 512">
+      <Path
+        fill="#3a9322ff"
+        d="M277.8 8.6c-12.3-11.4-31.3-11.4-43.5 0l-224 208c-9.6 9-12.8 22.9-8 35.1S18.8 272 32 272h16v176c0 35.3 28.7 64 64 64h288c35.3 0 64-28.7 64-64V272h16c13.2 0 25-8.1 29.8-20.3s1.6-26.2-8-35.1zM240 320h32c26.5 0 48 21.5 48 48v96H192v-96c0-26.5 21.5-48 48-48"
+      />
+    </Svg>
+    <Text style={styles.navTextActiveHome}>Home</Text>
+  </TouchableOpacity>
+
+
+        <TouchableOpacity style={styles.navItem}
+        onPress={() => navigation.navigate("LearningModuleScreen")}>
+
+  <Svg width={26} height={26} viewBox="0 0 512 512">
+    <Path
+      fill="#000"
+      d="M478 217.9c-13.8-32.4-43.4-53.9-79.3-57.5c-39.1-4-78.5-6.1-117.7-6.1s-78.6 2-117.7 6.1c-35.9 3.7-65.5 25.2-79.3 57.5C63.1 254.7 64 296 80.8 332.5c16 35.2 48.1 59.4 84.9 63.8c2.2.3 4.4.5 6.6.5c12.8 0 24.8-5.9 32.7-15.8l18.9-24c6-7.6 15-12 24.5-12s18.6 4.4 24.5 12l18.9 24c7.9 9.9 19.9 15.8 32.7 15.8c2.2 0 4.4-.2 6.6-.5c36.8-4.4 68.9-28.6 84.9-63.8c16.8-36.5 17.7-77.8 2-114.6zM192 288h-32v32h-32v-32H96v-32h32v-32h32v32h32v32zm160 48c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32zm48-64c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z"
+    />
+  </Svg>
+  <Text style={styles.navTextInactive}>Games</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.navItem}
+onPress={() => navigation.navigate("LearningModuleScreen")}>
+  <Svg width={26} height={26} viewBox="0 0 512 512">
+    <Path
+      fill="#000"
+      d="M96 64c-17.7 0-32 14.3-32 32v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32H96zm112 96l160 112l-160 112V160z"
+    />
+  </Svg>
+  <Text style={styles.navTextInactive}>Learn</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.navItem}>
+  <Svg width={26} height={26} viewBox="0 0 512 512">
+    <Path
+      fill="#000"
+      d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224s224-100.3 224-224S379.7 32 256 32zm0 384c-88.2 0-160-71.8-160-160s71.8-160 160-160s160 71.8 160 160s-71.8 160-160 160zm0-256c-53 0-96 43-96 96s43 96 96 96s96-43 96-96s-43-96-96-96zm0 128c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z"
+    />
+  </Svg>
+  <Text style={styles.navTextInactive}>Challenges</Text>
+</TouchableOpacity>
+
+      </View>
+
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  profileHeader: {
-    padding: 20,
-    paddingTop: 15,
-    backgroundColor: '#ffffff',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  profileInfo: {
+  container: { flex: 1, backgroundColor: '#f5f5f5' },
+
+  header: {
+    backgroundColor: '#3a9322ff',
+    paddingTop: 50,
+    paddingBottom: 15,
+    paddingHorizontal: 20,
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 15,
-  },
-  avatar: {
-    fontSize: 50,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#e8f5e9',
-    textAlign: 'center',
-    lineHeight: 70,
-    borderWidth: 3,
-    borderColor: '#4caf50',
-  },
-  levelBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#ff9800',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  levelText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 2,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-    marginBottom: 8,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 8,
-  },
-  statItem: {
-    flex: 1,
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#dee2e6',
-    marginHorizontal: 5,
-  },
-  xpContainer: {
-    marginTop: 10,
-  },
-  xpText: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 5,
-    fontWeight: '600',
-  },
-  xpBar: {
-    height: 8,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 4,
+
+  appName: { color: '#fff', fontSize: 20, fontWeight: 'bold', letterSpacing: 1 },
+
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+
+  notificationIcon: { width: 35, height: 35, justifyContent: 'center', alignItems: 'center' },
+
+  bellIcon: { fontSize: 22 },
+
+  profileIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     overflow: 'hidden',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  xpFill: {
-    height: '100%',
-    width: '70%',
-    backgroundColor: '#4caf50',
-    borderRadius: 4,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e0e0e0',
+
+  profileImage: { width: '100%', height: '100%' },
+
+  welcomeCard: {
+    backgroundColor: '#fff',
     marginHorizontal: 20,
-    marginVertical: 10,
-  },
-  appTitleContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  appTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-    textAlign: 'center',
-    letterSpacing: 2,
-    textShadowColor: 'rgba(0,0,0,0.1)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  section: {
+    marginTop: 20,
     padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-    marginBottom: 15,
-    letterSpacing: 0.5,
-  },
-  activityCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderLeftWidth: 6,
-    borderLeftColor: '#1b5e20',
-  },
-  activityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  activityMainTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-    flex: 1,
-  },
-  tag: {
-    backgroundColor: '#ffeb3b',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fbc02d',
-  },
-  gameTag: {
-    backgroundColor: '#4caf50',
-    borderColor: '#388e3c',
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  activityContent: {
-    // Content styling
-  },
-  learnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 5,
-  },
-  description: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 15,
-    lineHeight: 22,
-  },
-  gameDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-    fontStyle: 'italic',
-  },
-  details: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  detailItem: {
+    borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  detailIcon: {
-    fontSize: 16,
-    marginRight: 5,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  gameRewards: {
-    flexDirection: 'row',
-    marginBottom: 15,
-  },
-  rewardItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  rewardIcon: {
-    fontSize: 14,
-    marginRight: 5,
-  },
-  rewardText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
-  learnButton: {
-    backgroundColor: '#2196f3',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  learnButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  actionButton: {
-    backgroundColor: '#1b5e20',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  actionButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  gameCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  gameHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  gameTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b5e20',
-  },
-  vrBadge: {
-    backgroundColor: '#9c27b0',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  vrBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  gameSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  navigationGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  navButton: {
-    width: '48%',
-    backgroundColor: '#e8f5e9',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#c5e1a5',
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
   },
-  navButtonIcon: {
-    fontSize: 24,
+
+  welcomeText: { fontSize: 14, color: '#666' },
+  userName: { fontSize: 18, fontWeight: 'bold', color: '#000', marginTop: 2 },
+
+  rankBadge: {
+    backgroundColor: '#FF9533',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 10,
+  },
+
+  rankText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+
+  characterEmoji: { fontSize: 45 },
+
+  levelContainer: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: 15,
+    padding: 15,
+    borderRadius: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  levelBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+
+  levelItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#e8e8e8',
+  },
+
+  levelActive: { backgroundColor: '#4CAF50' },
+
+  levelTextInactive: { fontSize: 12, color: '#666', fontWeight: '600' },
+  levelTextActive: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
+
+  progressBar: { 
+    height: 8, 
+    backgroundColor: '#ddd', 
+    borderRadius: 4, 
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+
+  progressFill: { height: '100%', width: '40%', backgroundColor: '#FFD700' },
+
+  ecoPointsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  coinIcon: { fontSize: 20, marginRight: 5 },
+
+  ecoPointsText: { fontSize: 13, color: '#888', fontWeight: '600' },
+
+  moduleCardsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    gap: 15,
+    marginTop: 20,
+  },
+
+  learningModuleCard: {
+    flex: 1,
+    backgroundColor: '#5DADE2',
+    borderRadius: 15,
+    padding: 20,
+    minHeight: 50,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  moduleIcon: {
+    width: 50,
+    height: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+
+  moduleIconText: { fontSize: 24 },
+
+  moduleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    lineHeight: 22,
+  },
+
+  rewardsCard: {
+    flex: 1,
+    backgroundColor: '#9B30FF',
+    borderRadius: 15,
+    padding: 20,
+    minHeight: 100,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  rewardsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     marginBottom: 5,
   },
-  navButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1b5e20',
+
+  starIcon: { fontSize: 16 },
+
+  rewardsIcon: {
+    width: 50,
+    height: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  bottomSpace: {
-    height: 30,
+
+  rewardsIconText: { fontSize: 24 },
+
+  rewardsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    lineHeight: 22,
   },
+
+  section: { marginTop: 20 },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginHorizontal: 20,
+    marginBottom: 15,
+    color: '#000',
+  },
+
+  gamesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    gap: 15,
+  },
+
+  gameCard: {
+    width: '47%',
+  },
+
+  gameCardInner: {
+    borderRadius: 15,
+    padding: 15,
+    minHeight: 130,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  gameImageContainer: {
+    width: '100%',
+    height: 150,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 10,
+    position: 'relative',
+  },
+
+  gameImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+
+  quizElements: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  quizEmoji: { fontSize: 30, marginBottom: 5 },
+
+  quizOptions: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+
+  quizOption: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+
+  gamePlayButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 'auto',
+  },
+
+  gamePlayIcon: { 
+    color: '#fff', 
+    fontSize: 14, 
+    marginRight: 5,
+  },
+
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  navItem: { 
+    flex: 1, 
+    alignItems: 'center', 
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+  },
+
+  navItemActive: {
+    backgroundColor: '#adffacff',
+    borderRadius: 25,
+    marginHorizontal: 5,
+  },
+
+  navIcon: { fontSize: 22, marginBottom: 2 },
+
+  navIconInactive: { fontSize: 22, color: '#666', marginBottom: 2 },
+
+  navTextActive: { fontSize: 11, color: '#fff', fontWeight: '600' },
+
+  navTextInactive: { fontSize: 11, color: '#666' },
 });
