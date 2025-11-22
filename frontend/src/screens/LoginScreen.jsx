@@ -12,10 +12,7 @@ export default function LoginScreen({ navigation }) {
   const [message, setMessage] = useState("");
 
   // Correct backend IP (SAME as Register)
-const API_URL = "http://10.168.69.133:5000/api/auth/login";
-
-
-
+  const API_URL = "http://10.112.144.117:5000/api/auth/login";
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,7 +34,8 @@ const API_URL = "http://10.168.69.133:5000/api/auth/login";
 
       if (response.status === 200) {
         setMessage("Login Successful! 🌿");
-        setTimeout(() => navigation.navigate("Home"), 1200);
+        // ✅ CHANGED: Navigate to "Main" instead of "Home"
+        setTimeout(() => navigation.navigate("Main"), 1200);
       } else {
         setMessage(data.message || "Invalid credentials!");
       }
@@ -97,7 +95,6 @@ const API_URL = "http://10.168.69.133:5000/api/auth/login";
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
