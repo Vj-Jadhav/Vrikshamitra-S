@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import Svg, { Path } from "react-native-svg";
 
-
 // Imported Images
 import ArVr from '../assets/ArVr.jpg';
 import CommunityWatch from '../assets/CommunityWatch.png';
@@ -18,16 +17,25 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.appName}>VRIKSHAMITRA</Text>
 
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.notificationIcon}>
+
+          <TouchableOpacity 
+            style={styles.notificationIcon}
+            onPress={() => navigation.navigate("NotificationsScreen")}
+          >
             <Text style={styles.bellIcon}>🔔</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.profileIcon}>
+          <TouchableOpacity 
+            style={styles.profileIcon}
+            onPress={() => navigation.getParent()?.navigate("ProfileScreen")}
+
+          >
             <Image 
               source={{ uri: 'https://via.placeholder.com/40' }} 
               style={styles.profileImage}
             />
           </TouchableOpacity>
+
         </View>
       </View>
 
@@ -73,73 +81,84 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.ecoPointsText}>2571 Eco-Points Collected</Text>
           </View>
         </View>
-{/* Learning Module & Rewards Cards */}
-<View style={styles.moduleCardsContainer}>
 
-  {/* Learning Module */}
-  <TouchableOpacity 
-    style={styles.learningModuleCard}
-    onPress={() => navigation.navigate("LearningModuleScreen")}
-  >
-    <View style={styles.moduleIcon}>
-      <Text style={styles.moduleIconText}>▶️</Text>
-    </View>
-    <Text style={styles.moduleTitle}>Learning{'\n'}Module</Text>
-  </TouchableOpacity>
+        {/* Learning Module & Rewards Cards */}
+        <View style={styles.moduleCardsContainer}>
 
-  {/* Rewards & Leaderboard */}
-  <TouchableOpacity 
-    style={styles.rewardsCard}
-    onPress={() => navigation.navigate("LeaderboardScreen")}   // ⭐ Link added here
-  >
-    <View style={styles.rewardsHeader}>
-      <Text style={styles.starIcon}>⭐⭐</Text>
-    </View>
+          <TouchableOpacity 
+            style={styles.learningModuleCard}
+            onPress={() => navigation.navigate("LearningModuleScreen")}
+          >
+            <View style={styles.moduleIcon}>
+              <Text style={styles.moduleIconText}>▶️</Text>
+            </View>
+            <Text style={styles.moduleTitle}>Learning{'\n'}Module</Text>
+          </TouchableOpacity>
 
-    <View style={styles.rewardsIcon}>
-      <Text style={styles.rewardsIconText}>🏆</Text>
-    </View>
+          <TouchableOpacity 
+            style={styles.rewardsCard}
+            onPress={() => navigation.navigate("LeaderboardScreen")}
+          >
+            <View style={styles.rewardsHeader}>
+              <Text style={styles.starIcon}>⭐⭐</Text>
+            </View>
 
-    <Text style={styles.rewardsTitle}>Rewards &{'\n'}Leaderboard</Text>
-  </TouchableOpacity>
+            <View style={styles.rewardsIcon}>
+              <Text style={styles.rewardsIconText}>🏆</Text>
+            </View>
 
-</View>
+            <Text style={styles.rewardsTitle}>Rewards &{'\n'}Leaderboard</Text>
+          </TouchableOpacity>
 
+        </View>
 
         {/* Fun and Educational Games */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fun and Educational Games</Text>
 
           <View style={styles.gamesGrid}>
-            
-            {/* Nature Quiz */}
-            <TouchableOpacity style={styles.gameCard}>
+
+            {/* Game 1 */}
+            <TouchableOpacity 
+              style={styles.gameCard}
+              onPress={() => navigation.navigate("GamesScreen")}
+            >
               <View style={[styles.gameCardInner, { backgroundColor: '#7FBF7F' }]}>
                 <View style={styles.gameImageContainer}>
                   <Image source={EarthHeroes} style={styles.gameImage} />
                 </View>
-                </View>
+              </View>
             </TouchableOpacity>
-            {/* Plant Detectives */}
-            <TouchableOpacity style={styles.gameCard}>
+
+            {/* Game 2 */}
+            <TouchableOpacity 
+              style={styles.gameCard}
+              onPress={() => navigation.navigate("GamesScreen")}
+            >
               <View style={[styles.gameCardInner, { backgroundColor: '#6B9B6B' }]}>
                 <View style={styles.gameImageContainer}>
                   <Image source={PlantDetective} style={styles.gameImage} />
                 </View>
-                </View>
+              </View>
             </TouchableOpacity>
 
-            {/* AR/VR Game */}
-            <TouchableOpacity style={styles.gameCard}>
+            {/* Game 3 */}
+            <TouchableOpacity 
+              style={styles.gameCard}
+              onPress={() => navigation.navigate("GamesScreen")}
+            >
               <View style={[styles.gameCardInner, { backgroundColor: '#5A8A7A' }]}>
                 <View style={styles.gameImageContainer}>
                   <Image source={ArVr} style={styles.gameImage} />
                 </View>
-                </View>
+              </View>
             </TouchableOpacity>
 
-            {/* Community Watch */}
-            <TouchableOpacity style={styles.gameCard}>
+            {/* Game 4 */}
+            <TouchableOpacity 
+              style={styles.gameCard}
+              onPress={() => navigation.navigate("GamesScreen")}
+            >
               <View style={[styles.gameCardInner, { backgroundColor: '#A67C7C' }]}>
                 <View style={styles.gameImageContainer}>
                   <Image source={CommunityWatch} style={styles.gameImage} />
@@ -154,52 +173,60 @@ export default function HomeScreen({ navigation }) {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      
-      {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
+
+        {/* Home */}
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-    <Svg width={26} height={26} viewBox="0 0 512 512">
-      <Path
-        fill="#3a9322ff"
-        d="M277.8 8.6c-12.3-11.4-31.3-11.4-43.5 0l-224 208c-9.6 9-12.8 22.9-8 35.1S18.8 272 32 272h16v176c0 35.3 28.7 64 64 64h288c35.3 0 64-28.7 64-64V272h16c13.2 0 25-8.1 29.8-20.3s1.6-26.2-8-35.1zM240 320h32c26.5 0 48 21.5 48 48v96H192v-96c0-26.5 21.5-48 48-48"
-      />
-    </Svg>
-    <Text style={styles.navTextActiveHome}>Home</Text>
-  </TouchableOpacity>
+          <Svg width={26} height={26} viewBox="0 0 512 512">
+            <Path
+              fill="#3a9322ff"
+              d="M277.8 8.6c-12.3-11.4-31.3-11.4-43.5 0l-224 208c-9.6 9-12.8 22.9-8 35.1S18.8 272 32 272h16v176c0 35.3 28.7 64 64 64h288c35.3 0 64-28.7 64-64V272h16c13.2 0 25-8.1 29.8-20.3s1.6-26.2-8-35.1zM240 320h32c26.5 0 48 21.5 48 48v96H192v-96c0-26.5 21.5-48 48-48"
+            />
+          </Svg>
+          <Text style={styles.navTextActiveHome}>Home</Text>
+        </TouchableOpacity>
 
+        {/* Games */}
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate("GamesScreen")}
+        >
+          <Svg width={26} height={26} viewBox="0 0 512 512">
+            <Path
+              fill="#000"
+              d="M478 217.9c-13.8-32.4-43.4-53.9-79.3-57.5c-39.1-4-78.5-6.1-117.7-6.1s-78.6 2-117.7 6.1c-35.9 3.7-65.5 25.2-79.3 57.5C63.1 254.7 64 296 80.8 332.5c16 35.2 48.1 59.4 84.9 63.8c2.2.3 4.4.5 6.6.5c12.8 0 24.8-5.9 32.7-15.8l18.9-24c6-7.6 15-12 24.5-12s18.6 4.4 24.5 12l18.9 24c7.9 9.9 19.9 15.8 32.7 15.8c2.2 0 4.4-.2 6.6-.5c36.8-4.4 68.9-28.6 84.9-63.8c16.8-36.5 17.7-77.8 2-114.6z"
+            />
+          </Svg>
+          <Text style={styles.navTextInactive}>Games</Text>
+        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem}
-        onPress={() => navigation.navigate("")}>
+        {/* Learn */}
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate("LearningModuleScreen")}
+        >
+          <Svg width={26} height={26} viewBox="0 0 512 512">
+            <Path
+              fill="#000"
+              d="M96 64c-17.7 0-32 14.3-32 32v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32H96zm112 96l160 112l-160 112V160z"
+            />
+          </Svg>
+          <Text style={styles.navTextInactive}>Learn</Text>
+        </TouchableOpacity>
 
-  <Svg width={26} height={26} viewBox="0 0 512 512">
-    <Path
-      fill="#000"
-      d="M478 217.9c-13.8-32.4-43.4-53.9-79.3-57.5c-39.1-4-78.5-6.1-117.7-6.1s-78.6 2-117.7 6.1c-35.9 3.7-65.5 25.2-79.3 57.5C63.1 254.7 64 296 80.8 332.5c16 35.2 48.1 59.4 84.9 63.8c2.2.3 4.4.5 6.6.5c12.8 0 24.8-5.9 32.7-15.8l18.9-24c6-7.6 15-12 24.5-12s18.6 4.4 24.5 12l18.9 24c7.9 9.9 19.9 15.8 32.7 15.8c2.2 0 4.4-.2 6.6-.5c36.8-4.4 68.9-28.6 84.9-63.8c16.8-36.5 17.7-77.8 2-114.6zM192 288h-32v32h-32v-32H96v-32h32v-32h32v32h32v32zm160 48c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32zm48-64c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z"
-    />
-  </Svg>
-  <Text style={styles.navTextInactive}>Games</Text>
-</TouchableOpacity>
-
-<TouchableOpacity style={styles.navItem}
-onPress={() => navigation.navigate("LearningModuleScreen")}>
-  <Svg width={26} height={26} viewBox="0 0 512 512">
-    <Path
-      fill="#000"
-      d="M96 64c-17.7 0-32 14.3-32 32v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32H96zm112 96l160 112l-160 112V160z"
-    />
-  </Svg>
-  <Text style={styles.navTextInactive}>Learn</Text>
-</TouchableOpacity>
-
-<TouchableOpacity style={styles.navItem}>
-  <Svg width={26} height={26} viewBox="0 0 512 512">
-    <Path
-      fill="#000"
-      d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224s224-100.3 224-224S379.7 32 256 32zm0 384c-88.2 0-160-71.8-160-160s71.8-160 160-160s160 71.8 160 160s-71.8 160-160 160zm0-256c-53 0-96 43-96 96s43 96 96 96s96-43 96-96s-43-96-96-96zm0 128c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z"
-    />
-  </Svg>
-  <Text style={styles.navTextInactive}>Challenges</Text>
-</TouchableOpacity>
+        {/* Challenges */}
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate("ChallengesScreen")}
+        >
+          <Svg width={26} height={26} viewBox="0 0 512 512">
+            <Path
+              fill="#000"
+              d="M256 32C132.3 32 32 132.3 32 256s100.3 224 224 224s224-100.3 224-224S379.7 32 256 32zm0 384c-88.2 0-160-71.8-160-160s71.8-160 160-160s160 71.8 160 160s-71.8 160-160 160zm0-256c-53 0-96 43-96 96s43 96 96 96s96-43 96-96s-43-96-96-96zm0 128c-17.7 0-32-14.3-32-32s14.3-32 32-32s32 14.3 32 32s-14.3 32-32 32z"
+            />
+          </Svg>
+          <Text style={styles.navTextInactive}>Challenges</Text>
+        </TouchableOpacity>
 
       </View>
 
@@ -249,10 +276,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
 
   welcomeText: { fontSize: 14, color: '#666' },
@@ -276,11 +299,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     padding: 15,
     borderRadius: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
 
   levelBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
@@ -329,12 +347,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#5DADE2',
     borderRadius: 15,
     padding: 20,
-    minHeight: 50,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
 
   moduleIcon: {
@@ -347,7 +360,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  moduleIconText: { fontSize: 24 },
+  moduleIconText: { fontSize: 24, color: '#fff' },
 
   moduleTitle: {
     fontSize: 16,
@@ -361,12 +374,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#9B30FF',
     borderRadius: 15,
     padding: 20,
-    minHeight: 100,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
 
   rewardsHeader: {
@@ -375,7 +383,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
 
-  starIcon: { fontSize: 16 },
+  starIcon: { fontSize: 16, color: '#fff' },
 
   rewardsIcon: {
     width: 50,
@@ -387,7 +395,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  rewardsIconText: { fontSize: 24 },
+  rewardsIconText: { fontSize: 24, color: '#fff' },
 
   rewardsTitle: {
     fontSize: 16,
@@ -422,10 +430,6 @@ const styles = StyleSheet.create({
     padding: 15,
     minHeight: 130,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
 
   gameImageContainer: {
@@ -433,55 +437,12 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 10,
     overflow: 'hidden',
-    marginBottom: 10,
-    position: 'relative',
   },
 
   gameImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-  },
-
-  quizElements: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  quizEmoji: { fontSize: 30, marginBottom: 5 },
-
-  quizOptions: {
-    flexDirection: 'row',
-    gap: 5,
-  },
-
-  quizOption: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-  },
-
-  gamePlayButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 'auto',
-  },
-
-  gamePlayIcon: { 
-    color: '#fff', 
-    fontSize: 14, 
-    marginRight: 5,
   },
 
   bottomNav: {
@@ -492,17 +453,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
 
   navItem: { 
     flex: 1, 
     alignItems: 'center', 
     paddingVertical: 8,
-    paddingHorizontal: 5,
   },
 
   navItemActive: {
@@ -511,11 +467,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
 
-  navIcon: { fontSize: 22, marginBottom: 2 },
+  navTextActiveHome: {
+    fontSize: 11,
+    color: '#3a9322ff',
+    fontWeight: '700',
+    marginTop: 2,
+  },
 
-  navIconInactive: { fontSize: 22, color: '#666', marginBottom: 2 },
-
-  navTextActive: { fontSize: 11, color: '#fff', fontWeight: '600' },
-
-  navTextInactive: { fontSize: 11, color: '#666' },
+  navTextInactive: { fontSize: 11, color: '#666', marginTop: 2 },
 });

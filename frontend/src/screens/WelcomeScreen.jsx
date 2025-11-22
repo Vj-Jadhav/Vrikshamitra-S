@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ImageBackground } from 'react-native';
+import LottieView from 'lottie-react-native';   // ✅ Added
 
 export default function WelcomeScreen({ navigation }) {
   return (
@@ -15,28 +16,30 @@ export default function WelcomeScreen({ navigation }) {
       {/* Main Content */}
       <View style={styles.content}>
 
-        {/* Badge */}
+        {/* Badge
         <View style={styles.ecoBadge}>
           <Text style={styles.badgeText}>🌱</Text>
-        </View>
+        </View> */}
 
         {/* Welcome Heading */}
         <Text style={styles.welcome}>Welcome to</Text>
 
-        {/* Vrikshamitra Logo Image */}
+        {/* Vrikshamitra Logo */}
         <View style={styles.titleContainer}>
           <Image
-            source={require('../assets/vriksha.png')}   // ✅ FIXED PATH
+            source={require('../assets/vriksha.png')}
             style={styles.titleImage}
             resizeMode="contain"
           />
         </View>
 
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          Play, Learn, and Explore with Exciting{"\n"}
-          Games, Challenges, Videos, Quizzes!
-        </Text>
+        {/* 🌿 Plant Growing Animation */}
+        <LottieView
+          source={require('../assets/Energyplant5.json')}
+          autoPlay
+          loop
+          style={{ width: 250, height: 250, marginTop: 10 }}
+        />
 
         {/* Start Button */}
         <TouchableOpacity

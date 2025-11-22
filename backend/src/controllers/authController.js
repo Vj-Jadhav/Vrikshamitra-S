@@ -2,6 +2,18 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+export const getUserDetails = async (req, res) => {
+  try {
+    return res.status(200).json({
+      success: true,
+      user: req.user
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
 // ⭐ REGISTER ⭐
 export const registerUser = async (req, res) => {
   try {
