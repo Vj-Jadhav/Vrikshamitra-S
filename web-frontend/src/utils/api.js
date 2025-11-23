@@ -38,7 +38,6 @@ export const addStudentsBulk = async (instituteId, students) => {
   }
 };
 
-const TEMP_ADMIN_ID = "000000000000000000000001";
 
 export const getChallenges = () => API.get("/challenges");
 
@@ -47,17 +46,11 @@ export const deleteChallenge = (id) =>
 
 
 export const createChallenge = (data) => {
-  return API.post("/challenges", {
-    ...data,
-    createdBy: TEMP_ADMIN_ID
-  });
+  return API.post("/challenges", data);
 };
 
 export const updateChallenge = (id, data) => {
-  return API.put(`/challenges/${id}`, {
-    ...data,
-    createdBy: TEMP_ADMIN_ID
-  });
+  return API.put(`/challenges/${id}`, data);
 };
 
 

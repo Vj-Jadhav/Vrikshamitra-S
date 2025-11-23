@@ -1,6 +1,6 @@
 // src/institute/InstituteTypeOverview.jsx
 import React from 'react';
-import { School, Building2, University, Users, BookOpen, GraduationCap } from 'lucide-react';
+import { School, Building2, University, Users, BookOpen, GraduationCap, Clock, CheckCircle } from 'lucide-react';
 
 const InstituteTypeOverview = ({ instituteData, stats }) => {
   const getInstituteSpecificStats = () => {
@@ -16,7 +16,21 @@ const InstituteTypeOverview = ({ instituteData, stats }) => {
         value: stats.totalStudents,
         icon: GraduationCap,
         color: "green"
-      }
+      },
+      {
+      title: "Completed Challenges",
+      value: stats.completedChallenges,
+      icon: CheckCircle,
+      color: "green",
+      description: "Successfully completed"
+    },
+    {
+      title: "Pending Submissions",
+      value: stats.pendingSubmissions,
+      icon: Clock,
+      color: "orange",
+      description: "Awaiting approval"
+    }
     ];
 
     switch (instituteData.type) {
@@ -103,8 +117,10 @@ const InstituteTypeOverview = ({ instituteData, stats }) => {
               )}
             </div>
             <div className="text-2xl font-bold text-gray-800 mb-1">
-              {stat.isString ? stat.value : stat.value.toLocaleString()}
-            </div>
+{stat.isString
+  ? (stat.value ?? "N/A")
+  : ((stat.value ?? 0).toLocaleString())
+}            </div>
             <div className="text-sm font-medium text-gray-600">{stat.title}</div>
             {stat.description && (
               <div className="text-xs text-gray-500 mt-1">{stat.description}</div>

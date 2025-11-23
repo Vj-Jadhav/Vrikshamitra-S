@@ -6,13 +6,13 @@ import { User, Mail, Lock, School, Calendar, BookOpen } from "lucide-react";
 
 export default function Register() {
   const [form, setForm] = useState({
-    name: "",
+    fullName: "",
     email: "",
     password: "",
     role: "student",
-    schoolName: "",
-    age: "",
-    className: "",
+    // schoolName: "",
+    // age: "",
+    // className: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -24,11 +24,6 @@ export default function Register() {
 
     try {
       const payload = { ...form };
-
-      if (form.role !== "student") {
-        delete payload.age;
-        delete payload.className;
-      }
 
       await API.post("/auth/register", payload);
       alert("Registered successfully!");
@@ -62,8 +57,8 @@ export default function Register() {
               type="text"
               placeholder="Name"
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              value={form.fullName}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
               required
             />
           </div>
@@ -108,7 +103,7 @@ export default function Register() {
           </div>
 
           {/* School Name */}
-          <div className="mb-5 relative">
+          {/* <div className="mb-5 relative">
             <School className="absolute left-3 top-2.5 text-green-600" size={20} />
             <input
               type="text"
@@ -118,10 +113,10 @@ export default function Register() {
               onChange={(e) => setForm({ ...form, schoolName: e.target.value })}
               required
             />
-          </div>
+          </div> */}
 
           {/* Student-only fields */}
-          {form.role === "student" && (
+          {/* {form.role === "student" && (
             <>
               <div className="mb-5 relative">
                 <Calendar className="absolute left-3 top-2.5 text-green-600" size={20} />
@@ -147,7 +142,7 @@ export default function Register() {
                 />
               </div>
             </>
-          )}
+          )} */}
 
           {/* Submit Button */}
           <button
