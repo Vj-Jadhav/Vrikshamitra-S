@@ -3,9 +3,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 
+import mongoose from "mongoose";
 
 import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
 import Faculty from "../models/Faculty.js";
+import Student from "../models/Student.js";
+import Challenge from "../models/Challenge.js";
 
 
 //government dashboard
@@ -445,3 +448,53 @@ export const addFaculty = async (req, res) => {
     res.status(500).json({ message: "Failed to add faculty" });
   }
 };
+
+export const getFacultyByInstitute = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    // Check if institute exists
+    const institute = await Institute.findById(instituteId);
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
+
+    // Find all faculty belonging to this institute
+    const faculty = await Faculty.find({ instituteId });
+
+    return res.status(200).json(faculty);
+  } catch (err) {
+    console.error("Error fetching faculty:", err);
+    return res.status(500).json({ message: "Failed to fetch faculty" });
+  }
+};
+
+export const addStudentsBulk = async (req, res) => {
+  try {
+    const { students } = req.body;
+    const { instituteId } = req.params;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ message: 'No students provided' });
+    }
+
+    // Add instituteId to each student
+    const studentsWithInstitute = students.map(s => ({
+      ...s,
+      instituteId,
+      status: s.status || 'active',
+      joinDate: s.joinDate || new Date(),
+      ecoPoints: s.ecoPoints || 0
+    }));
+
+    // Save all students at once
+    const savedStudents = await Student.insertMany(studentsWithInstitute);
+
+    res.status(201).json(savedStudents);
+  } catch (error) {
+    console.error('Error adding students in bulk:', error);
+    res.status(500).json({ message: 'Failed to save students' });
+  }
+};
+
+

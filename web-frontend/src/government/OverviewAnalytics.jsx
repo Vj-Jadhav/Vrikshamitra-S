@@ -1,6 +1,6 @@
 // src/government/OverviewAnalytics.jsx
 import React from 'react';
-import { Building, Users, CheckCircle, Clock, TrendingUp, MapPin } from 'lucide-react';
+import { Building, Users, CheckCircle, Clock, TrendingUp, MapPin, Crosshair } from 'lucide-react';
 
 const OverviewAnalytics = ({ analytics, loading, error, refresh }) => {
   if (loading) {
@@ -61,6 +61,20 @@ const OverviewAnalytics = ({ analytics, loading, error, refresh }) => {
               <h3 className="text-3xl font-bold text-gray-800">{stats.activeInstitutes}</h3>
             </div>
             <CheckCircle className="text-green-500" size={32} />
+          </div>
+        </div>
+
+        // Add this to the stats grid in OverviewAnalytics.jsx
+        <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-orange-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600">Active Challenges</p>
+              <h3 className="text-3xl font-bold text-gray-800">8</h3>
+            </div>
+            <Crosshair className="text-orange-500" size={32} />
+          </div>
+          <div className="mt-2 text-sm text-gray-600">
+            5 mandatory, 3 optional
           </div>
         </div>
 

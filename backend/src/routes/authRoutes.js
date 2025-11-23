@@ -1,5 +1,16 @@
 import express from "express";
-import { registerUser, loginUser, getUserDetails, registerInstitute, getAllInstitutes, approveInstitute, rejectInstitute,getInstituteById, addFaculty} from "../controllers/authController.js";
+import { registerUser,
+         loginUser, 
+         getUserDetails, 
+         registerInstitute, 
+         getAllInstitutes, 
+         approveInstitute, 
+         rejectInstitute,
+         getInstituteById, 
+         addFaculty,
+         getFacultyByInstitute,
+         addStudentsBulk
+        } from "../controllers/authController.js";
 
 
 import { protect } from "../middlewares/auth.js";
@@ -26,5 +37,21 @@ router.put("/:id/reject", rejectInstitute);
 router.get("/:id", getInstituteById);
 
 router.post("/:instituteId/faculty", addFaculty);
+router.get("/:instituteId/faculty", getFacultyByInstitute);
+router.post('/bulk/:instituteId', addStudentsBulk);
+
+
+// // GET all challenges
+// router.get("/", getChallenges);
+
+// // CREATE a new challenge
+// router.post("/", createChallenge);
+
+// // UPDATE a challenge
+// router.put("/:id", updateChallenge);
+
+// // DELETE a challenge
+// router.delete("/:id", deleteChallenge);
+
 
 export default router;

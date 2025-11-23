@@ -12,6 +12,7 @@ import UserManagement from "../government/UserManagement";
 import RegistrationAnalytics from "../government/RegistrationAnalytics";
 import Reports from "../government/Reports";
 import SystemSettings from "../government/SystemSettings";
+import ChallengeManagement from "../government/ChallengeManagement";
 
 export default function GovernmentDashboard() {
   const { user, logout } = useContext(AuthContext);
@@ -186,37 +187,40 @@ const fetchAdminAnalytics = async () => {
   }, [user?._id]);
 
   const renderContent = () => {
-    switch (activeSection) {
-      case "overview":
-        return (
-          <OverviewAnalytics
-            analytics={analytics}
-            loading={loadingAnalytics}
-            error={analyticsError}
-            refresh={fetchAdminAnalytics}
-          />
-        );
-      case "institutes":
-        return <InstituteManagement />;
-      case "users":
-        return <UserManagement />;
-      case "registrations":
-        return <RegistrationAnalytics />;
-      case "reports":
-        return <Reports adminData={adminData} />;
-      case "settings":
-        return <SystemSettings />;
-      default:
-        return (
-          <OverviewAnalytics
-            analytics={analytics}
-            loading={loadingAnalytics}
-            error={analyticsError}
-            refresh={fetchAdminAnalytics}
-          />
-        );
-    }
-  };
+  switch (activeSection) {
+    case "overview":
+      return (
+        <OverviewAnalytics
+          analytics={analytics}
+          loading={loadingAnalytics}
+          error={analyticsError}
+          refresh={fetchAdminAnalytics}
+        />
+      );
+    case "institutes":
+      return <InstituteManagement />;
+    case "users":
+      return <UserManagement />;
+    case "challenges": // Add this case
+      return <ChallengeManagement />;
+    case "registrations":
+      return <RegistrationAnalytics />;
+    case "reports":
+      return <Reports adminData={adminData} />;
+    case "settings":
+      return <SystemSettings />;
+    default:
+      return (
+        <OverviewAnalytics
+          analytics={analytics}
+          loading={loadingAnalytics}
+          error={analyticsError}
+          refresh={fetchAdminAnalytics}
+        />
+      );
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">

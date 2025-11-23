@@ -11,6 +11,7 @@ import {
   Shield,
   CheckCircle,
   Clock,
+  Crosshair,
 } from "lucide-react";
 
 const GovernmentSidebar = ({
@@ -19,14 +20,16 @@ const GovernmentSidebar = ({
   adminData,
   onLogout,
 }) => {
-  const menuItems = [
-    { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
-    { id: "institutes", icon: Building, label: "Institute Management" },
-    { id: "users", icon: Users, label: "User Management" },
-    { id: "registrations", icon: TrendingUp, label: "Registration Analytics" },
-    { id: "reports", icon: FileText, label: "Reports & Exports" },
-    { id: "settings", icon: Settings, label: "System Settings" },
-  ];
+ const menuItems = [
+  { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
+  { id: "institutes", icon: Building, label: "Institute Management" },
+  { id: "users", icon: Users, label: "User Management" },
+  { id: "challenges", icon: Crosshair, label: "Challenge Management" }, // Add this line
+  { id: "registrations", icon: TrendingUp, label: "Registration Analytics" },
+  { id: "reports", icon: FileText, label: "Reports & Exports" },
+  { id: "settings", icon: Settings, label: "System Settings" },
+];
+
 
   return (
     <aside className="w-72 bg-white shadow-2xl border-r-2 border-blue-100 flex flex-col sticky top-0 h-screen">

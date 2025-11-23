@@ -38,30 +38,52 @@ export const addStudentsBulk = async (instituteId, students) => {
   }
 };
 
+const TEMP_ADMIN_ID = "000000000000000000000001";
 
-export const getGames = async () => {
-  try {
-    const response = await API.get("/games");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+export const getChallenges = () => API.get("/challenges");
+
+export const deleteChallenge = (id) =>
+  API.delete(`/challenges/${id}`);
+
+
+export const createChallenge = (data) => {
+  return API.post("/challenges", {
+    ...data,
+    createdBy: TEMP_ADMIN_ID
+  });
 };
 
-export const addScore = async (data) => {
-  try {
-    const response = await API.post("/scores", data);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+export const updateChallenge = (id, data) => {
+  return API.put(`/challenges/${id}`, {
+    ...data,
+    createdBy: TEMP_ADMIN_ID
+  });
 };
 
-export const getLeaderboard = async () => {
-  try {
-    const response = await API.get("/leaderboard");
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
+
+// export const getGames = async () => {
+//   try {
+//     const response = await API.get("/games");
+//     return response.data;
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+// export const addScore = async (data) => {
+//   try {
+//     const response = await API.post("/scores", data);
+//     return response.data;
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+// export const getLeaderboard = async () => {
+//   try {
+//     const response = await API.get("/leaderboard");
+//     return response.data;
+//   } catch (error) {
+//     throw error;
+//   }
+// };
