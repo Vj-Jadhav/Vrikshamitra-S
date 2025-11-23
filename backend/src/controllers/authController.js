@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 
 
 import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
+import Faculty from "../models/Faculty.js";
 
 
 //government dashboard
@@ -348,41 +349,99 @@ export const registerUser = async (req, res) => {
 // ⭐ LOGIN ⭐
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    const user = await User.findOne({ email });
+    let user;
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    // Check based on role
+    switch (role) {
+      case "institute":
+        user = await Institute.findOne({ email });
+        if (!user) return res.status(404).json({ message: "Institute not found" });
 
+        // Only allow login if approvalStatus is true
+        if (!user.approvalStatus) {
+          return res.status(403).json({ message: "Institute not approved yet" });
+        }
+        break;
+
+      case "faculty":
+        user = await Faculty.findOne({ email });
+        if (!user) return res.status(404).json({ message: "Faculty not found" });
+        break;
+
+      case "student":
+        user = await Student.findOne({ email });
+        if (!user) return res.status(404).json({ message: "Student not found" });
+        break;
+
+      default:
+        // fallback to normal users (like admin)
+        user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        break;
+    }
+
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
 
+    // Generate JWT
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
+    // Send user info
     return res.status(200).json({
       message: "Login successful",
       token,
       user: {
         id: user._id,
-        fullName: user.fullName,
+        fullName: user.fullName || user.instituteName, // adapt for Institute
         email: user.email,
-        role: user.role,
+        role: role,
       },
     });
 
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
+};
 
 
-  
+export const addFaculty = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+    const { name, email, phone, department, subjects } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !department) {
+      return res.status(400).json({ message: "Name, Email, and Department are required." });
+    }
+
+    // Check if institute exists
+    const institute = await Institute.findById(instituteId);
+    if (!institute) return res.status(404).json({ message: "Institute not found" });
+
+    // Create new faculty
+    const newFaculty = await Faculty.create({
+      name,
+      email,
+      phone,
+      department,
+      subjects, // array expected
+      instituteId
+    });
+
+    res.status(201).json(newFaculty);
+  } catch (err) {
+    console.error("Error adding faculty:", err);
+    res.status(500).json({ message: "Failed to add faculty" });
+  }
 };

@@ -1,5 +1,5 @@
 import express from "express";
-import { registerUser, loginUser, getUserDetails, registerInstitute, getAllInstitutes, approveInstitute, rejectInstitute,getInstituteById } from "../controllers/authController.js";
+import { registerUser, loginUser, getUserDetails, registerInstitute, getAllInstitutes, approveInstitute, rejectInstitute,getInstituteById, addFaculty} from "../controllers/authController.js";
 
 
 import { protect } from "../middlewares/auth.js";
@@ -25,5 +25,6 @@ router.put("/:id/approve", approveInstitute);
 router.put("/:id/reject", rejectInstitute);
 router.get("/:id", getInstituteById);
 
+router.post("/:instituteId/faculty", addFaculty);
 
 export default router;
