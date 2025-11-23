@@ -23,6 +23,21 @@ export const addFaculty = async (instituteId, facultyData) => {
   return response.data;
 };
 
+export const getFacultyByInstitute = async (instituteId) => {
+  const response = await API.get(`/auth/${instituteId}/faculty`);
+  return response.data;
+};
+
+
+export const addStudentsBulk = async (instituteId, students) => {
+  try {
+    const response = await API.post(`/auth/bulk/${instituteId}`, { students });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 
 export const getGames = async () => {
   try {

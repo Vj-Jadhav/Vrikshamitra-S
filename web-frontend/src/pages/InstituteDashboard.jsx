@@ -126,7 +126,7 @@ export default function InstituteDashboard() {
       case "faculty":
         return <FacultyManagement instituteId={user?._id} />; 
       case "students":
-        return <StudentManagement instituteData={instituteData} />;
+        return <StudentManagement instituteId={user?._id} />;
       case "structure":
         return <DepartmentStructure instituteData={instituteData} />;
     //   case "analytics":

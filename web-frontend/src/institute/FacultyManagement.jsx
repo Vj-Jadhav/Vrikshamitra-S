@@ -1,7 +1,7 @@
 // src/institute/FacultyManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Mail, Phone, BookOpen, Users } from 'lucide-react';
-import { addFaculty } from '../utils/api';
+import { addFaculty, getFacultyByInstitute } from '../utils/api';
 
 const FacultyManagement = ({ instituteId }) => {
   const [faculty, setFaculty] = useState([]);
@@ -17,45 +17,45 @@ const FacultyManagement = ({ instituteId }) => {
     subjects: ''
   });
 
-  // useEffect(() => {
-  //   if (instituteId) fetchFaculty();
-  // }, [instituteId]);
+  // Fetch faculty list whenever instituteId changes
+  useEffect(() => {
+    if (instituteId) fetchFaculty();
+  }, [instituteId]);
 
-  // const fetchFaculty = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const res = await API.get(`/faculty/institute/${instituteId}`);
-  //     setFaculty(res.data);
-  //   } catch (error) {
-  //     console.error("Error fetching faculty:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const fetchFaculty = async () => {
+    setLoading(true);
+    try {
+      const data = await getFacultyByInstitute(instituteId);
+      setFaculty(data);
+    } catch (error) {
+      console.error("Error fetching faculty:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddFaculty = async () => {
-  if (!newFaculty.name || !newFaculty.email || !newFaculty.department) {
-    alert("Please fill in all required fields (Name, Email, Department).");
-    return;
-  }
+    if (!newFaculty.name || !newFaculty.email || !newFaculty.department) {
+      alert("Please fill in all required fields (Name, Email, Department).");
+      return;
+    }
 
-  try {
-    const payload = {
-      ...newFaculty,
-      subjects: newFaculty.subjects.split(',').map(s => s.trim())
-    };
+    try {
+      const payload = {
+        ...newFaculty,
+        subjects: newFaculty.subjects.split(',').map(s => s.trim())
+      };
 
-    // Use the helper instead of hardcoded API.post
-    const res = await addFaculty(instituteId, payload);
+      const res = await addFaculty(instituteId, payload);
 
-    setFaculty([...faculty, res]); // Add new faculty to state
-    setShowModal(false);
-    setNewFaculty({ name: '', email: '', phone: '', department: '', subjects: '' });
-  } catch (err) {
-    console.error("Failed to add faculty:", err);
-    alert(err.response?.data?.message || "Failed to add faculty");
-  }
-};
+      setFaculty([...faculty, res]); // Add new faculty to state
+      setShowModal(false);
+      setNewFaculty({ name: '', email: '', phone: '', department: '', subjects: '' });
+    } catch (err) {
+      console.error("Failed to add faculty:", err);
+      alert(err.response?.data?.message || "Failed to add faculty");
+    }
+  };
 
   const filteredFaculty = faculty.filter(fac =>
     fac.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
