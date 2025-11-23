@@ -12,7 +12,7 @@ export default function LoginScreen({ navigation }) {
   const [message, setMessage] = useState("");
 
   // Correct backend IP (SAME as Register)
-  const API_URL = "http://10.112.144.117:5000/api/auth/login";
+  const API_URL = "http://10.60.191.117:5000/api/auth/login";
 
   const handleLogin = async () => {
     if (!email || !password) {

@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
 
   rewardsCard: {
     flex: 1,
-    backgroundColor: '#9B30FF',
+    backgroundColor: '#9e13d5ff',
     borderRadius: 15,
     padding: 20,
     elevation: 3,
