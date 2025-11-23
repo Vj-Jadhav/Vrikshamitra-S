@@ -17,27 +17,31 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.headerRight}>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.notificationIcon}
             onPress={() => navigation.navigate("NotificationsScreen")}
           >
             <Text style={styles.bellIcon}>🔔</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileIcon}
             onPress={() => navigation.getParent()?.navigate("ProfileScreen")}
           >
-            <Image 
-              source={{ uri: 'https://via.placeholder.com/40' }} 
+            <Image
+              source={{ uri: 'https://via.placeholder.com/40' }}
               style={styles.profileImage}
             />
           </TouchableOpacity>
 
         </View>
       </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}   // ← Important
+      >
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+
 
         {/* Welcome Card */}
         <View style={styles.welcomeCard}>
@@ -83,7 +87,7 @@ export default function HomeScreen({ navigation }) {
         {/* Learning Module & Rewards Cards */}
         <View style={styles.moduleCardsContainer}>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.learningModuleCard}
             onPress={() => navigation.navigate("LearningModuleScreen")}
           >
@@ -93,7 +97,7 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.moduleTitle}>Learning{'\n'}Module</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.rewardsCard}
             onPress={() => navigation.navigate("LeaderboardScreen")}
           >
@@ -117,54 +121,63 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.gamesGrid}>
 
             {/* Game 1 */}
-            <TouchableOpacity 
-              style={styles.gameCard}
+            <TouchableOpacity
+              style={styles.newGameCard}
               onPress={() => navigation.navigate("GamesScreen")}
             >
-              <View style={[styles.gameCardInner, { backgroundColor: '#7FBF7F' }]}>
-                <View style={styles.gameImageContainer}>
-                  <Image source={EarthHeroes} style={styles.gameImage} />
-                </View>
+              <Image source={EarthHeroes} style={styles.newGameImage} />
+
+              <View style={styles.newGameContent}>
+                <Text style={styles.newGameTitle}>
+                  Explore Nature & solve Challenges!
+                </Text>
               </View>
             </TouchableOpacity>
 
             {/* Game 2 */}
-            <TouchableOpacity 
-              style={styles.gameCard}
+            <TouchableOpacity
+              style={styles.newGameCard}
               onPress={() => navigation.navigate("GamesScreen")}
             >
-              <View style={[styles.gameCardInner, { backgroundColor: '#6B9B6B' }]}>
-                <View style={styles.gameImageContainer}>
-                  <Image source={PlantDetective} style={styles.gameImage} />
-                </View>
+              <Image source={PlantDetective} style={styles.newGameImage} />
+
+              <View style={styles.newGameContent}>
+                <Text style={styles.newGameTitle}>
+                  Card Hunt, Become a Plant Detective!
+                </Text>
               </View>
             </TouchableOpacity>
 
             {/* Game 3 */}
-            <TouchableOpacity 
-              style={styles.gameCard}
+            <TouchableOpacity
+              style={styles.newGameCard}
               onPress={() => navigation.navigate("GamesScreen")}
             >
-              <View style={[styles.gameCardInner, { backgroundColor: '#5A8A7A' }]}>
-                <View style={styles.gameImageContainer}>
-                  <Image source={ArVr} style={styles.gameImage} />
-                </View>
+              <Image source={ArVr} style={styles.newGameImage} />
+
+              <View style={styles.newGameContent}>
+                <Text style={styles.newGameTitle}>
+                  AR/VR Flora–Fauna Explorer
+                </Text>
               </View>
             </TouchableOpacity>
 
             {/* Game 4 */}
-            <TouchableOpacity 
-              style={styles.gameCard}
+            <TouchableOpacity
+              style={styles.newGameCard}
               onPress={() => navigation.navigate("GamesScreen")}
             >
-              <View style={[styles.gameCardInner, { backgroundColor: '#A67C7C' }]}>
-                <View style={styles.gameImageContainer}>
-                  <Image source={CommunityWatch} style={styles.gameImage} />
-                </View>
+              <Image source={CommunityWatch} style={styles.newGameImage} />
+
+              <View style={styles.newGameContent}>
+                <Text style={styles.newGameTitle}>
+                  Click photo-file Complaint.
+                </Text>
               </View>
             </TouchableOpacity>
 
           </View>
+
         </View>
 
         <View style={{ height: 30 }} />
@@ -256,10 +269,10 @@ const styles = StyleSheet.create({
   levelTextInactive: { fontSize: 12, color: '#666', fontWeight: '600' },
   levelTextActive: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
 
-  progressBar: { 
-    height: 8, 
-    backgroundColor: '#ddd', 
-    borderRadius: 4, 
+  progressBar: {
+    height: 8,
+    backgroundColor: '#ddd',
+    borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 10,
   },
@@ -384,6 +397,36 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
+  },
+  /* NEW GAME CARD UI (like your uploaded design) */
+  newGameCard: {
+    width: "47%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+  },
+
+  newGameImage: {
+    width: "100%",
+    height: 140,
+    resizeMode: "cover",
+  },
+
+  newGameContent: {
+    padding: 10,
+    backgroundColor: "#fff",
+  },
+
+  newGameTitle: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#000",
+    lineHeight: 18,
   },
 
   // ✅ REMOVED: bottomNav, navItem, navItemActive, navTextActiveHome, navTextInactive styles
