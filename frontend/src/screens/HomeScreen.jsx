@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   View, Text, TouchableOpacity, StyleSheet, 
-  ScrollView, Image 
+  ScrollView, Image, ActivityIndicator
 } from 'react-native';
 import Svg, { Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,37 +12,75 @@ import CommunityWatch from '../assets/CommunityWatch.png';
 import EarthHeroes from '../assets/EarthHeroes.jpg';
 import PlantDetective from '../assets/PlantDetective.png';
 
-export default function HomeScreen({ navigation }) {
+// Default avatar URLs
+const defaultAvatars = [
+  "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+  "https://cdn-icons-png.flaticon.com/512/4140/4140047.png",
+  "https://cdn-icons-png.flaticon.com/512/4333/4333607.png",
+];
 
-  const [fullName, setFullName] = useState("User");
+export default function HomeScreen({ navigation }) {
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchUserData = async () => {
     try {
       const userId = await AsyncStorage.getItem("userId");
+      console.log("HomeScreen - User ID:", userId);
+
       if (!userId) {
         setLoading(false);
         return;
       }
 
-      const API_URL = `https://informedly-unoverruled-kimberely.ngrok-free.dev/api/user/${userId}`;
-      const res = await fetch(API_URL);
-      const data = await res.json();
+      const API_URL = `http://10.168.69.133:5000/api/user/${userId}`;
+      console.log("HomeScreen - Fetching from:", API_URL);
 
-      if (data?.fullName) {
-        setFullName(data.fullName);
+      const res = await fetch(API_URL);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log("HomeScreen - User data:", data);
+
+      // Set default avatar if none exists
+      if (data && !data.photo) {
+        data.photo = defaultAvatars[0];
       }
 
+      setUser(data);
+      
+      // Store user data locally for quick access
+      await AsyncStorage.setItem("userData", JSON.stringify(data));
+
     } catch (error) {
-      console.log("Fetch error:", error);
+      console.log("HomeScreen - Fetch error:", error);
+      // Try to get from local storage as fallback
+      try {
+        const localUser = await AsyncStorage.getItem("userData");
+        if (localUser) {
+          setUser(JSON.parse(localUser));
+        }
+      } catch (localError) {
+        console.log("Local storage error:", localError);
+      }
     }
 
     setLoading(false);
   };
 
   useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchUserData();
+    });
+
+    // Initial fetch
     fetchUserData();
-  }, []);
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -66,12 +104,26 @@ export default function HomeScreen({ navigation }) {
             activeOpacity={0.7}
             onPress={() => navigation.navigate("ProfileScreen")}
           >
-            <Image
-              source={{
-                uri: 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
-              }}
-              style={styles.profileImage}
-            />
+            {loading ? (
+              <View style={[styles.profileImage, styles.loadingProfile]}>
+                <ActivityIndicator size="small" color="#3a9322" />
+              </View>
+            ) : (
+              <Image
+                source={{
+                  uri: user?.photo || defaultAvatars[0]
+                }}
+                style={styles.profileImage}
+                defaultSource={{ uri: defaultAvatars[0] }}
+                onError={(e) => {
+                  console.log("Image load error, using default");
+                  // Fallback to default avatar if image fails to load
+                  e.nativeEvent.target.setNativeProps({
+                    source: { uri: defaultAvatars[0] }
+                  });
+                }}
+              />
+            )}
           </TouchableOpacity>
 
         </View>
@@ -88,12 +140,12 @@ export default function HomeScreen({ navigation }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.welcomeText}>Welcome,</Text>
             <Text style={styles.userName}>
-              {loading ? "Loading..." : fullName}
+              {loading ? "Loading..." : (user?.fullName || "User")}
             </Text>
           </View>
 
           <View style={styles.rankBadge}>
-            <Text style={styles.rankText}>RANK : 3</Text>
+            <Text style={styles.rankText}>RANK #{user?.rank || 3}</Text>
           </View>
 
           <Text style={styles.characterEmoji}>🌺</Text>
@@ -105,7 +157,10 @@ export default function HomeScreen({ navigation }) {
             {["Lv 1", "Lv 2", "Lv 3", "Lv 4", "Lv 5"].map((item, index) => (
               <View
                 key={index}
-                style={[styles.levelItem, index === 1 && styles.levelActive]}
+                style={[
+                  styles.levelItem, 
+                  index === 1 && styles.levelActive
+                ]}
               >
                 <Text
                   style={index === 1 ? styles.levelTextActive : styles.levelTextInactive}
@@ -117,12 +172,14 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           <View style={styles.progressBar}>
-            <View style={styles.progressFill} />
+            <View style={[styles.progressFill, { width: '40%' }]} />
           </View>
 
           <View style={styles.ecoPointsRow}>
             <Text style={styles.coinIcon}>🪙</Text>
-            <Text style={styles.ecoPointsText}>2571 Eco-Points Collected</Text>
+            <Text style={styles.ecoPointsText}>
+              {user?.points || 2571} Eco-Points Collected
+            </Text>
           </View>
         </View>
 
@@ -132,6 +189,7 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             style={styles.learningModuleCard}
             onPress={() => navigation.navigate("LearningModuleScreen")}
+            activeOpacity={0.8}
           >
             <View style={styles.moduleIcon}>
               <Text style={styles.moduleIconText}>▶️</Text>
@@ -142,6 +200,7 @@ export default function HomeScreen({ navigation }) {
           <TouchableOpacity
             style={styles.rewardsCard}
             onPress={() => navigation.navigate("LeaderboardScreen")}
+            activeOpacity={0.8}
           >
             <View style={styles.rewardsHeader}>
               <Text style={styles.starIcon}>⭐⭐</Text>
@@ -156,7 +215,7 @@ export default function HomeScreen({ navigation }) {
 
         </View>
 
-        {/* Games */}
+        {/* Games Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fun and Educational Games</Text>
 
@@ -263,11 +322,9 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-
 // ----------------------- STYLES -----------------------
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
-
   header: {
     backgroundColor: '#3a9322',
     paddingTop: 50,
@@ -277,14 +334,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   appName: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 15 },
-
   notificationIcon: { width: 35, height: 35, justifyContent: 'center', alignItems: 'center' },
   bellIcon: { fontSize: 22 },
-
   profileIcon: {
     width: 40,
     height: 40,
@@ -292,9 +345,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   profileImage: { width: '100%', height: '100%', borderRadius: 20 },
-
+  loadingProfile: { justifyContent: 'center', alignItems: 'center' },
   welcomeCard: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
@@ -304,10 +358,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   welcomeText: { fontSize: 14, color: '#666' },
   userName: { fontSize: 18, fontWeight: 'bold', color: '#000', marginTop: 2 },
-
   rankBadge: {
     backgroundColor: '#FF9533',
     paddingHorizontal: 15,
@@ -316,9 +368,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   rankText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-
   characterEmoji: { fontSize: 45 },
-
   levelContainer: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
@@ -326,20 +376,16 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 15,
   },
-
   levelBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-
   levelItem: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
     backgroundColor: '#e8e8e8',
   },
-
   levelActive: { backgroundColor: '#4CAF50' },
   levelTextInactive: { fontSize: 12, color: '#666', fontWeight: '600' },
   levelTextActive: { fontSize: 12, color: '#fff', fontWeight: 'bold' },
-
   progressBar: {
     height: 8,
     backgroundColor: '#ddd',
@@ -347,26 +393,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 10,
   },
-  progressFill: { height: '100%', width: '40%', backgroundColor: '#FFD700' },
-
+  progressFill: { height: '100%', backgroundColor: '#FFD700' },
   ecoPointsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   coinIcon: { fontSize: 20, marginRight: 5 },
   ecoPointsText: { fontSize: 13, color: '#888', fontWeight: '600' },
-
   moduleCardsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     gap: 15,
     marginTop: 20,
   },
-
   learningModuleCard: {
     flex: 1,
     backgroundColor: '#5DADE2',
     borderRadius: 15,
     padding: 20,
   },
-
   moduleIcon: {
     width: 50,
     height: 50,
@@ -376,21 +418,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-
   moduleIconText: { fontSize: 24, color: '#fff' },
-
   moduleTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', lineHeight: 22 },
-
   rewardsCard: {
     flex: 1,
     backgroundColor: '#9e13d5',
     borderRadius: 15,
     padding: 20,
   },
-
   rewardsHeader: { marginBottom: 5 },
   starIcon: { fontSize: 16, color: '#fff' },
-
   rewardsIcon: {
     width: 50,
     height: 50,
@@ -400,13 +437,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-
   rewardsIconText: { fontSize: 24, color: '#fff' },
-
   rewardsTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff', lineHeight: 22 },
-
   section: { marginTop: 20 },
-
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -414,23 +447,19 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     color: '#000',
   },
-
   gamesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: 20,
     gap: 15,
   },
-
   gameCard: { width: '47%' },
-
   gameCardInner: {
     borderRadius: 15,
     padding: 15,
     minHeight: 130,
     alignItems: 'center',
   },
-
   gameImage: {
     width: '100%',
     height: 100,
@@ -438,14 +467,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     resizeMode: 'cover',
   },
-
   gameCardText: {
     fontSize: 12,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
   },
-
   bottomNav: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -454,26 +481,22 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
-
   navItem: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
   },
-
   navItemActive: {
     backgroundColor: '#adffac',
     borderRadius: 25,
     marginHorizontal: 5,
   },
-
   navTextActiveHome: {
     fontSize: 11,
     color: '#3a9322',
     fontWeight: '700',
     marginTop: 2,
   },
-
   navTextInactive: {
     fontSize: 11,
     color: '#666',

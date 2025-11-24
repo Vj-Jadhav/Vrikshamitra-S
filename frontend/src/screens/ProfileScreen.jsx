@@ -1,115 +1,316 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Image, 
+  TouchableOpacity, 
+  ScrollView, 
+  Modal, 
+  FlatList,
+  Alert
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Move avatars array outside component to avoid recreation
+const avatars = [
+  { id: 1, uri: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" },
+  { id: 2, uri: "https://cdn-icons-png.flaticon.com/512/4140/4140047.png" },
+  { id: 3, uri: "https://cdn-icons-png.flaticon.com/512/4333/4333607.png" },
+  { id: 4, uri: "https://cdn-icons-png.flaticon.com/512/921/921071.png" },
+  { id: 5, uri: "https://cdn-icons-png.flaticon.com/512/3001/3001758.png" },
+  { id: 6, uri: "https://cdn-icons-png.flaticon.com/512/6997/6997662.png" },
+  { id: 7, uri: "https://cdn-icons-png.flaticon.com/512/9493/9493966.png" },
+  { id: 8, uri: "https://cdn-icons-png.flaticon.com/512/3899/3899618.png" },
+];
 
 export default function ProfileScreen({ navigation }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
 
-  const user = {
-    name: "Nandini Deshmukh",
-    email: "nandini@example.com",
-    rank: 3,
-    points: 2571,
-    photo: "https://imgs.search.brave.com/5LcPZHHABtFumbI-buPjW-U0buNcqE-R2eKKeh6vWgQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMjE3/MTM4MjYzMy92ZWN0/b3IvdXNlci1wcm9m/aWxlLWljb24tYW5v/bnltb3VzLXBlcnNv/bi1zeW1ib2wtYmxh/bmstYXZhdGFyLWdy/YXBoaWMtdmVjdG9y/LWlsbHVzdHJhdGlv/bi5qcGc_cz02MTJ4/NjEyJnc9MCZrPTIw/JmM9WndPRjZOZk9S/MHpoWUM0NHhPWDA2/cnlJUEFVaER2QWFq/clBzYVo2djEtdz0"
+  const fetchProfile = async () => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      console.log("PROFILE USER ID:", userId);
+
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
+      const API_URL = `http://10.168.69.133:5000/api/user/${userId}`;
+      console.log("Fetching from:", API_URL);
+      
+      const res = await fetch(API_URL);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log("PROFILE DATA:", data);
+
+      // If user doesn't have a photo, set default avatar
+      if (!data.photo) {
+        data.photo = avatars[0].uri;
+      }
+
+      setUser(data);
+
+    } catch (err) {
+      console.log("Profile Fetch Error:", err);
+      // Try to get user data from local storage as fallback
+      const localUser = await AsyncStorage.getItem("userData");
+      if (localUser) {
+        setUser(JSON.parse(localUser));
+      }
+    }
+
+    setLoading(false);
   };
+
+  const updateAvatar = async (avatarUri) => {
+    try {
+      const userId = await AsyncStorage.getItem("userId");
+      if (!userId) {
+        Alert.alert("Error", "User not found");
+        return;
+      }
+
+      const API_URL = `http://10.168.69.133:5000/api/user/${userId}/avatar`;
+      console.log("Updating avatar at:", API_URL);
+      
+      const response = await fetch(API_URL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          photo: avatarUri
+        }),
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        
+        // Update local state
+        setUser(prevUser => ({
+          ...prevUser,
+          photo: avatarUri
+        }));
+        
+        // Also update local storage
+        await AsyncStorage.setItem("userData", JSON.stringify({
+          ...user,
+          photo: avatarUri
+        }));
+        
+        setAvatarModalVisible(false);
+        Alert.alert("Success", "Avatar updated successfully!");
+        console.log("Avatar updated successfully");
+      } else {
+        // If API fails, update locally only
+        console.log("API failed, updating locally");
+        updateAvatarLocally(avatarUri);
+      }
+    } catch (error) {
+      console.log("Avatar update error:", error);
+      // Update locally if API call fails
+      updateAvatarLocally(avatarUri);
+    }
+  };
+
+  const updateAvatarLocally = async (avatarUri) => {
+    // Update local state
+    setUser(prevUser => ({
+      ...prevUser,
+      photo: avatarUri
+    }));
+    
+    // Update local storage
+    await AsyncStorage.setItem("userData", JSON.stringify({
+      ...user,
+      photo: avatarUri
+    }));
+    
+    setAvatarModalVisible(false);
+    Alert.alert("Success", "Avatar updated locally!");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("userId");
+      await AsyncStorage.removeItem("userData");
+      await AsyncStorage.removeItem("token");
+      navigation.navigate("Login");
+    } catch (error) {
+      console.log("Logout error:", error);
+      navigation.navigate("Login");
+    }
+  };
+
+  // Avatar Selector Modal Component
+  const AvatarSelectorModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={avatarModalVisible}
+      onRequestClose={() => setAvatarModalVisible(false)}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Choose Your Avatar</Text>
+          
+          <FlatList
+            data={avatars}
+            numColumns={3}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={[
+                  styles.avatarOption,
+                  user?.photo === item.uri && styles.selectedAvatar
+                ]}
+                onPress={() => updateAvatar(item.uri)}
+              >
+                <Image 
+                  source={{ uri: item.uri }} 
+                  style={styles.avatarOptionImage} 
+                />
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={styles.avatarsGrid}
+          />
+          
+          <TouchableOpacity 
+            style={styles.cancelButton}
+            onPress={() => setAvatarModalVisible(false)}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ fontSize: 18 }}>Loading Profile...</Text>
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>User not found</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={fetchProfile}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-
-      {/* Header with Profile Icon */}
       <View style={styles.header}>
         <Text style={styles.headerText}>Profile</Text>
         <TouchableOpacity 
           style={styles.profileIconContainer}
-          onPress={() => navigation.navigate("EditProfileScreen")}
+          onPress={() => setAvatarModalVisible(true)}
         >
           <Image 
-            source={{ uri: user.photo }} 
+            source={{ uri: user.photo || avatars[0].uri }} 
             style={styles.profileIcon} 
+            defaultSource={{ uri: avatars[0].uri }}
           />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-
-        {/* Profile Section */}
         <View style={styles.profileCard}>
-          <Image source={{ uri: user.photo }} style={styles.profileImage} />
+          <TouchableOpacity onPress={() => setAvatarModalVisible(true)}>
+            <View style={styles.avatarContainer}>
+              <Image 
+                source={{ uri: user.photo || avatars[0].uri }} 
+                style={styles.profileImage} 
+                defaultSource={{ uri: avatars[0].uri }}
+              />
+              <View style={styles.editAvatarBadge}>
+                <Text style={styles.editAvatarText}>Edit</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
 
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
+          <Text style={styles.userName}>{user.fullName || "User Name"}</Text>
+          <Text style={styles.userEmail}>{user.email || "user@example.com"}</Text>
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>{user.points}</Text>
+              <Text style={styles.statValue}>{user.points || 0}</Text>
               <Text style={styles.statLabel}>Eco Points</Text>
             </View>
 
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>#{user.rank}</Text>
+              <Text style={styles.statValue}>#{user.rank || "N/A"}</Text>
               <Text style={styles.statLabel}>Rank</Text>
             </View>
           </View>
         </View>
 
-        {/* Settings Menu */}
         <View style={styles.menuContainer}>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("EditProfileScreen")}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("EditProfileScreen")}>
             <Text style={styles.menuText}>Edit Profile</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("SettingsScreen")}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("SettingsScreen")}>
             <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("NotificationsScreen")}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("NotificationsScreen")}>
             <Text style={styles.menuText}>Notifications</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("HelpSupportScreen")}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("HelpSupportScreen")}>
             <Text style={styles.menuText}>Help & Support</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate("AboutScreen")}
-          >
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("AboutScreen")}>
             <Text style={styles.menuText}>About</Text>
           </TouchableOpacity>
 
-          {/* Logout */}
-          <TouchableOpacity
-            style={[styles.menuItem, styles.logoutButton]}
-            onPress={() => navigation.navigate("Login")}
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.logoutButton]} 
+            onPress={handleLogout}
           >
             <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
           </TouchableOpacity>
-
         </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <AvatarSelectorModal />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: "#f5f5f5" 
+  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
   },
-
   header: {
     backgroundColor: "#3a9322ff",
     paddingTop: 50,
@@ -119,14 +320,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   headerText: {
     color: "#fff",
     fontSize: 22,
     fontWeight: "bold",
-    letterSpacing: 1,
   },
-
   profileIconContainer: {
     width: 40,
     height: 40,
@@ -134,18 +332,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "#fff",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
   },
-
-  profileIcon: {
-    width: "100%",
-    height: "100%",
-  },
-
+  profileIcon: { width: "100%", height: "100%" },
   profileCard: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
@@ -157,9 +345,12 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 4,
   },
-
+  avatarContainer: {
+    position: "relative",
+    alignItems: "center",
+  },
   profileImage: {
     width: 120,
     height: 120,
@@ -168,47 +359,31 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: "#3a9322ff",
   },
-
-  userName: {
-    fontSize: 20,
+  editAvatarBadge: {
+    position: "absolute",
+    bottom: 20,
+    backgroundColor: "#3a9322ff",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  editAvatarText: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "bold",
-    color: "#000",
-    marginBottom: 5,
   },
-
-  userEmail: {
-    fontSize: 14,
-    color: "#777",
-    marginBottom: 20,
-  },
-
+  userName: { fontSize: 20, fontWeight: "bold", color: "#000", marginTop: 5 },
+  userEmail: { fontSize: 14, color: "#777", marginBottom: 20 },
   statsRow: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 30,
     marginTop: 10,
   },
-
-  statBox: {
-    alignItems: "center",
-  },
-
-  statValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#3a9322ff",
-  },
-
-  statLabel: {
-    fontSize: 13,
-    color: "#777",
-  },
-
-  menuContainer: {
-    marginTop: 30,
-    marginHorizontal: 20,
-  },
-
+  statBox: { alignItems: "center" },
+  statValue: { fontSize: 20, fontWeight: "bold", color: "#3a9322ff" },
+  statLabel: { fontSize: 13, color: "#777" },
+  menuContainer: { marginTop: 30, marginHorizontal: 20 },
   menuItem: {
     backgroundColor: "#fff",
     padding: 18,
@@ -218,24 +393,76 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
   },
-
-  menuText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-
+  menuText: { fontSize: 16, fontWeight: "600", color: "#333" },
   logoutButton: {
     borderWidth: 1,
     borderColor: "#d32f2f",
     backgroundColor: "#fff",
     marginTop: 10,
   },
-
-  logoutText: {
-    color: "#d32f2f",
+  logoutText: { color: "#d32f2f", textAlign: "center" },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 20,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
     textAlign: "center",
+    marginBottom: 20,
+    color: "#333",
+  },
+  avatarsGrid: {
+    alignItems: "center",
+  },
+  avatarOption: {
+    margin: 10,
+    padding: 5,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: "#f0f0f0",
+  },
+  selectedAvatar: {
+    borderColor: "#3a9322ff",
+    borderWidth: 3,
+  },
+  avatarOptionImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  cancelButton: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  retryButton: {
+    backgroundColor: "#3a9322ff",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

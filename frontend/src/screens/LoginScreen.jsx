@@ -37,9 +37,9 @@ export default function LoginScreen({ navigation }) {
       if (response.status === 200) {
 
         // ⭐ Save userId so HomeScreen can fetch name
-        if (data?.user?._id) {
-          await AsyncStorage.setItem("userId", data.user._id);
-          console.log("Saved UserID:", data.user._id);
+        if (data?.user?.id) {
+          await AsyncStorage.setItem("userId", data.user.id);
+          console.log("Saved UserID:", data.user.id);
         }
 
         setMessage("Login Successful! 🌿");
