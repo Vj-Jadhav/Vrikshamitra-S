@@ -2,13 +2,13 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-// import SimpleMap from './screens/Simplemap'
 
 import WelcomeScreen from './screens/WelcomeScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import LoginScreen from './screens/LoginScreen';
-import MainLayout from './MainLayout'; // Import the MainLayout
+import MainLayout from './MainLayout';
 import StorytellingGame from './screens/StorytellingGame';
+import ChapterScreen from './screens/ChapterScreen';   // <-- ADD THIS
 
 const Stack = createNativeStackNavigator();
 
@@ -19,18 +19,26 @@ export default function AppNavigator() {
         initialRouteName="Welcome"
         screenOptions={{ headerShown: false }}
       >
-        {/* Auth Screens - No Bottom Navigation */}
+        {/* Auth Screens */}
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
-        {/* <Stack.Screen name="Map" component={SimpleMap} /> */}
-        {/* Main App with Bottom Tabs */}
+
+        {/* Bottom Tabs */}
         <Stack.Screen name="Main" component={MainLayout} />
+
+        {/* Story Game */}
         <Stack.Screen
           name="StorytellingGame"
           component={StorytellingGame}
-          options={{ title: 'Eco Chronicles' }}
         />
+
+        {/* <-- YOU MUST ADD THIS TO FIX NAVIGATION */}
+        <Stack.Screen
+          name="ChapterScreen"
+          component={ChapterScreen}
+        />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
