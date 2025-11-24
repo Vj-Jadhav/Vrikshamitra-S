@@ -4,7 +4,13 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
+
 import authRoutes from "./routes/authRoutes.js";
+<<<<<<< HEAD
+import userRoutes from "./routes/user.js";
+=======
+import challengeRoutes from "./routes/challengeRoutes.js";
+>>>>>>> website
 
 const app = express();
 
@@ -17,5 +23,11 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
+<<<<<<< HEAD
+app.use("/api/user", userRoutes);
+
+=======
+app.use("/api/challenges", challengeRoutes);
+>>>>>>> website
 
 export default app;

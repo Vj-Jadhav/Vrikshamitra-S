@@ -1,7 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ScrollView, 
+  Modal, 
+  TextInput, 
+  Alert,
+  ActivityIndicator,
+  Animated,
+  Dimensions
+} from 'react-native';
 import Svg, { Path } from "react-native-svg";
 import YoutubePlayer from "react-native-youtube-iframe";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function LearningModuleScreen({ navigation }) {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -15,20 +29,44 @@ export default function LearningModuleScreen({ navigation }) {
   const [userStats, setUserStats] = useState({
     completed: 0,
     inProgress: 0,
-    totalPoints: 0
+    totalPoints: 0,
+    streak: 3
   });
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
+  useEffect(() => {
+    // Animate on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   // Learning Categories
   const categories = [
-    { id: 'all', name: 'All', icon: '🌍' },
-    { id: 'climate', name: 'Climate', icon: '🌡️' },
-    { id: 'biodiversity', name: 'Biodiversity', icon: '🦋' },
-    { id: 'pollution', name: 'Pollution', icon: '🏭' },
-    { id: 'conservation', name: 'Conservation', icon: '♻️' },
+    { id: 'all', name: 'All', icon: '🌍', color: '#667eea' },
+    { id: 'climate', name: 'Climate', icon: '🌡', color: '#ff6b6b' },
+    { id: 'biodiversity', name: 'Biodiversity', icon: '🦋', color: '#4ecdc4' },
+    { id: 'pollution', name: 'Pollution', icon: '🏭', color: '#ff9ff3' },
+    { id: 'conservation', name: 'Conservation', icon: '♻', color: '#feca57' },
   ];
 
-  // Dynamic Learning Content with YouTube Videos
+  // Learning Content with YouTube Videos
   const allLessons = [
     {
       id: 1,
@@ -38,14 +76,17 @@ export default function LearningModuleScreen({ navigation }) {
       duration: '25 min',
       points: 50,
       color: '#FF6B6B',
+      gradient: ['#FF6B6B', '#FF8E8E'],
       difficulty: 'Intermediate',
       totalLessons: 8,
-      youtubeId: 'G9t__9Tmwv4', // Climate Change 101
+      youtubeId: 'G9t__9Tmwv4',
+      description: 'Learn about the causes, effects, and solutions to climate change and global warming.',
       quiz: [
         {
           question: 'What is the primary greenhouse gas contributing to climate change?',
           options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'],
-          correctAnswer: 1
+          correctAnswer: 1,
+          explanation: 'Carbon dioxide is the primary greenhouse gas emitted through human activities.'
         },
         {
           question: 'What is the Paris Agreement?',
@@ -55,12 +96,14 @@ export default function LearningModuleScreen({ navigation }) {
             'A peace treaty',
             'A cultural exchange program'
           ],
-          correctAnswer: 1
+          correctAnswer: 1,
+          explanation: 'The Paris Agreement is an international treaty on climate change adopted in 2015.'
         },
         {
           question: 'Which sector contributes most to greenhouse gas emissions?',
           options: ['Transportation', 'Agriculture', 'Energy Production', 'Waste'],
-          correctAnswer: 2
+          correctAnswer: 2,
+          explanation: 'Energy production, especially burning fossil fuels for electricity, is the largest contributor.'
         }
       ]
     },
@@ -72,9 +115,11 @@ export default function LearningModuleScreen({ navigation }) {
       duration: '20 min',
       points: 45,
       color: '#4ECDC4',
+      gradient: ['#4ECDC4', '#67E6DC'],
       difficulty: 'Beginner',
       totalLessons: 6,
-      youtubeId: 'GK_vRtHJZu4', // What is Biodiversity?
+      youtubeId: 'GK_vRtHJZu4',
+      description: 'Explore the incredible diversity of life on Earth and how ecosystems function.',
       quiz: [
         {
           question: 'What does biodiversity refer to?',
@@ -84,12 +129,14 @@ export default function LearningModuleScreen({ navigation }) {
             'Only animal species',
             'Only marine life'
           ],
-          correctAnswer: 1
+          correctAnswer: 1,
+          explanation: 'Biodiversity includes all living organisms and their interactions.'
         },
         {
           question: 'Which biome has the highest biodiversity?',
           options: ['Desert', 'Tundra', 'Tropical Rainforest', 'Grassland'],
-          correctAnswer: 2
+          correctAnswer: 2,
+          explanation: 'Tropical rainforests contain over half of the world\'s species.'
         },
         {
           question: 'What is a keystone species?',
@@ -99,7 +146,8 @@ export default function LearningModuleScreen({ navigation }) {
             'The largest species',
             'An extinct species'
           ],
-          correctAnswer: 1
+          correctAnswer: 1,
+          explanation: 'Keystone species play a crucial role in maintaining ecosystem structure.'
         }
       ]
     },
@@ -111,14 +159,17 @@ export default function LearningModuleScreen({ navigation }) {
       duration: '18 min',
       points: 40,
       color: '#4A90E2',
+      gradient: ['#4A90E2', '#6BA8E8'],
       difficulty: 'Beginner',
       totalLessons: 5,
-      youtubeId: 'bHO-z-1xJDY', // Ocean Conservation
+      youtubeId: 'bHO-z-1xJDY',
+      description: 'Learn about ocean ecosystems and how to protect marine life.',
       quiz: [
         {
           question: 'What percentage of Earth\'s oxygen comes from the ocean?',
           options: ['10%', '30%', '50%', '70%'],
-          correctAnswer: 2
+          correctAnswer: 2,
+          explanation: 'The ocean produces over 50% of the world\'s oxygen through phytoplankton.'
         },
         {
           question: 'What is coral bleaching?',
@@ -128,7 +179,8 @@ export default function LearningModuleScreen({ navigation }) {
             'Coral growing process',
             'Coral reproduction'
           ],
-          correctAnswer: 1
+          correctAnswer: 1,
+          explanation: 'Coral bleaching occurs when corals expel algae due to temperature stress.'
         },
         {
           question: 'What is the main cause of ocean acidification?',
@@ -138,136 +190,60 @@ export default function LearningModuleScreen({ navigation }) {
             'CO2 absorption',
             'Overfishing'
           ],
-          correctAnswer: 2
-        }
-      ]
-    },
-    {
-      id: 4,
-      title: 'Plastic Pollution Crisis',
-      subtitle: 'Understanding Plastic Impact',
-      category: 'pollution',
-      duration: '15 min',
-      points: 35,
-      color: '#FF6B9D',
-      difficulty: 'Beginner',
-      totalLessons: 4,
-      youtubeId: '6jkN50X9gZc', // Plastic Pollution
-      quiz: [
-        {
-          question: 'How long does plastic take to decompose?',
-          options: ['10 years', '50 years', '100 years', '450+ years'],
-          correctAnswer: 3
-        },
-        {
-          question: 'What is microplastic?',
-          options: [
-            'Very small plastic particles less than 5mm',
-            'Biodegradable plastic',
-            'Recycled plastic',
-            'Plant-based plastic'
-          ],
-          correctAnswer: 0
-        },
-        {
-          question: 'Which country produces the most plastic waste?',
-          options: ['India', 'China', 'United States', 'Japan'],
-          correctAnswer: 2
-        }
-      ]
-    },
-    {
-      id: 5,
-      title: 'Renewable Energy Sources',
-      subtitle: 'Power for a Sustainable Future',
-      category: 'climate',
-      duration: '22 min',
-      points: 50,
-      color: '#FFD93D',
-      difficulty: 'Intermediate',
-      totalLessons: 7,
-      youtubeId: 'Giek094C_l4', // Renewable Energy
-      quiz: [
-        {
-          question: 'Which is NOT a renewable energy source?',
-          options: ['Solar', 'Wind', 'Natural Gas', 'Hydroelectric'],
-          correctAnswer: 2
-        },
-        {
-          question: 'What does solar panel convert into electricity?',
-          options: ['Heat', 'Light', 'Wind', 'Water'],
-          correctAnswer: 1
-        },
-        {
-          question: 'Which country leads in renewable energy production?',
-          options: ['USA', 'China', 'Germany', 'Brazil'],
-          correctAnswer: 1
-        }
-      ]
-    },
-    {
-      id: 6,
-      title: 'Deforestation & Its Impact',
-      subtitle: 'Forests: Earth\'s Lungs in Danger',
-      category: 'biodiversity',
-      duration: '20 min',
-      points: 45,
-      color: '#95E1D3',
-      difficulty: 'Intermediate',
-      totalLessons: 6,
-      youtubeId: '-01T9e6VDWU', // Deforestation
-      quiz: [
-        {
-          question: 'What percentage of Earth\'s land was originally covered by forests?',
-          options: ['20%', '30%', '50%', '70%'],
-          correctAnswer: 2
-        },
-        {
-          question: 'What is the leading cause of deforestation?',
-          options: ['Wildfires', 'Agriculture', 'Urbanization', 'Logging'],
-          correctAnswer: 1
-        },
-        {
-          question: 'How many species lose their habitat daily due to deforestation?',
-          options: ['10', '50', '100', '137'],
-          correctAnswer: 3
+          correctAnswer: 2,
+          explanation: 'Oceans absorb about 30% of CO2 emissions, causing acidification.'
         }
       ]
     }
   ];
 
-  // Filter lessons based on category
-  const filteredLessons = activeCategory === 'all' 
-    ? allLessons 
-    : allLessons.filter(lesson => lesson.category === activeCategory);
+  // Filter and search lessons
+  const filteredLessons = useMemo(() => {
+    let filtered = activeCategory === 'all' 
+      ? allLessons 
+      : allLessons.filter(lesson => lesson.category === activeCategory);
+
+    if (searchQuery) {
+      filtered = filtered.filter(lesson =>
+        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lesson.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lesson.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [activeCategory, searchQuery]);
 
   // Calculate progress for each lesson
-  const getLessonProgress = (lessonId) => {
-    if (completedLessons.includes(lessonId)) return 100;
-    return 0;
-  };
+  const getLessonProgress = useCallback((lessonId) => {
+    return completedLessons.includes(lessonId) ? 100 : 0;
+  }, [completedLessons]);
 
   // Handle video state change
-  const handleVideoStateChange = (state) => {
+  const handleVideoStateChange = useCallback((state) => {
     if (state === 'ended') {
       setIsVideoPlaying(false);
-      // Auto-show quiz when video ends
+      setVideoLoading(false);
       handleVideoComplete();
+    } else if (state === 'playing') {
+      setVideoLoading(false);
+    } else if (state === 'buffering') {
+      setVideoLoading(true);
     }
-  };
+  }, []);
 
   // Handle video completion
-  const handleVideoComplete = () => {
+  const handleVideoComplete = useCallback(() => {
     setShowQuiz(true);
-  };
+  }, []);
 
   // Handle quiz answer selection
-  const handleAnswerSelect = (answerIndex) => {
+  const handleAnswerSelect = useCallback((answerIndex) => {
     setSelectedAnswer(answerIndex);
-  };
+  }, []);
 
   // Handle next question
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
     if (selectedAnswer === null) {
       Alert.alert('Please select an answer', 'You must select an answer before continuing.');
       return;
@@ -275,30 +251,31 @@ export default function LearningModuleScreen({ navigation }) {
 
     const currentQuestion = selectedLesson.quiz[currentQuestionIndex];
     if (selectedAnswer === currentQuestion.correctAnswer) {
-      setQuizScore(quizScore + 1);
+      setQuizScore(prev => prev + 1);
     }
 
     if (currentQuestionIndex < selectedLesson.quiz.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentQuestionIndex(prev => prev + 1);
       setSelectedAnswer(null);
     } else {
       setShowResults(true);
     }
-  };
+  }, [selectedAnswer, currentQuestionIndex, selectedLesson]);
 
   // Handle lesson completion
-  const handleLessonComplete = () => {
-    const passingScore = Math.ceil(selectedLesson.quiz.length * 0.6); // 60% to pass
+  const handleLessonComplete = useCallback(() => {
+    const passingScore = Math.ceil(selectedLesson.quiz.length * 0.6);
     
     if (quizScore >= passingScore) {
-      // Mark lesson as completed
       if (!completedLessons.includes(selectedLesson.id)) {
-        setCompletedLessons([...completedLessons, selectedLesson.id]);
-        setUserStats({
-          completed: userStats.completed + 1,
-          inProgress: userStats.inProgress > 0 ? userStats.inProgress - 1 : 0,
-          totalPoints: userStats.totalPoints + selectedLesson.points
-        });
+        setCompletedLessons(prev => [...prev, selectedLesson.id]);
+        setUserStats(prev => ({
+          ...prev,
+          completed: prev.completed + 1,
+          inProgress: prev.inProgress > 0 ? prev.inProgress - 1 : 0,
+          totalPoints: prev.totalPoints + selectedLesson.points,
+          streak: prev.streak + 1
+        }));
       }
       Alert.alert(
         '🎉 Congratulations!',
@@ -315,19 +292,19 @@ export default function LearningModuleScreen({ navigation }) {
         ]
       );
     }
-  };
+  }, [selectedLesson, quizScore, completedLessons]);
 
   // Reset quiz
-  const resetQuiz = () => {
+  const resetQuiz = useCallback(() => {
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
     setQuizScore(0);
     setShowResults(false);
     setShowQuiz(false);
-  };
+  }, []);
 
   // Close lesson
-  const closeLesson = () => {
+  const closeLesson = useCallback(() => {
     setSelectedLesson(null);
     setShowQuiz(false);
     setCurrentQuestionIndex(0);
@@ -335,28 +312,148 @@ export default function LearningModuleScreen({ navigation }) {
     setQuizScore(0);
     setShowResults(false);
     setIsVideoPlaying(false);
-  };
+    setVideoLoading(false);
+  }, []);
 
   // Open lesson
-  const openLesson = (lesson) => {
+  const openLesson = useCallback((lesson) => {
     setSelectedLesson(lesson);
     if (!completedLessons.includes(lesson.id)) {
-      // Mark as in progress
-      const inProgressLessons = allLessons.filter(l => 
-        !completedLessons.includes(l.id) && getLessonProgress(l.id) > 0
-      ).length;
-      if (inProgressLessons === 0) {
-        setUserStats({
-          ...userStats,
-          inProgress: userStats.inProgress + 1
-        });
-      }
+      setUserStats(prev => ({
+        ...prev,
+        inProgress: prev.inProgress + (getLessonProgress(lesson.id) === 0 ? 1 : 0)
+      }));
     }
+  }, [completedLessons, getLessonProgress]);
+
+  // Get active category color
+  const getActiveCategoryColor = () => {
+    const category = categories.find(cat => cat.id === activeCategory);
+    return category ? category.color : '#667eea';
+  };
+
+  const renderSearchBar = () => (
+    <View style={styles.searchContainer}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search lessons..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholderTextColor="#999"
+      />
+      <TouchableOpacity 
+        style={styles.searchClose}
+        onPress={() => {
+          setShowSearch(false);
+          setSearchQuery('');
+        }}
+      >
+        <Text style={styles.searchCloseText}>✕</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderLessonCard = (lesson, index) => {
+    const progress = getLessonProgress(lesson.id);
+    const isCompleted = completedLessons.includes(lesson.id);
+    const category = categories.find(cat => cat.id === lesson.category);
+
+    return (
+      <Animated.View
+        key={lesson.id}
+        style={[
+          styles.lessonCard,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }
+        ]}
+      >
+        <TouchableOpacity onPress={() => openLesson(lesson)} activeOpacity={0.9}>
+          <View style={[styles.lessonThumbnail, { backgroundColor: lesson.color }]}>
+            <View style={styles.videoPlaceholder}>
+              <Text style={styles.playIcon}>▶</Text>
+              <Text style={styles.videoText}>Watch Video</Text>
+            </View>
+            
+            <View style={styles.lessonHeaderOverlay}>
+              <View style={[styles.categoryTag, { backgroundColor: category?.color }]}>
+                <Text style={styles.categoryTagText}>{category?.name}</Text>
+              </View>
+              {isCompleted && (
+                <View style={styles.completedBadge}>
+                  <Text style={styles.completedBadgeText}>✓</Text>
+                </View>
+              )}
+            </View>
+
+            {progress > 0 && !isCompleted && (
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${progress}%` }
+                  ]} 
+                />
+              </View>
+            )}
+          </View>
+
+          <View style={styles.lessonContent}>
+            <Text style={styles.lessonTitle}>{lesson.title}</Text>
+            <Text style={styles.lessonSubtitle}>{lesson.subtitle}</Text>
+
+            <View style={styles.lessonMeta}>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaIcon}>⏱</Text>
+                <Text style={styles.metaText}>{lesson.duration}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaIcon}>📖</Text>
+                <Text style={styles.metaText}>{lesson.totalLessons} lessons</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Text style={styles.metaIcon}>🪙</Text>
+                <Text style={styles.metaText}>{lesson.points}</Text>
+              </View>
+            </View>
+
+            <View style={styles.difficultyContainer}>
+              <View style={[
+                styles.difficultyBadge,
+                { backgroundColor: lesson.difficulty === 'Beginner' ? '#E8F5E9' : '#FFF3E0' }
+              ]}>
+                <Text style={[
+                  styles.difficultyText,
+                  { color: lesson.difficulty === 'Beginner' ? '#4CAF50' : '#FF9800' }
+                ]}>
+                  {lesson.difficulty}
+                </Text>
+              </View>
+            </View>
+
+            {isCompleted ? (
+              <View style={styles.completedButton}>
+                <Text style={styles.completedButtonText}>✓ Completed</Text>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.startButton}
+                onPress={() => openLesson(lesson)}
+              >
+                <Text style={styles.startButtonText}>
+                  {progress > 0 ? 'Continue Learning →' : 'Start Learning →'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
   };
 
   return (
     <View style={styles.container}>
-      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
@@ -368,38 +465,56 @@ export default function LearningModuleScreen({ navigation }) {
 
         <Text style={styles.headerTitle}>Learning Module</Text>
 
-        <TouchableOpacity style={styles.searchButton}>
+        <TouchableOpacity 
+          style={styles.searchButton}
+          onPress={() => setShowSearch(!showSearch)}
+        >
           <Text style={styles.searchIcon}>🔍</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        
+      {showSearch && renderSearchBar()}
+
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* User Progress Card */}
-        <View style={styles.progressCard}>
-          <View style={styles.progressLeft}>
-            <Text style={styles.progressTitle}>Your Learning Journey</Text>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{userStats.completed}</Text>
-                <Text style={styles.statLabel}>Completed</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{userStats.inProgress}</Text>
-                <Text style={styles.statLabel}>In Progress</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>{userStats.totalPoints}</Text>
-                <Text style={styles.statLabel}>Points</Text>
+        <Animated.View 
+          style={[
+            styles.progressCard,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }
+          ]}
+        >
+          <View style={styles.progressContent}>
+            <View style={styles.progressLeft}>
+              <Text style={styles.progressTitle}>Your Learning Journey</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{userStats.completed}</Text>
+                  <Text style={styles.statLabel}>Completed</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{userStats.inProgress}</Text>
+                  <Text style={styles.statLabel}>In Progress</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statNumber}>{userStats.streak}</Text>
+                  <Text style={styles.statLabel}>Day Streak</Text>
+                </View>
               </View>
             </View>
+            <View style={styles.progressRight}>
+              <Text style={styles.treeEmoji}>🌳</Text>
+              <Text style={styles.pointsText}>+{userStats.totalPoints} pts</Text>
+            </View>
           </View>
-          <View style={styles.progressRight}>
-            <Text style={styles.treeEmoji}>🌳</Text>
-          </View>
-        </View>
+        </Animated.View>
 
         {/* Categories */}
         <View style={styles.section}>
@@ -413,7 +528,10 @@ export default function LearningModuleScreen({ navigation }) {
                 key={category.id}
                 style={[
                   styles.categoryChip,
-                  activeCategory === category.id && styles.categoryChipActive
+                  activeCategory === category.id && [
+                    styles.categoryChipActive,
+                    { borderColor: category.color }
+                  ]
                 ]}
                 onPress={() => setActiveCategory(category.id)}
               >
@@ -429,95 +547,50 @@ export default function LearningModuleScreen({ navigation }) {
           </ScrollView>
         </View>
 
-        {/* Featured Lessons */}
+        {/* Lessons List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>📚 Available Lessons</Text>
             <Text style={styles.lessonCount}>{filteredLessons.length} lessons</Text>
           </View>
 
-          {filteredLessons.map((lesson) => {
-            const progress = getLessonProgress(lesson.id);
-            const isCompleted = completedLessons.includes(lesson.id);
-
-            return (
-              <TouchableOpacity 
-                key={lesson.id} 
-                style={styles.lessonCard}
-                onPress={() => openLesson(lesson)}
-              >
-                <View style={[styles.lessonThumbnail, { backgroundColor: lesson.color }]}>
-                  <View style={styles.videoPlaceholder}>
-                    <Text style={styles.playIcon}>▶️</Text>
-                    <Text style={styles.videoText}>Watch Video</Text>
-                  </View>
-                  <View style={styles.lessonOverlay}>
-                    <Text style={styles.lessonIconLarge}>{lesson.icon}</Text>
-                  </View>
-                  {isCompleted && (
-                    <View style={styles.completedBadge}>
-                      <Text style={styles.completedBadgeText}>✓ Completed</Text>
-                    </View>
-                  )}
-                </View>
-
-                <View style={styles.lessonContent}>
-                  <View style={styles.lessonHeader}>
-                    <Text style={styles.lessonTitle}>{lesson.title}</Text>
-                    <View style={styles.difficultyBadge}>
-                      <Text style={styles.difficultyText}>{lesson.difficulty}</Text>
-                    </View>
-                  </View>
-                  
-                  <Text style={styles.lessonSubtitle}>{lesson.subtitle}</Text>
-
-                  <View style={styles.lessonMeta}>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaIcon}>⏱️</Text>
-                      <Text style={styles.metaText}>{lesson.duration}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaIcon}>📖</Text>
-                      <Text style={styles.metaText}>{lesson.totalLessons} Lessons</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                      <Text style={styles.metaIcon}>🪙</Text>
-                      <Text style={styles.metaText}>{lesson.points} pts</Text>
-                    </View>
-                  </View>
-
-                  {isCompleted ? (
-                    <View style={styles.completedButton}>
-                      <Text style={styles.completedButtonText}>✓ Completed</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity 
-                      style={styles.startButton}
-                      onPress={() => openLesson(lesson)}
-                    >
-                      <Text style={styles.startButtonText}>
-                        {progress > 0 ? 'Continue Learning →' : 'Start Learning →'}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          {filteredLessons.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateIcon}>🔍</Text>
+              <Text style={styles.emptyStateTitle}>No lessons found</Text>
+              <Text style={styles.emptyStateText}>
+                Try adjusting your search or filter criteria
+              </Text>
+            </View>
+          ) : (
+            filteredLessons.map((lesson, index) => 
+              renderLessonCard(lesson, index)
+            )
+          )}
         </View>
 
         {/* Achievement Banner */}
-        <View style={styles.achievementBanner}>
-          <View style={styles.achievementLeft}>
-            <Text style={styles.achievementIcon}>🏆</Text>
+        <Animated.View 
+          style={[
+            styles.achievementBanner,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }
+          ]}
+        >
+          <View style={styles.achievementContent}>
+            <View style={styles.achievementLeft}>
+              <Text style={styles.achievementIcon}>🏆</Text>
+            </View>
+            <View style={styles.achievementRight}>
+              <Text style={styles.achievementTitle}>Unlock Achievements!</Text>
+              <Text style={styles.achievementText}>
+                Complete 5 lessons to earn the "Eco Warrior" badge
+              </Text>
+            </View>
           </View>
-          <View style={styles.achievementRight}>
-            <Text style={styles.achievementTitle}>Unlock Achievements!</Text>
-            <Text style={styles.achievementText}>
-              Complete lessons to earn badges and climb the leaderboard
-            </Text>
-          </View>
-        </View>
+        </Animated.View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -530,29 +603,41 @@ export default function LearningModuleScreen({ navigation }) {
       >
         {selectedLesson && (
           <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { backgroundColor: getActiveCategoryColor() }]}>
               <TouchableOpacity onPress={closeLesson} style={styles.closeButton}>
                 <Text style={styles.closeIcon}>✕</Text>
               </TouchableOpacity>
-              <Text style={styles.modalTitle}>{selectedLesson.title}</Text>
+              <Text style={styles.modalTitle} numberOfLines={2}>
+                {selectedLesson.title}
+              </Text>
               <View style={{ width: 40 }} />
             </View>
 
             {!showQuiz ? (
               <ScrollView style={styles.modalContent}>
                 <View style={styles.videoContainer}>
+                  {videoLoading && (
+                    <View style={styles.videoLoader}>
+                      <ActivityIndicator size="large" color="#3a9322" />
+                      <Text style={styles.loadingText}>Loading video...</Text>
+                    </View>
+                  )}
                   <YoutubePlayer
                     height={300}
                     play={isVideoPlaying}
                     videoId={selectedLesson.youtubeId}
                     onChangeState={handleVideoStateChange}
-                    onError={(error) => console.log('YouTube player error:', error)}
+                    onError={(error) => {
+                      console.log('YouTube player error:', error);
+                      setVideoLoading(false);
+                      Alert.alert('Error', 'Failed to load video. Please check your connection.');
+                    }}
                   />
                 </View>
 
                 <View style={styles.lessonInfo}>
                   <Text style={styles.lessonInfoTitle}>About this lesson</Text>
-                  <Text style={styles.lessonInfoText}>{selectedLesson.subtitle}</Text>
+                  <Text style={styles.lessonInfoText}>{selectedLesson.description}</Text>
                   
                   <View style={styles.lessonInfoMeta}>
                     <View style={styles.infoMetaItem}>
@@ -599,32 +684,41 @@ export default function LearningModuleScreen({ navigation }) {
                   {selectedLesson.quiz[currentQuestionIndex].question}
                 </Text>
 
-                <View style={styles.answersContainer}>
-                  {selectedLesson.quiz[currentQuestionIndex].options.map((option, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.answerOption,
-                        selectedAnswer === index && styles.answerOptionSelected
-                      ]}
-                      onPress={() => handleAnswerSelect(index)}
-                    >
-                      <View style={styles.answerRadio}>
-                        {selectedAnswer === index && <View style={styles.answerRadioSelected} />}
-                      </View>
-                      <Text style={[
-                        styles.answerText,
-                        selectedAnswer === index && styles.answerTextSelected
-                      ]}>
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <ScrollView 
+                  style={styles.answersScroll}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.answersContainer}>
+                    {selectedLesson.quiz[currentQuestionIndex].options.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.answerOption,
+                          selectedAnswer === index && styles.answerOptionSelected
+                        ]}
+                        onPress={() => handleAnswerSelect(index)}
+                      >
+                        <View style={styles.answerRadio}>
+                          {selectedAnswer === index && <View style={styles.answerRadioSelected} />}
+                        </View>
+                        <Text style={[
+                          styles.answerText,
+                          selectedAnswer === index && styles.answerTextSelected
+                        ]}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
 
                 <TouchableOpacity 
-                  style={styles.nextButton}
+                  style={[
+                    styles.nextButton,
+                    selectedAnswer === null && styles.nextButtonDisabled
+                  ]}
                   onPress={handleNextQuestion}
+                  disabled={selectedAnswer === null}
                 >
                   <Text style={styles.nextButtonText}>
                     {currentQuestionIndex < selectedLesson.quiz.length - 1 ? 'Next Question →' : 'Submit Quiz'}
@@ -662,7 +756,9 @@ export default function LearningModuleScreen({ navigation }) {
                   style={styles.finishButton}
                   onPress={handleLessonComplete}
                 >
-                  <Text style={styles.finishButtonText}>Finish</Text>
+                  <Text style={styles.finishButtonText}>
+                    {quizScore >= Math.ceil(selectedLesson.quiz.length * 0.6) ? 'Continue Learning' : 'Try Again'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -670,7 +766,7 @@ export default function LearningModuleScreen({ navigation }) {
         )}
       </Modal>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation
       <View style={styles.bottomNav}>
         <TouchableOpacity 
           style={styles.navItem}
@@ -698,11 +794,11 @@ export default function LearningModuleScreen({ navigation }) {
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
           <Svg width={26} height={26} viewBox="0 0 512 512">
             <Path
-              fill="#3a9322ff"
+              fill="#3a9322"
               d="M96 64c-17.7 0-32 14.3-32 32v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32H96zm112 96l160 112l-160 112V160z"
             />
           </Svg>
-          <Text style={styles.navTextInactive}>Learn</Text>
+          <Text style={styles.navTextActive}>Learn</Text>
         </TouchableOpacity>
       
         <TouchableOpacity style={styles.navItem}>
@@ -714,8 +810,7 @@ export default function LearningModuleScreen({ navigation }) {
           </Svg>
           <Text style={styles.navTextInactive}>Challenges</Text>
         </TouchableOpacity>
-      </View>
-
+      </View> */}
     </View>
   );
 }
@@ -723,10 +818,13 @@ export default function LearningModuleScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   header: {
-    backgroundColor: '#3a9322ff',
+    backgroundColor: '#3a9322',
     paddingTop: 50,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -760,20 +858,52 @@ const styles = StyleSheet.create({
   },
   searchIcon: {
     fontSize: 22,
+    color: '#fff',
   },
-  progressCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 20,
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 15,
+    borderRadius: 15,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#000',
+  },
+  searchClose: {
+    padding: 5,
+  },
+  searchCloseText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  progressCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    backgroundColor: '#667eea',
+  },
+  progressContent: {
+    padding: 20,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   progressLeft: {
     flex: 1,
@@ -781,7 +911,7 @@ const styles = StyleSheet.create({
   progressTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#fff',
     marginBottom: 15,
   },
   statsRow: {
@@ -795,23 +925,30 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0d7a5f',
+    color: '#fff',
   },
   statLabel: {
     fontSize: 11,
-    color: '#666',
+    color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: '#ddd',
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
   progressRight: {
     marginLeft: 15,
+    alignItems: 'center',
   },
   treeEmoji: {
-    fontSize: 60,
+    fontSize: 40,
+  },
+  pointsText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginTop: 5,
   },
   section: {
     marginTop: 25,
@@ -849,8 +986,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChipActive: {
-    backgroundColor: '#0d7a5f',
-    borderColor: '#0d7a5f',
+    backgroundColor: '#fff',
   },
   categoryIcon: {
     fontSize: 18,
@@ -861,7 +997,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   categoryTextActive: {
-    color: '#fff',
+    color: '#000',
   },
   lessonCard: {
     backgroundColor: '#fff',
@@ -887,6 +1023,7 @@ const styles = StyleSheet.create({
   },
   playIcon: {
     fontSize: 50,
+    color: '#fff',
     marginBottom: 10,
   },
   videoText: {
@@ -894,64 +1031,64 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  lessonOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    pointerEvents: 'none',
-  },
-  lessonIconLarge: {
-    fontSize: 60,
-  },
-  completedBadge: {
+  lessonHeaderOverlay: {
     position: 'absolute',
     top: 15,
+    left: 15,
     right: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  categoryTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  categoryTagText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  completedBadge: {
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   completedBadgeText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
   },
+  progressBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+  },
   lessonContent: {
     padding: 20,
-  },
-  lessonHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
   },
   lessonTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
-    flex: 1,
-    marginRight: 10,
-  },
-  difficultyBadge: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  difficultyText: {
-    fontSize: 11,
-    color: '#4CAF50',
-    fontWeight: '600',
+    marginBottom: 5,
   },
   lessonSubtitle: {
     fontSize: 14,
     color: '#666',
     marginBottom: 15,
+    lineHeight: 20,
   },
   lessonMeta: {
     flexDirection: 'row',
@@ -969,6 +1106,19 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 13,
     color: '#666',
+    fontWeight: '600',
+  },
+  difficultyContainer: {
+    marginBottom: 15,
+  },
+  difficultyBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  difficultyText: {
+    fontSize: 11,
     fontWeight: '600',
   },
   startButton: {
@@ -995,22 +1145,47 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateIcon: {
+    fontSize: 50,
+    marginBottom: 15,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
   achievementBanner: {
     marginHorizontal: 20,
     marginTop: 25,
-    backgroundColor: '#E8F5E9',
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    backgroundColor: '#ff9a9e',
+  },
+  achievementContent: {
     borderRadius: 20,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4CAF50',
   },
   achievementLeft: {
     marginRight: 15,
   },
   achievementIcon: {
-    fontSize: 50,
+    fontSize: 40,
   },
   achievementRight: {
     flex: 1,
@@ -1031,7 +1206,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   modalHeader: {
-    backgroundColor: '#3a9322ff',
     paddingTop: 50,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -1056,12 +1230,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+    marginHorizontal: 10,
   },
   modalContent: {
     flex: 1,
   },
   videoContainer: {
     backgroundColor: '#000',
+    position: 'relative',
+  },
+  videoLoader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
   },
   lessonInfo: {
     padding: 20,
@@ -1091,6 +1283,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginRight: 8,
+    width: 80,
   },
   infoMetaValue: {
     fontSize: 14,
@@ -1139,6 +1332,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     lineHeight: 28,
   },
+  answersScroll: {
+    flex: 1,
+  },
   answersContainer: {
     gap: 15,
     marginBottom: 30,
@@ -1176,6 +1372,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     flex: 1,
+    lineHeight: 20,
   },
   answerTextSelected: {
     color: '#0d7a5f',
@@ -1186,6 +1383,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 15,
     alignItems: 'center',
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#ccc',
   },
   nextButtonText: {
     color: '#fff',
@@ -1247,6 +1447,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    lineHeight: 20,
   },
   finishButton: {
     backgroundColor: '#0d7a5f',
@@ -1283,7 +1484,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   navItemActive: {
-    backgroundColor: '#adffacff',
+    backgroundColor: '#adffac',
     borderRadius: 25,
     marginHorizontal: 5,
   },
@@ -1291,5 +1492,11 @@ const styles = StyleSheet.create({
     fontSize: 11, 
     color: '#666',
     marginTop: 4,
+  },
+  navTextActive: { 
+    fontSize: 11, 
+    color: '#3a9322',
+    marginTop: 4,
+    fontWeight: 'bold',
   },
 });

@@ -18,6 +18,8 @@ export default function RegisterScreen({ navigation }) {
 
 
 
+
+
   const handleRegister = async () => {
     if (!fullName || !email || !password) {
       setMessageType("error");

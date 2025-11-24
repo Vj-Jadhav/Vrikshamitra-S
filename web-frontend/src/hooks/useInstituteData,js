@@ -1,0 +1,49 @@
+// src/hooks/useInstituteData.js
+import { useState, useEffect } from 'react';
+import { API } from '../institute/instituteApi';
+
+export const useInstituteData = (instituteId, instituteType) => {
+  const [instituteData, setInstituteData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchInstituteData = async () => {
+      try {
+        setLoading(true);
+        const endpoint = `/institute/${instituteId}`;
+        const response = await API.get(endpoint);
+        
+        // Enhance data with type-specific properties
+        const enhancedData = {
+          ...response.data,
+          type: instituteType,
+          // Add type-specific computed properties
+          ...(instituteType === 'school' && {
+            totalGrades: response.data.grades?.length || 0
+          }),
+          ...(instituteType === 'college' && {
+            totalDepartments: response.data.departments?.length || 0,
+            totalCourses: response.data.courses?.length || 0
+          }),
+          ...(instituteType === 'university' && {
+            totalFaculties: response.data.faculties?.length || 0,
+            totalPrograms: response.data.programs?.length || 0
+          })
+        };
+        
+        setInstituteData(enhancedData);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch institute data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (instituteId) {
+      fetchInstituteData();
+    }
+  }, [instituteId, instituteType]);
+
+  return { instituteData, loading, error };
+};

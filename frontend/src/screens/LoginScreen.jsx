@@ -4,6 +4,8 @@ import {
   StyleSheet, ActivityIndicator 
 } from 'react-native';
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState("");
@@ -36,8 +38,18 @@ const API_URL = "http://10.178.111.220:5000/api/auth/login";
       console.log("LOGIN RESPONSE:", data);
 
       if (response.status === 200) {
+
+        // ⭐ Save userId so HomeScreen can fetch name
+        if (data?.user?.id) {
+          await AsyncStorage.setItem("userId", data.user.id);
+          console.log("Saved UserID:", data.user.id);
+        }
+
         setMessage("Login Successful! 🌿");
+
+        // Navigate to Main (bottom navigation layout)
         setTimeout(() => navigation.navigate("Home"), 1200);
+
       } else {
         setMessage(data.message || "Invalid credentials!");
       }
@@ -97,7 +109,6 @@ const API_URL = "http://10.178.111.220:5000/api/auth/login";
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
