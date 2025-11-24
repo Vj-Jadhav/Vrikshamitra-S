@@ -63,7 +63,8 @@ const OverviewAnalytics = ({ analytics, loading, error, refresh }) => {
             <CheckCircle className="text-green-500" size={32} />
           </div>
         </div>
-        
+
+        // Add this to the stats grid in OverviewAnalytics.jsx
         <div className="bg-white p-6 rounded-xl shadow-lg border-2 border-orange-100">
           <div className="flex items-center justify-between">
             <div>

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 
 // import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
 // import Faculty from "../models/Faculty.js";

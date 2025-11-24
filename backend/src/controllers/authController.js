@@ -8,7 +8,7 @@ import mongoose from "mongoose";
 import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
 import Faculty from "../models/Faculty.js";
 import Student from "../models/Student.js";
-import Admin from "../models/AdminSchema.js";
+import Challenge from "../models/Challenge.js";
 
 
 //government dashboard
@@ -323,14 +323,14 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
-    const userExists = await Admin.findOne({ email });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(409).json({ message: "Email already registered" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const user = await Admin.create({
+    const user = await User.create({
       fullName,
       email,
       password: hashed,
@@ -380,11 +380,6 @@ export const loginUser = async (req, res) => {
       case "student":
         user = await Student.findOne({ email });
         if (!user) return res.status(404).json({ message: "Student not found" });
-        break;
-    
-        case "admin":
-        user = await Admin.findOne({ email });
-        if (!user) return res.status(404).json({ message: "Admin not found" });
         break;
 
       default:

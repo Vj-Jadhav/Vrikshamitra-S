@@ -35,7 +35,7 @@ export default function Login() {
       // Role-based navigation
       switch (user.role) {
         case "admin":
-          navigate("/GovernmentDashboard");
+          navigate("/AdminDashboard");
           break;
         case "institute":
           navigate("/InstituteDashboard");

@@ -10,8 +10,6 @@ import InstituteOverview from "../institute/InstituteTypeOverview ";
 import FacultyManagement from "../institute/FacultyManagement";
 import StudentManagement from "../institute/StudentManagement";
 import DepartmentStructure from "../institute/DepartmentStructure";
-import ChallengeManagement from "../institute/ChallengeManagement";
-import ChallengeSubmissions from "../institute/ChallengeSubmissions";
 // import AnalyticsDashboard from "../institute/AnalyticsDashboard";
 // import InstituteSettings from "../institute/InstituteSettings";
 // import Reports from "../institute/Reports";
@@ -131,10 +129,6 @@ export default function InstituteDashboard() {
         return <StudentManagement instituteId={user?._id} />;
       case "structure":
         return <DepartmentStructure instituteData={instituteData} />;
-       case "challenges": // NEW
-        return <ChallengeManagement instituteId={user?._id} instituteData={instituteData} />;
-      case "submissions": // NEW
-        return <ChallengeSubmissions instituteId={user?._id} />;
     //   case "analytics":
     //     return <AnalyticsDashboard instituteData={instituteData} stats={stats} />;
     //   case "reports":
@@ -153,7 +147,8 @@ export default function InstituteDashboard() {
         );
     }
   };
-return (
+
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <InstituteHeader instituteData={instituteData} stats={stats} />
       
