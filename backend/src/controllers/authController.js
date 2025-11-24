@@ -11,86 +11,6 @@ import Student from "../models/Student.js";
 import Admin from "../models/AdminSchema.js";
 
 
-//government dashboard
-export const getAllInstitutes = async (req, res) => {
-  try {
-    const institutes = await Institute.find().lean();
-
-    res.status(200).json({
-      success: true,
-      data: institutes
-    });
-  } catch (error) {
-    console.error("Error fetching institutes:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch institutes"
-    });
-  }
-};
-
-export const approveInstitute = async (req, res) => {
-  try {
-    // Approve institute by updating approvalStatus
-    const institute = await Institute.findByIdAndUpdate(
-      req.params.id,
-      { approvalStatus: true },
-      { new: true }
-    );
-
-    if (!institute) {
-      return res.status(404).json({ success: false, message: "Institute not found" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "Institute approved",
-      data: institute
-    });
-
-  } catch (err) {
-    console.error("ERROR in approveInstitute:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-
-export const rejectInstitute = async (req, res) => {
-  try {
-    const result = await Institute.findByIdAndUpdate(
-      req.params.id,
-      { approvalStatus: false },
-      { new: true }
-    );
-
-    res.status(200).json({ success: true, data: result });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
-  }
-};
-
-export const getInstituteById = async (req, res) => {
-  const { id } = req.params;
-
-  // Validate MongoDB ObjectId
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ success: false, message: "Invalid ID" });
-  }
-
-  try {
-    const institute = await Institute.findById(id);
-
-    if (!institute) {
-      return res.status(404).json({ success: false, message: "Institute not found" });
-    }
-
-    res.status(200).json({ success: true, data: institute });
-  } catch (error) {
-    console.error("Error fetching institute:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
-  }
-};
 
 
 // ⭐ REGISTER INSTITUTE ⭐
@@ -151,6 +71,10 @@ export const registerInstitute = async (req, res) => {
       researchCenters
     } = req.body;
 
+    console.log("📥 Received university faculties:", faculties);
+    console.log("📥 Received workingDays:", workingDays);
+    console.log("📥 Received infrastructure:", infrastructure);
+
     // Basic validation
     if (!instituteName || !email || !password || !instituteType) {
       return res.status(400).json({ message: "Please fill all required fields" });
@@ -165,50 +89,53 @@ export const registerInstitute = async (req, res) => {
       const codeExists = await Institute.findOne({ instituteCode });
       if (codeExists) return res.status(409).json({ message: "Institute code already registered" });
     }
+
     console.log("🔍 RAW PASSWORD RECEIVED FROM FRONTEND:", password);
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("🔐 HASHED PASSWORD SAVED:", hashedPassword);
 
-    // Prepare base payload - MATCHING YOUR SCHEMA STRUCTURE
+    // Prepare base payload - UPDATED to match schema
     let payload = {
       instituteName,
-      instituteCode: instituteCode || `INST_${Date.now()}`, // Default code if not provided
+      instituteCode: instituteCode || `INST_${Date.now()}`,
       email,
       password: hashedPassword,
-      accreditation,
-      affiliation,
+      accreditation: accreditation || "",
+      affiliation: affiliation || "",
       
       // Contact Information
-      address,
-      city,
-      state,
-      country,
-      pincode,
-      phone,
-      website,
-      alternatePhone,
+      address: address || "",
+      city: city || "",
+      state: state || "",
+      country: country || "",
+      pincode: pincode || "",
+      phone: phone || "",
+      website: website || "",
+      alternatePhone: alternatePhone || "",
       
-      // Institute Details - Convert to numbers
+      // Institute Details - Convert to numbers and handle arrays
       totalStudents: totalStudents ? parseInt(totalStudents) : 0,
       totalStaff: totalStaff ? parseInt(totalStaff) : 0,
       totalFaculty: totalFaculty ? parseInt(totalFaculty) : 0,
       establishedYear: establishedYear ? parseInt(establishedYear) : null,
-      campusArea,
-      infrastructure: Array.isArray(infrastructure) ? infrastructure.join(', ') : infrastructure, // Convert array to string as per your schema
+      campusArea: campusArea || "",
+      infrastructure: Array.isArray(infrastructure) ? infrastructure : (infrastructure ? [infrastructure] : []),
       
       // Principal/Head Details
-      principalName,
-      principalEmail,
-      principalPhone,
-      principalQualification,
-      principalExperience,
+      principalName: principalName || "",
+      principalEmail: principalEmail || "",
+      principalPhone: principalPhone || "",
+      principalQualification: principalQualification || "",
+      principalExperience: principalExperience || "",
       
-      // Academic Details
-      academicSession,
-      workingDays: Array.isArray(workingDays) ? workingDays.length : workingDays ? parseInt(workingDays) : 5, // Convert to number as per your schema
+      // Academic Details - Keep workingDays as array
+      academicSession: academicSession || "",
+      workingDays: Array.isArray(workingDays) ? workingDays : (workingDays ? [workingDays] : []),
     };
+
+    console.log("🔄 Prepared base payload:", JSON.stringify(payload, null, 2));
 
     // Add type-specific fields with validation
     switch (instituteType) {
@@ -218,35 +145,70 @@ export const registerInstitute = async (req, res) => {
             message: "School level is required for schools" 
           });
         }
+        if (!board) {
+          return res.status(400).json({ 
+            message: "Education board is required for schools" 
+          });
+        }
         payload = { 
           ...payload, 
           schoolLevel, 
-          grades: grades || []
+          grades: Array.isArray(grades) ? grades : [],
+          board 
         };
-        // Note: 'board' field is not in your School schema, so it's not included
         break;
         
       case "college":
+        if (!departments || departments.length === 0) {
+          return res.status(400).json({ 
+            message: "At least one department is required for colleges" 
+          });
+        }
         payload = { 
           ...payload, 
-          departments: departments || [], 
-          courses: courses || [],
-          universityAffiliated 
+          departments: Array.isArray(departments) ? departments : [departments], 
+          courses: Array.isArray(courses) ? courses : [],
+          universityAffiliated: universityAffiliated || ""
         };
         break;
         
       case "university":
+        // Validate faculties structure for universities
+        if (!faculties || faculties.length === 0) {
+          return res.status(400).json({ 
+            message: "At least one faculty is required for universities" 
+          });
+        }
+
+        // Validate that each faculty has the correct structure
+        const invalidFaculties = faculties.filter(faculty => 
+          !faculty || !faculty.name || typeof faculty.name !== 'string'
+        );
+        
+        if (invalidFaculties.length > 0) {
+          return res.status(400).json({ 
+            message: "Invalid faculty structure. Each faculty must have a name." 
+          });
+        }
+
         payload = { 
           ...payload, 
-          faculties: faculties || [], 
-          programs: programs || [],
-          researchCenters: researchCenters || [] 
+          faculties: faculties.map(faculty => ({
+            name: faculty.name?.trim() || "",
+            departments: Array.isArray(faculty.departments) ? faculty.departments : []
+          })), 
+          programs: Array.isArray(programs) ? programs : [],
+          researchCenters: Array.isArray(researchCenters) ? researchCenters : [] 
         };
         break;
         
       default:
-        break;
+        return res.status(400).json({ 
+          message: "Invalid institute type" 
+        });
     }
+
+    console.log("📤 Final payload for creation:", JSON.stringify(payload, null, 2));
 
     // Create document using the correct discriminator
     let instituteDoc;
@@ -261,8 +223,12 @@ export const registerInstitute = async (req, res) => {
         instituteDoc = await University.create(payload);
         break;
       default:
-        instituteDoc = await Institute.create(payload);
+        return res.status(400).json({ 
+          message: "Invalid institute type" 
+        });
     }
+
+    console.log("✅ Institute created successfully:", instituteDoc._id);
 
     return res.status(201).json({
       message: "Institute registered successfully",
@@ -277,7 +243,7 @@ export const registerInstitute = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Institute registration error:", err);
+    console.error("❌ Institute registration error:", err);
     
     // Handle MongoDB duplicate key errors
     if (err.code === 11000) {
@@ -450,7 +416,7 @@ export const addFaculty = async (req, res) => {
     res.status(201).json(newFaculty);
   } catch (err) {
     console.error("Error adding faculty:", err);
-    res.status(500).json({ message: "Failed to add faculty" });
+    res.status(500).json({ message: "Failed to add faculty error printend in console" });
   }
 };
 

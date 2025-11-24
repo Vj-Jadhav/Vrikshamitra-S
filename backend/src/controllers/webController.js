@@ -1,16 +1,96 @@
 import mongoose from "mongoose";
 
-// import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
+import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
 // import Faculty from "../models/Faculty.js";
 // import Student from "../models/Student.js";
 import Challenge from "../models/Challenge.js";
 
+//government dashboard
+export const getAllInstitutes = async (req, res) => {
+  try {
+    const institutes = await Institute.find().lean();
+
+    res.status(200).json({
+      success: true,
+      data: institutes
+    });
+  } catch (error) {
+    console.error("Error fetching institutes:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch institutes"
+    });
+  }
+};
+
+export const approveInstitute = async (req, res) => {
+  try {
+    // Approve institute by updating approvalStatus
+    const institute = await Institute.findByIdAndUpdate(
+      req.params.id,
+      { approvalStatus: true },
+      { new: true }
+    );
+
+    if (!institute) {
+      return res.status(404).json({ success: false, message: "Institute not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Institute approved",
+      data: institute
+    });
+
+  } catch (err) {
+    console.error("ERROR in approveInstitute:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+export const rejectInstitute = async (req, res) => {
+  try {
+    const result = await Institute.findByIdAndUpdate(
+      req.params.id,
+      { approvalStatus: false },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false });
+  }
+};
+
+export const getInstituteById = async (req, res) => {
+  const { id } = req.params;
+
+  // Validate MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ success: false, message: "Invalid ID" });
+  }
+
+  try {
+    const institute = await Institute.findById(id);
+
+    if (!institute) {
+      return res.status(404).json({ success: false, message: "Institute not found" });
+    }
+
+    res.status(200).json({ success: true, data: institute });
+  } catch (error) {
+    console.error("Error fetching institute:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
 
 
 
 /**
  * @desc    Get all challenges
- * @route   GET /government/challenges
+ * @route   GET /challenges
  */
 export const getChallenges = async (req, res) => {
   try {
@@ -23,7 +103,7 @@ export const getChallenges = async (req, res) => {
 
 /**
  * @desc    Create new challenge
- * @route   POST /government/challenges
+ * @route   POST /challenges
  */
 export const createChallenge = async (req, res) => {
   try {
@@ -66,7 +146,7 @@ export const createChallenge = async (req, res) => {
 
 /**
  * @desc    Update a challenge
- * @route   PUT /government/challenges/:id
+ * @route   PUT /challenges/:id
  */
 export const updateChallenge = async (req, res) => {
   try {
@@ -95,7 +175,7 @@ export const updateChallenge = async (req, res) => {
 
 /**
  * @desc    Delete a challenge
- * @route   DELETE /government/challenges/:id
+ * @route   DELETE /challenges/:id
  */
 export const deleteChallenge = async (req, res) => {
   try {

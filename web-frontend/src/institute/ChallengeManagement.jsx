@@ -1,24 +1,24 @@
-// src/institute/ChallengeManagement.jsx - UPDATED
+// src/institute/ChallengeManagement.jsx - FULLY UPDATED
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Target, CheckCircle, Clock, AlertCircle, Users, Calendar, FileText, Plus, BookOpen } from 'lucide-react';
-import { API,getChallenges } from "../utils/api";
-
+import { Search, Filter, Target, CheckCircle, Clock, AlertCircle, Users, Calendar, FileText, Plus, BookOpen, X } from 'lucide-react';
+import { API, getChallenges } from "../utils/api";
 
 const ChallengeManagement = ({ instituteId, instituteData }) => {
   const [challenges, setChallenges] = useState([]);
-  const [governmentChallenges, setGovernmentChallenges] = useState([]); // NEW
+  const [governmentChallenges, setGovernmentChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false); // NEW
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [submissionData, setSubmissionData] = useState({
     description: '',
     documents: [],
     photos: []
   });
-  const [newChallengeData, setNewChallengeData] = useState({ // NEW
+  const [newChallengeData, setNewChallengeData] = useState({
     governmentChallengeId: '',
     customTitle: '',
     description: '',
@@ -30,56 +30,169 @@ const ChallengeManagement = ({ instituteId, instituteData }) => {
     additionalNotes: ''
   });
 
+  // Assignment state
+  const [assignmentData, setAssignmentData] = useState({
+    selectedBatches: [],
+    assignmentMessage: '',
+    deadline: '',
+    facultyCoordinator: ''
+  });
+
+  // Sample batches data - replace with actual data from your backend
+  const [availableBatches, setAvailableBatches] = useState([
+    { id: '1', name: '1st Year', department: 'All Departments', students: 120, type: 'year' },
+    { id: '2', name: '2nd Year', department: 'All Departments', students: 115, type: 'year' },
+    { id: '3', name: '3rd Year', department: 'All Departments', students: 110, type: 'year' },
+    { id: '4', name: '4th Year', department: 'All Departments', students: 105, type: 'year' },
+    { id: '5', name: '1st Class', department: 'Elementary', students: 60, type: 'class' },
+    { id: '6', name: '2nd Class', department: 'Elementary', students: 58, type: 'class' },
+    { id: '7', name: '3rd Class', department: 'Elementary', students: 55, type: 'class' },
+    { id: '8', name: 'Computer Science', department: 'Engineering', students: 75, type: 'department' },
+    { id: '9', name: 'Mechanical', department: 'Engineering', students: 68, type: 'department' },
+    { id: '10', name: 'Civil', department: 'Engineering', students: 72, type: 'department' }
+  ]);
+
+  const [batchFilter, setBatchFilter] = useState('all');
+
   useEffect(() => {
     fetchChallenges();
-    fetchGovernmentChallenges(); // NEW
+    fetchGovernmentChallenges();
   }, [instituteId]);
 
   const fetchChallenges = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
+      const res = await getChallenges();
+      const allChallenges = res.data;
 
-    // Fetch all challenges from backend
-    const res = await getChallenges(); // Axios call
-    const allChallenges = res.data; // assuming API returns array of challenges
+      const challengesWithSource = allChallenges.map(ch => ({
+        ...ch,
+        source: ch.createdByRole === "government" ? "government" : "institute",
+        instituteStatus: ch.instituteStatus || "not-started",
+        studentParticipation: ch.studentParticipation || 0,
+        progress: ch.progress || 0,
+        submissionDeadline: ch.submissionDeadline || ch.deadline,
+        assignedBatches: ch.assignedBatches || [],
+        assignmentDetails: ch.assignmentDetails || null
+      }));
 
-    // Optionally, tag challenges by source
-    const challengesWithSource = allChallenges.map(ch => ({
-      ...ch,
-      source: ch.createdByRole === "government" ? "government" : "institute",
-      instituteStatus: ch.instituteStatus || "not-started",
-      studentParticipation: ch.studentParticipation || 0,
-      progress: ch.progress || 0,
-      submissionDeadline: ch.submissionDeadline || ch.deadline,
+      setChallenges(challengesWithSource);
+      setGovernmentChallenges(challengesWithSource.filter(ch => ch.source === "government"));
+    } catch (error) {
+      console.error("Error fetching challenges:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGovernmentChallenges = async () => {
+    try {
+      const res = await getChallenges();
+      setGovernmentChallenges(res.data);
+    } catch (error) {
+      console.error('Error fetching government challenges:', error);
+    }
+  };
+
+  // Handle batch selection
+  const handleBatchSelection = (batchId) => {
+    setAssignmentData(prev => {
+      const isSelected = prev.selectedBatches.includes(batchId);
+      if (isSelected) {
+        return {
+          ...prev,
+          selectedBatches: prev.selectedBatches.filter(id => id !== batchId)
+        };
+      } else {
+        return {
+          ...prev,
+          selectedBatches: [...prev.selectedBatches, batchId]
+        };
+      }
+    });
+  };
+
+  // Handle starting challenge with assignment
+  const handleStartChallenge = (challenge) => {
+    setSelectedChallenge(challenge);
+    // Pre-fill assignment deadline with challenge deadline
+    setAssignmentData(prev => ({
+      ...prev,
+      deadline: challenge.deadline || ''
     }));
+    setShowAssignmentModal(true);
+  };
 
-    // Set main challenges state
-    setChallenges(challengesWithSource);
+  // Confirm assignment and start challenge
+  const handleConfirmAssignment = async () => {
+    if (assignmentData.selectedBatches.length === 0) {
+      alert('Please select at least one batch to assign this challenge');
+      return;
+    }
 
-    // Optionally set government challenges separately
-    setGovernmentChallenges(challengesWithSource.filter(ch => ch.source === "government"));
+    try {
+      // Update challenge status and assignment in backend
+      const updatedChallenge = {
+        ...selectedChallenge,
+        instituteStatus: 'in-progress',
+        assignedBatches: assignmentData.selectedBatches,
+        assignmentDetails: {
+          message: assignmentData.assignmentMessage,
+          deadline: assignmentData.deadline,
+          facultyCoordinator: assignmentData.facultyCoordinator,
+          assignedAt: new Date().toISOString()
+        }
+      };
 
-  } catch (error) {
-    console.error("Error fetching challenges:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      // Update local state immediately
+      const updatedChallenges = challenges.map(c => 
+        c._id === selectedChallenge._id ? updatedChallenge : c
+      );
+      setChallenges(updatedChallenges);
 
-  // NEW: Fetch government challenges for dropdown
+      // Here you would typically make an API call to update the challenge
+      // await API.put(`/challenges/${selectedChallenge._id}/assign`, {
+      //   assignedBatches: assignmentData.selectedBatches,
+      //   assignmentDetails: assignmentData
+      // });
 
+      // Reset assignment data and close modal
+      setAssignmentData({
+        selectedBatches: [],
+        assignmentMessage: '',
+        deadline: '',
+        facultyCoordinator: ''
+      });
+      setShowAssignmentModal(false);
+      setSelectedChallenge(null);
 
-const fetchGovernmentChallenges = async () => {
-  try {
-    const res = await getChallenges(); // call the API helper
-    setGovernmentChallenges(res.data); // assuming the response has the array in res.data
-  } catch (error) {
-    console.error('Error fetching government challenges:', error);
-  }
-};
+      alert(`Challenge assigned to ${assignmentData.selectedBatches.length} batch(es) successfully!`);
 
+    } catch (error) {
+      console.error('Error assigning challenge:', error);
+      alert('Failed to assign challenge. Please try again.');
+    }
+  };
 
-  // NEW: Handle creating new challenge from government template
+  // Get batch name by ID
+  const getBatchName = (batchId) => {
+    const batch = availableBatches.find(b => b.id === batchId);
+    return batch ? batch.name : 'Unknown Batch';
+  };
+
+  // Get batch details by ID
+  const getBatchDetails = (batchId) => {
+    const batch = availableBatches.find(b => b.id === batchId);
+    return batch || null;
+  };
+
+  // Filter batches by type
+  const filteredBatches = availableBatches.filter(batch => {
+    if (batchFilter === 'all') return true;
+    return batch.type === batchFilter;
+  });
+
+  // Handle creating new challenge from government template
   const handleCreateChallenge = async () => {
     if (!newChallengeData.governmentChallengeId) {
       alert('Please select a government challenge');
@@ -105,7 +218,9 @@ const fetchGovernmentChallenges = async () => {
         assignedFaculty: newChallengeData.assignedFaculty,
         targetStudents: newChallengeData.targetStudents,
         budget: newChallengeData.budget,
-        additionalNotes: newChallengeData.additionalNotes
+        additionalNotes: newChallengeData.additionalNotes,
+        assignedBatches: [],
+        assignmentDetails: null
       };
 
       // Add to local state immediately
@@ -133,7 +248,7 @@ const fetchGovernmentChallenges = async () => {
     }
   };
 
-  // NEW: Handle creating custom institute challenge
+  // Handle creating custom institute challenge
   const handleCreateCustomChallenge = async () => {
     if (!newChallengeData.customTitle || !newChallengeData.description) {
       alert('Please provide title and description for the custom challenge');
@@ -160,7 +275,9 @@ const fetchGovernmentChallenges = async () => {
         targetCompletionDate: newChallengeData.targetCompletionDate,
         assignedFaculty: newChallengeData.assignedFaculty,
         targetStudents: newChallengeData.targetStudents,
-        budget: newChallengeData.budget
+        budget: newChallengeData.budget,
+        assignedBatches: [],
+        assignmentDetails: null
       };
 
       // Add to local state immediately
@@ -186,15 +303,6 @@ const fetchGovernmentChallenges = async () => {
       console.error('Error creating custom challenge:', error);
       alert('Failed to create custom challenge. Please try again.');
     }
-  };
-
-  const handleStartChallenge = (challenge) => {
-    setSelectedChallenge(challenge);
-    // Mark challenge as in-progress for institute
-    const updatedChallenges = challenges.map(c => 
-      c._id === challenge._id ? { ...c, instituteStatus: 'in-progress' } : c
-    );
-    setChallenges(updatedChallenges);
   };
 
   const handleSubmitChallenge = async () => {
@@ -246,6 +354,15 @@ const fetchGovernmentChallenges = async () => {
     return source === 'government' 
       ? 'bg-purple-100 text-purple-800 border-purple-200'
       : 'bg-teal-100 text-teal-800 border-teal-200';
+  };
+
+  const getBatchTypeColor = (type) => {
+    switch (type) {
+      case 'year': return 'bg-blue-100 text-blue-800';
+      case 'class': return 'bg-green-100 text-green-800';
+      case 'department': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   const filteredChallenges = challenges.filter(challenge => {
@@ -327,7 +444,7 @@ const fetchGovernmentChallenges = async () => {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
@@ -354,7 +471,7 @@ const fetchGovernmentChallenges = async () => {
       {/* Challenges Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredChallenges.map((challenge) => (
-          <div key={challenge._id} className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6">
+          <div key={challenge._id} className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${
@@ -381,6 +498,34 @@ const fetchGovernmentChallenges = async () => {
 
             <p className="text-gray-600 text-sm mb-4">{challenge.description}</p>
 
+            {/* Show assigned batches if any */}
+            {challenge.assignedBatches && challenge.assignedBatches.length > 0 && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                  <Users size={14} />
+                  <span className="font-medium">Assigned to:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {challenge.assignedBatches.map(batchId => {
+                    const batch = getBatchDetails(batchId);
+                    return batch ? (
+                      <div key={batchId} className="flex items-center gap-1">
+                        <span className={`px-2 py-1 text-xs rounded-full ${getBatchTypeColor(batch.type)}`}>
+                          {batch.name}
+                        </span>
+                        <span className="text-xs text-gray-500">({batch.students} students)</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+                {challenge.assignmentDetails && challenge.assignmentDetails.facultyCoordinator && (
+                  <div className="text-xs text-gray-500 mt-2">
+                    Coordinator: {challenge.assignmentDetails.facultyCoordinator}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-3 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar size={14} />
@@ -398,7 +543,7 @@ const fetchGovernmentChallenges = async () => {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-green-500 h-2 rounded-full" 
+                      className="bg-green-500 h-2 rounded-full transition-all duration-300" 
                       style={{ width: `${challenge.progress}%` }}
                     ></div>
                   </div>
@@ -410,7 +555,7 @@ const fetchGovernmentChallenges = async () => {
               {challenge.instituteStatus === 'not-started' && (
                 <button
                   onClick={() => handleStartChallenge(challenge)}
-                  className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                  className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
                 >
                   Start Challenge
                 </button>
@@ -421,12 +566,28 @@ const fetchGovernmentChallenges = async () => {
                     setSelectedChallenge(challenge);
                     setShowSubmissionModal(true);
                   }}
-                  className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors"
+                  className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
                 >
                   Submit Completion
                 </button>
               )}
-              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+              {challenge.instituteStatus === 'submitted' && (
+                <button
+                  className="flex-1 bg-orange-500 text-white py-2 rounded-lg font-medium cursor-not-allowed"
+                  disabled
+                >
+                  Under Review
+                </button>
+              )}
+              {challenge.instituteStatus === 'completed' && (
+                <button
+                  className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium cursor-not-allowed"
+                  disabled
+                >
+                  Completed
+                </button>
+              )}
+              <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                 View Details
               </button>
             </div>
@@ -448,15 +609,231 @@ const fetchGovernmentChallenges = async () => {
         </div>
       )}
 
+      {/* Assignment Modal */}
+      {showAssignmentModal && selectedChallenge && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Assign Challenge: {selectedChallenge.title}
+                  </h3>
+                  <p className="text-gray-600 mt-1">Select batches to assign this challenge</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAssignmentModal(false);
+                    setSelectedChallenge(null);
+                    setAssignmentData({
+                      selectedBatches: [],
+                      assignmentMessage: '',
+                      deadline: '',
+                      facultyCoordinator: ''
+                    });
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Batch Selection */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Select Batches/Classes *
+                    </label>
+                    <select
+                      value={batchFilter}
+                      onChange={(e) => setBatchFilter(e.target.value)}
+                      className="text-sm px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="year">Years</option>
+                      <option value="class">Classes</option>
+                      <option value="department">Departments</option>
+                    </select>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    {filteredBatches.map((batch) => (
+                      <div
+                        key={batch.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          assignmentData.selectedBatches.includes(batch.id)
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                        }`}
+                        onClick={() => handleBatchSelection(batch.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-800">{batch.name}</span>
+                              <span className={`px-1.5 py-0.5 text-xs rounded-full ${getBatchTypeColor(batch.type)}`}>
+                                {batch.type}
+                              </span>
+                            </div>
+                            <div className="text-sm text-gray-600">{batch.department}</div>
+                            <div className="text-xs text-gray-500">{batch.students} students</div>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            assignmentData.selectedBatches.includes(batch.id)
+                              ? 'bg-blue-500 border-blue-500'
+                              : 'border-gray-300 bg-white'
+                          }`}>
+                            {assignmentData.selectedBatches.includes(batch.id) && (
+                              <div className="text-white text-xs font-bold">✓</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-xs text-gray-500">
+                      Selected: {assignmentData.selectedBatches.length} batch(es)
+                    </p>
+                    {assignmentData.selectedBatches.length > 0 && (
+                      <button
+                        onClick={() => setAssignmentData(prev => ({ ...prev, selectedBatches: [] }))}
+                        className="text-xs text-red-500 hover:text-red-700"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Assignment Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Assignment Deadline *
+                    </label>
+                    <input
+                      type="date"
+                      value={assignmentData.deadline}
+                      onChange={(e) => setAssignmentData(prev => ({ ...prev, deadline: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Faculty Coordinator *
+                    </label>
+                    <input
+                      type="text"
+                      value={assignmentData.facultyCoordinator}
+                      onChange={(e) => setAssignmentData(prev => ({ ...prev, facultyCoordinator: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter coordinator name"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assignment Message (Optional)
+                  </label>
+                  <textarea
+                    value={assignmentData.assignmentMessage}
+                    onChange={(e) => setAssignmentData(prev => ({ ...prev, assignmentMessage: e.target.value }))}
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Add any specific instructions or notes for the assigned batches..."
+                  />
+                </div>
+
+                {/* Selected Batches Summary */}
+                {assignmentData.selectedBatches.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-800 mb-2">Assignment Summary</h4>
+                    <div className="text-sm text-blue-700">
+                      <p>This challenge will be assigned to:</p>
+                      <ul className="list-disc list-inside mt-1">
+                        {assignmentData.selectedBatches.map(batchId => {
+                          const batch = getBatchDetails(batchId);
+                          return batch ? (
+                            <li key={batchId}>
+                              {batch.name} ({batch.department}) - {batch.students} students
+                            </li>
+                          ) : null;
+                        })}
+                      </ul>
+                      <p className="mt-2 font-medium">
+                        Total students: {assignmentData.selectedBatches.reduce((total, batchId) => {
+                          const batch = getBatchDetails(batchId);
+                          return total + (batch ? batch.students : 0);
+                        }, 0)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowAssignmentModal(false);
+                      setSelectedChallenge(null);
+                      setAssignmentData({
+                        selectedBatches: [],
+                        assignmentMessage: '',
+                        deadline: '',
+                        facultyCoordinator: ''
+                      });
+                    }}
+                    className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmAssignment}
+                    className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled={assignmentData.selectedBatches.length === 0 || !assignmentData.deadline || !assignmentData.facultyCoordinator}
+                  >
+                    Assign & Start Challenge
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Challenge Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Create New Challenge</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">Create New Challenge</h3>
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setNewChallengeData({
+                      governmentChallengeId: '',
+                      customTitle: '',
+                      description: '',
+                      startDate: '',
+                      targetCompletionDate: '',
+                      assignedFaculty: '',
+                      targetStudents: 0,
+                      budget: '',
+                      additionalNotes: ''
+                    });
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
               
               <div className="space-y-4">
-
                 {/* Custom Challenge Fields */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -562,7 +939,7 @@ const fetchGovernmentChallenges = async () => {
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
                       setShowCreateModal(false);
@@ -578,21 +955,21 @@ const fetchGovernmentChallenges = async () => {
                         additionalNotes: ''
                       });
                     }}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   {newChallengeData.governmentChallengeId ? (
                     <button
                       onClick={handleCreateChallenge}
-                      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+                      className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
                     >
                       Create from Government Template
                     </button>
                   ) : (
                     <button
                       onClick={handleCreateCustomChallenge}
-                      className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600"
+                      className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium"
                     >
                       Create Custom Challenge
                     </button>
@@ -604,14 +981,25 @@ const fetchGovernmentChallenges = async () => {
         </div>
       )}
 
-      {/* Submission Modal (existing code remains the same) */}
+      {/* Submission Modal */}
       {showSubmissionModal && selectedChallenge && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
-                Submit Challenge: {selectedChallenge.title}
-              </h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">
+                  Submit Challenge: {selectedChallenge.title}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowSubmissionModal(false);
+                    setSelectedChallenge(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
               
               <div className="space-y-4">
                 <div>
@@ -672,19 +1060,19 @@ const fetchGovernmentChallenges = async () => {
                   <p className="text-sm text-blue-700">{selectedChallenge.requirements}</p>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
                       setShowSubmissionModal(false);
                       setSelectedChallenge(null);
                     }}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSubmitChallenge}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
                   >
                     Submit Challenge
                   </button>

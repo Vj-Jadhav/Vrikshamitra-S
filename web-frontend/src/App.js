@@ -9,7 +9,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import FacultyDashboard from "./pages/FacultyDashboard";
 import Home from "./pages/Home";
 import GovernmentDashboard from "./pages/GovernmentDashboard";
-import InstituteRegistration from "./pages/Institute-Registration";
+import InstituteRegistration from "./pages/InstituteRegistration";
 import InstituteDashboard from "./pages/InstituteDashboard";
 
 function App() {

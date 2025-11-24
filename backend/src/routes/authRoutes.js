@@ -3,10 +3,6 @@ import { registerUser,
          loginUser, 
          getUserDetails, 
          registerInstitute, 
-         getAllInstitutes, 
-         approveInstitute, 
-         rejectInstitute,
-         getInstituteById, 
          addFaculty,
          getFacultyByInstitute,
          addStudentsBulk
@@ -27,14 +23,9 @@ router.post("/login", loginUser);
 router.get("/me", protect, getUserDetails);
 
 
-//not to touch
+
 router.post("/institute-register", registerInstitute);
 
-//gov-dashboard
-router.get("/", getAllInstitutes);
-router.put("/:id/approve", approveInstitute);
-router.put("/:id/reject", rejectInstitute);
-router.get("/:id", getInstituteById);
 
 router.post("/:instituteId/faculty", addFaculty);
 router.get("/:instituteId/faculty", getFacultyByInstitute);

@@ -22,18 +22,23 @@ const studentSchema = new mongoose.Schema({
     type: String,
     trim: true 
   },
-  grade: { 
-    type: String,
-    required: true 
-  },
-  rollNumber: { 
-    type: String,
-    required: true 
-  },
-  batch: { 
+  // School-specific fields
+  grade: String,
+  rollNumber: String,
+  batch: String,
+  section: String,
+
+  // University/college-specific fields
+  department: { 
     type: String 
   },
-  section: { 
+  program: { 
+    type: String // e.g., B.Tech, M.Sc
+  },
+  semester: { 
+    type: Number 
+  },
+  enrollmentNumber: { 
     type: String 
   },
   status: {
@@ -42,7 +47,7 @@ const studentSchema = new mongoose.Schema({
     default: "active"
   },
   
-  // NEW: Optional fields for better tracking
+  // Optional fields for better tracking
   dateOfBirth: Date,
   gender: {
     type: String,
@@ -56,5 +61,8 @@ const studentSchema = new mongoose.Schema({
 
 // Compound index to ensure unique roll numbers per institute
 studentSchema.index({ instituteId: 1, rollNumber: 1 }, { unique: true });
+
+// Compound index for enrollment number uniqueness (university-wide)
+studentSchema.index({ instituteId: 1, enrollmentNumber: 1 }, { unique: true, sparse: true });
 
 export default mongoose.model("Student", studentSchema);

@@ -6,6 +6,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
+import instituteRoutes from "./routes/instituteRoutes.js";
 import challengeRoutes from "./routes/challengeRoutes.js";
 
 const app = express();
@@ -19,6 +20,7 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/institute", instituteRoutes);
 app.use("/api/challenges", challengeRoutes);
 
 export default app;
