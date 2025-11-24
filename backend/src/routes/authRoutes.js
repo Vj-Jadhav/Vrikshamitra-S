@@ -12,7 +12,7 @@ router.post("/register", registerUser);
 // Login
 router.post("/login", loginUser);
 
-// Get Logged-in User
 router.get("/me", protect, getUserDetails);
+
 
 export default router;

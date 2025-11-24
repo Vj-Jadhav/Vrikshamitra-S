@@ -4,6 +4,8 @@ import {
   StyleSheet, ActivityIndicator 
 } from 'react-native';
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState("");
@@ -11,8 +13,8 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Correct backend IP (SAME as Register)
-  const API_URL = "http://10.60.191.117:5000/api/auth/login";
+  // Correct backend IP (same as Register)
+  const API_URL = "http://10.168.69.133:5000/api/auth/login";
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -33,9 +35,18 @@ export default function LoginScreen({ navigation }) {
       console.log("LOGIN RESPONSE:", data);
 
       if (response.status === 200) {
+
+        // ⭐ Save userId so HomeScreen can fetch name
+        if (data?.user?._id) {
+          await AsyncStorage.setItem("userId", data.user._id);
+          console.log("Saved UserID:", data.user._id);
+        }
+
         setMessage("Login Successful! 🌿");
-        // ✅ CHANGED: Navigate to "Main" instead of "Home"
-        setTimeout(() => navigation.navigate("Main"), 1200);
+
+        // Navigate to Main (bottom navigation layout)
+        setTimeout(() => navigation.navigate("Home"), 1200);
+
       } else {
         setMessage(data.message || "Invalid credentials!");
       }
