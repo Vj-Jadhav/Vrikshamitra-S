@@ -18,40 +18,52 @@ const studentSchema = new mongoose.Schema({
     lowercase: true,
     trim: true 
   },
+  password: {
+    type: String,
+    default: null // Will be set by student during first login
+  },
   phone: { 
     type: String,
     trim: true 
   },
-  // School-specific fields
-  grade: String,
+  
+  // Common fields for all institute types
   rollNumber: String,
-  batch: String,
-  section: String,
-
-  // University/college-specific fields
-  department: { 
-    type: String 
-  },
-  program: { 
-    type: String // e.g., B.Tech, M.Sc
-  },
-  semester: { 
-    type: Number 
-  },
-  enrollmentNumber: { 
-    type: String 
-  },
   status: {
     type: String,
     enum: ["active", "inactive", "graduated", "transferred"],
     default: "active"
   },
-  
+  joinDate: {
+    type: Date,
+    default: Date.now
+  },
+  ecoPoints: {
+    type: Number,
+    default: 0
+  },
+
+  // School-specific fields
+  grade: String,
+  batch: String,
+  section: String,
+
+  // College-specific fields
+  department: String,
+  program: String, // e.g., B.Tech, M.Sc
+  semester: Number,
+
+  // University-specific fields
+  faculty: String,
+  enrollmentNumber: String,
+  academicYear: String,
+
   // Optional fields for better tracking
   dateOfBirth: Date,
   gender: {
     type: String,
-    enum: ["male", "female", "other"]
+    enum: ["male", "female", "other", ""],
+    default: ""
   },
   address: String
 

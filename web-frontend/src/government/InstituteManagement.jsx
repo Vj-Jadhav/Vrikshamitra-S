@@ -19,7 +19,7 @@ const InstituteManagement = () => {
   const fetchInstitutes = async () => {
     try {
       setLoading(true);
-      const res = await API.get("/institute/");
+      const res = await API.get("/government/");
 
       const formatted = res.data.data.map(inst => ({
         // BASIC IDENTIFICATION
@@ -99,7 +99,7 @@ const InstituteManagement = () => {
 
   const handleApprove = async (instituteId) => {
     try {
-      await API.put(`/institute/${instituteId}/approve`);
+      await API.put(`/government/${instituteId}/approve`);
       fetchInstitutes(); // Refresh the list
     } catch (error) {
       console.error('Error approving institute:', error);
@@ -108,7 +108,7 @@ const InstituteManagement = () => {
 
   const handleReject = async (instituteId) => {
     try {
-      await API.put(`/institute/${instituteId}/reject`);
+      await API.put(`/government/${instituteId}/reject`);
       fetchInstitutes(); // Refresh the list
     } catch (error) {
       console.error('Error rejecting institute:', error);
