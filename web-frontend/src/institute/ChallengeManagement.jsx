@@ -1,12 +1,13 @@
 // src/institute/ChallengeManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Target, CheckCircle, Clock, AlertCircle, Users, Calendar, FileText, Plus, BookOpen, X, BarChart3, Award, TrendingUp } from 'lucide-react';
-import { API, getChallenges, getInstituteById, getStudentsByInstitute, createChallengeAssignment } from "../utils/api";
+import { API, getChallenges, getInstituteById, getStudentsByInstitute, createChallengeAssignment, getFacultyByInstitute } from "../utils/api";
 
 const ChallengeManagement = ({ instituteId }) => {
   const [challenges, setChallenges] = useState([]);
   const [institute, setInstitute] = useState(null);
   const [students, setStudents] = useState([]);
+  const [faculties, setFaculties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -44,6 +45,7 @@ const ChallengeManagement = ({ instituteId }) => {
       fetchInstitute();
       fetchChallenges();
       fetchStudents();
+      fetchFaculties();
     }
   }, [instituteId]);
 
@@ -52,7 +54,7 @@ const ChallengeManagement = ({ instituteId }) => {
       console.error('Institute ID is missing!');
     } else {
       console.log('Institute ID from props:', instituteId);
-console.log('Type of instituteId:', typeof instituteId);
+      console.log('Type of instituteId:', typeof instituteId);
     }
   }, [instituteId]);
 
@@ -70,17 +72,25 @@ console.log('Type of instituteId:', typeof instituteId);
     }
   };
 
-const fetchStudents = async () => {
-  try {
-    const data = await getStudentsByInstitute(instituteId);
-    console.log("Fetched students:", data);  // 👈 See the result here
-    setStudents(data);
-  } catch (error) {
-    console.error("Error fetching students:", error);
-  }
-};
+  const fetchStudents = async () => {
+    try {
+      const data = await getStudentsByInstitute(instituteId);
+      console.log("Fetched students:", data);
+      setStudents(data);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    }
+  };
 
-
+  const fetchFaculties = async () => {
+    try {
+      const data = await getFacultyByInstitute(instituteId);
+      console.log("Fetched faculties:", data);
+      setFaculties(data.data || data);
+    } catch (error) {
+      console.error("Error fetching faculties:", error);
+    }
+  };
 
   const fetchChallenges = async () => {
     try {
@@ -254,84 +264,86 @@ const fetchStudents = async () => {
     setShowAssignmentModal(true);
   };
 
-const handleConfirmAssignment = async () => {
-  if (!selectedChallenge || !instituteId) return;
+  const handleConfirmAssignment = async () => {
+    if (!selectedChallenge || !instituteId) return;
 
-  try {
-    const matchingStudents = getMatchingStudents(assignmentData);
-    
-    if (matchingStudents.length === 0) {
-      alert('No students match the selected criteria. Please adjust your assignment parameters.');
-      return;
+    try {
+      const matchingStudents = getMatchingStudents(assignmentData);
+      
+      if (matchingStudents.length === 0) {
+        alert('No students match the selected criteria. Please adjust your assignment parameters.');
+        return;
+      }
+
+      // Get actual user ID from your authentication system
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const assignedById = currentUser._id || 'admin';
+
+      const assignmentPayload = {
+        challengeId: selectedChallenge._id,
+        instituteId: instituteId,
+        assignedBy: assignedById,
+        assignedByRef: 'Admin',
+        assignmentType: assignmentData.assignmentType,
+        submissionDeadline: assignmentData.submissionDeadline,
+        instructions: assignmentData.instructions,
+        facultyCoordinator: assignmentData.facultyCoordinator,
+        totalAssignedStudents: matchingStudents.length,
+        assignedStudents: matchingStudents.map(s => s._id),
+      };
+
+      // Add type-specific data
+      switch (assignmentData.assignmentType) {
+        case 'university':
+          assignmentPayload.faculties = assignmentData.faculties;
+          assignmentPayload.programs = assignmentData.programs;
+          assignmentPayload.academicYears = assignmentData.academicYears;
+          break;
+        case 'college':
+          assignmentPayload.departments = assignmentData.departments;
+          break;
+        case 'school':
+          assignmentPayload.schoolAssignment = {
+            grades: assignmentData.grades,
+            batches: assignmentData.batches,
+            sections: assignmentData.sections
+          };
+          break;
+      }
+
+      console.log('Final assignment payload:', assignmentPayload);
+
+      // Create assignment in backend
+      const assignment = await createChallengeAssignment(assignmentPayload);
+      
+      // Update local state
+      const updatedChallenge = {
+        ...selectedChallenge,
+        instituteStatus: 'in-progress',
+        assignedBatches: [...new Set(matchingStudents.map(s => s.batch).filter(Boolean))],
+        assignmentDetails: assignment
+      };
+
+      setChallenges(prev => 
+        prev.map(c => c._id === selectedChallenge._id ? updatedChallenge : c)
+      );
+
+      setShowAssignmentModal(false);
+      setSelectedChallenge(null);
+      resetAssignmentData();
+
+      alert(`Challenge assigned to ${matchingStudents.length} students successfully!`);
+
+    } catch (error) {
+      console.error('Error assigning challenge:', error);
+      const errorMessage = error.response?.data?.errors 
+        ? `Validation errors: ${error.response.data.errors.map(e => e.message).join(', ')}`
+        : error.response?.data?.message || error.message;
+      
+      alert(`Failed to assign challenge: ${errorMessage}`);
     }
+  };
 
-    // Get actual user ID from your authentication system
-    // If you don't have auth yet, use a temporary solution:
-    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const assignedById = currentUser._id || 'admin'; // Fallback to string
-
-    const assignmentPayload = {
-      challengeId: selectedChallenge._id,
-      instituteId: instituteId, // ✅ Make sure this is included
-      assignedBy: assignedById,
-      assignedByRef: 'Admin',
-      assignmentType: assignmentData.assignmentType,
-      submissionDeadline: assignmentData.submissionDeadline,
-      instructions: assignmentData.instructions,
-      facultyCoordinator: assignmentData.facultyCoordinator,
-      totalAssignedStudents: matchingStudents.length,
-      assignedStudents: matchingStudents.map(s => s._id),
-    };
-
-    // Add type-specific data
-    switch (assignmentData.assignmentType) {
-      case 'university':
-        assignmentPayload.faculties = assignmentData.faculties;
-        assignmentPayload.programs = assignmentData.programs;
-        assignmentPayload.academicYears = assignmentData.academicYears;
-        break;
-      case 'college':
-        assignmentPayload.departments = assignmentData.departments;
-        break;
-      case 'school':
-        assignmentPayload.grades = assignmentData.grades;
-        assignmentPayload.batches = assignmentData.batches;
-        assignmentPayload.sections = assignmentData.sections;
-        break;
-    }
-
-    console.log('Final assignment payload:', assignmentPayload);
-
-    // Create assignment in backend
-    const assignment = await createChallengeAssignment(assignmentPayload);
-    
-    // Update local state
-    const updatedChallenge = {
-      ...selectedChallenge,
-      instituteStatus: 'in-progress',
-      assignedBatches: [...new Set(matchingStudents.map(s => s.batch).filter(Boolean))],
-      assignmentDetails: assignment
-    };
-
-    setChallenges(prev => 
-      prev.map(c => c._id === selectedChallenge._id ? updatedChallenge : c)
-    );
-
-    setShowAssignmentModal(false);
-    setSelectedChallenge(null);
-    resetAssignmentData();
-
-    alert(`Challenge assigned to ${matchingStudents.length} students successfully!`);
-
-  } catch (error) {
-    console.error('Error assigning challenge:', error);
-    const errorMessage = error.response?.data?.errors 
-      ? `Validation errors: ${error.response.data.errors.map(e => e.message).join(', ')}`
-      : error.response?.data?.message || error.message;
-    
-    alert(`Failed to assign challenge: ${errorMessage}`);
-  }
-};
   const resetAssignmentData = () => {
     setAssignmentData({
       assignmentType: institute?.instituteType || '',
@@ -579,6 +591,7 @@ const handleConfirmAssignment = async () => {
           assignmentData={assignmentData}
           setAssignmentData={setAssignmentData}
           institute={institute}
+          faculties={faculties}
           onConfirm={handleConfirmAssignment}
           onCancel={() => {
             setShowAssignmentModal(false);
@@ -1220,7 +1233,7 @@ const ChallengeCard = ({ challenge, onStartChallenge, calculateOverallProgress, 
 };
 
 // Assignment Modal Component
-const AssignmentModal = ({ selectedChallenge, assignmentData, setAssignmentData, institute, onConfirm, onCancel, renderAssignmentForm, getAssignmentBreakdown }) => {
+const AssignmentModal = ({ selectedChallenge, assignmentData, setAssignmentData, institute, faculties, onConfirm, onCancel, renderAssignmentForm, getAssignmentBreakdown }) => {
   const breakdown = getAssignmentBreakdown();
 
   return (
@@ -1264,14 +1277,19 @@ const AssignmentModal = ({ selectedChallenge, assignmentData, setAssignmentData,
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Faculty Coordinator *
                 </label>
-                <input
-                  type="text"
+                <select
                   value={assignmentData.facultyCoordinator}
                   onChange={(e) => setAssignmentData(prev => ({ ...prev, facultyCoordinator: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter coordinator name"
                   required
-                />
+                >
+                  <option value="">Select Faculty Coordinator</option>
+                  {faculties.map(faculty => (
+                    <option key={faculty._id} value={faculty._id}>
+                      {faculty.name} - {faculty.department || faculty.email}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -1309,6 +1327,11 @@ const AssignmentModal = ({ selectedChallenge, assignmentData, setAssignmentData,
                 
                 <p className="mt-2">Institute Type: <strong>{institute?.instituteType}</strong></p>
                 <p>Deadline: <strong>{assignmentData.submissionDeadline}</strong></p>
+                {assignmentData.facultyCoordinator && (
+                  <p>Faculty Coordinator: <strong>{
+                    faculties.find(f => f._id === assignmentData.facultyCoordinator)?.name || 'Selected'
+                  }</strong></p>
+                )}
               </div>
             </div>
 

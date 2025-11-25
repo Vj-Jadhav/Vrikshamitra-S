@@ -227,6 +227,7 @@ const StudentManagement = ({ instituteId }) => {
           return {
             ...baseStudent,
             department: row['department'] || '',
+            enrollmentNumber: row['enrollmentNumber'] || '',
             program: row['program'] || '',
             semester: row['semester'] ? parseInt(row['semester']) : undefined,
             batch: row['batch'] || '' // Added batch for colleges
@@ -236,7 +237,8 @@ const StudentManagement = ({ instituteId }) => {
             ...baseStudent,
             grade: row['grade'] || '',
             batch: row['batch'] || '',
-            section: row['section'] || ''
+            section: row['section'] || '',
+            enrollmentNumber: row['enrollmentNumber'] || ''
           };
         default:
           return baseStudent;
@@ -271,10 +273,10 @@ const StudentManagement = ({ instituteId }) => {
         headers.push('faculty', 'department', 'enrollmentNumber', 'academicYear', 'program', 'batch'); // Added batch
         break;
       case 'college':
-        headers.push('department', 'program', 'semester', 'batch'); // Added batch
+        headers.push('department','enrollmentNumber', 'program', 'semester', 'batch'); // Added batch
         break;
       case 'school':
-        headers.push('grade', 'batch', 'section');
+        headers.push('grade', 'batch', 'section','enrollmentNumber');
         break;
     }
 

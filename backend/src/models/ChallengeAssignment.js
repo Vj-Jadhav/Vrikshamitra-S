@@ -102,7 +102,11 @@ const challengeAssignmentSchema = new mongoose.Schema({
   // Additional details
   instructions: String,
   resources: [String],
-  facultyCoordinator: String
+  facultyCoordinator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Faculty", // or "User" depending on your faculty model
+    required: true
+  },
 
 }, { timestamps: true });
 
