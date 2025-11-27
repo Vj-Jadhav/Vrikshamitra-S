@@ -4,9 +4,6 @@ import {
   loginUser, 
   getUserDetails, 
   registerInstitute, 
-  addFaculty,
-  getFacultyByInstitute,
-  addStudentsBulk,
   studentLoginAttempt,
   verifyStudentOTP,
   setStudentPassword,
@@ -43,8 +40,6 @@ router.post("/faculty/set-password", setFacultyPassword);
 router.post("/faculty/resend-otp", resendFacultyOTP);
 
 router.post("/institute-register", registerInstitute);
-router.post("/:instituteId/faculty", addFaculty);
-router.get("/:instituteId/faculty", getFacultyByInstitute);
-router.post('/bulk/:instituteId', addStudentsBulk);
+
 
 export default router;

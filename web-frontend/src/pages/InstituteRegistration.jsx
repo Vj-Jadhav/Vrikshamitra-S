@@ -210,7 +210,8 @@ const payload = {
 };
 
       console.log("📤 Sending registration payload:", payload);
-      const response = await API.post("/auth/institute-register", payload);
+      const res = await registerInstitute(payload);
+      console.log(res);      
       
       console.log("✅ Registration successful:", response.data);
       alert("Institute registered successfully! You can now login.");

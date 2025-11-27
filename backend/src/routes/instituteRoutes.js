@@ -1,16 +1,15 @@
 import express from "express";
 import { getStudentsByInstituteId,
-    createChallengeAssignment,
-  getInstituteAssignments,
-  getAssignmentDetails,
-  updateAssignmentStatus,
-  deleteAssignment,
-  getAssignmentStatistics,
-      getChallenges,
-  createChallenge,
-  updateChallenge,
-  deleteChallenge
-        } from "../controllers/webController.js";
+        createChallengeAssignment,
+        getInstituteAssignments,
+        getAssignmentDetails,
+        updateAssignmentStatus,
+        deleteAssignment,
+        getAssignmentStatistics,
+        addFaculty,
+        getFacultyByInstitute,
+        addStudentsBulk 
+        } from "../controllers/instituteController.js";
 
 const router = express.Router();
 
@@ -34,18 +33,13 @@ router.delete('/assignments/:assignmentId', deleteAssignment);
 // Get assignment statistics for dashboard
 router.get('/institute/:instituteId/assignment-stats', getAssignmentStatistics);
 
-// GET /api/challenges
-router.get("/", getChallenges);
 
-// POST /api/challenges
-router.post("/", createChallenge);
 
-// PUT /api/challenges/:id
-router.put("/:id", updateChallenge);
 
-// DELETE /api/challenges/:id
-router.delete("/:id", deleteChallenge);
 
+router.post("/:instituteId/faculty", addFaculty);
+router.get("/:instituteId/faculty", getFacultyByInstitute);
+router.post('/bulk/:instituteId', addStudentsBulk);
 
 export default router;
 

@@ -17,6 +17,12 @@ API.interceptors.response.use(
   }
 );
 
+export const registerInstitute = async (payload) => {
+  const response = await API.post("/auth/institute-register", payload);
+  return response.data;
+};
+
+
 // API helper functions
 export const addFaculty = async (instituteId, facultyData) => {
   const response = await API.post(`/auth/${instituteId}/faculty`, facultyData);
