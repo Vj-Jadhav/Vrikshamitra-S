@@ -469,15 +469,65 @@ export const verifyStudentOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
     console.log("Verify student OTP:", { email, otp });
-    res.status(200).json({ 
-      success: true, 
-      message: "Student OTP verified successfully",
-      tempToken: "temp_token_here"
+
+    const student = await Student.findOne({ email });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found"
+      });
+    }
+
+    // Check if OTP exists and is not expired
+    if (!student.otp || !student.otp.code) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found or expired. Please request a new OTP."
+      });
+    }
+
+    if (student.otp.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new OTP."
+      });
+    }
+
+    // Check OTP attempts
+    if (student.otp.attempts >= 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Too many OTP attempts. Please request a new OTP."
+      });
+    }
+
+    // Verify OTP
+    if (student.otp.code !== otp) {
+      student.otp.attempts += 1;
+      await student.save();
+      
+      return res.status(400).json({
+        success: false,
+        message: `Invalid OTP. ${5 - student.otp.attempts} attempts remaining.`
+      });
+    }
+
+    // OTP verified successfully
+    student.otp.verified = true;
+    student.otp.attempts = 0;
+    await student.save();
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      tempToken: student.otp.tempToken
     });
+
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: "Error verifying OTP: " + error.message 
+    console.error("OTP verification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying OTP: " + error.message
     });
   }
 };
@@ -531,19 +581,70 @@ export const setStudentPassword = async (req, res) => {
   }
 };
 
+
 export const verifyFacultyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
     console.log("Verify faculty OTP:", { email, otp });
-    res.status(200).json({ 
-      success: true, 
-      message: "Faculty OTP verified successfully",
-      tempToken: "temp_token_here"
+
+    const faculty = await Faculty.findOne({ email });
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: "Faculty not found"
+      });
+    }
+
+    // Check if OTP exists and is not expired
+    if (!faculty.otp || !faculty.otp.code) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found or expired. Please request a new OTP."
+      });
+    }
+
+    if (faculty.otp.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new OTP."
+      });
+    }
+
+    // Check OTP attempts
+    if (faculty.otp.attempts >= 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Too many OTP attempts. Please request a new OTP."
+      });
+    }
+
+    // Verify OTP
+    if (faculty.otp.code !== otp) {
+      faculty.otp.attempts += 1;
+      await faculty.save();
+      
+      return res.status(400).json({
+        success: false,
+        message: `Invalid OTP. ${5 - faculty.otp.attempts} attempts remaining.`
+      });
+    }
+
+    // OTP verified successfully
+    faculty.otp.verified = true;
+    faculty.otp.attempts = 0;
+    await faculty.save();
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      tempToken: faculty.otp.tempToken
     });
+
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: "Error verifying OTP: " + error.message 
+    console.error("OTP verification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying OTP: " + error.message
     });
   }
 };
@@ -600,14 +701,52 @@ export const resendStudentOTP = async (req, res) => {
   try {
     const { email } = req.body;
     console.log("Resend student OTP:", email);
-    res.status(200).json({ 
-      success: true, 
-      message: "New OTP sent to student email" 
+
+    const student = await Student.findOne({ email });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found"
+      });
+    }
+
+    // Generate new OTP
+    const otpCode = generateOTP();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    student.otp = {
+      code: otpCode,
+      expiresAt: otpExpires,
+      attempts: 0,
+      verified: false,
+      tempToken: generateTempToken(email, 'student'),
+      tokenExpires: otpExpires,
+      lastSentAt: new Date()
+    };
+
+    await student.save();
+
+    console.log("New OTP generated for student:", otpCode);
+
+    // Send email with new OTP
+    try {
+      await sendOTPEmail(email, otpCode, 'student');
+      console.log("Resent OTP email to student:", email);
+    } catch (emailError) {
+      console.error("Failed to resend OTP email to student:", emailError);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "New OTP sent to your email",
+      otpExpires: otpExpires
     });
+
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: "Error resending OTP: " + error.message 
+    console.error("Resend OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error resending OTP: " + error.message
     });
   }
 };
@@ -616,14 +755,52 @@ export const resendFacultyOTP = async (req, res) => {
   try {
     const { email } = req.body;
     console.log("Resend faculty OTP:", email);
-    res.status(200).json({ 
-      success: true, 
-      message: "New OTP sent to faculty email" 
+
+    const faculty = await Faculty.findOne({ email });
+    if (!faculty) {
+      return res.status(404).json({
+        success: false,
+        message: "Faculty not found"
+      });
+    }
+
+    // Generate new OTP
+    const otpCode = generateOTP();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    faculty.otp = {
+      code: otpCode,
+      expiresAt: otpExpires,
+      attempts: 0,
+      verified: false,
+      tempToken: generateTempToken(email, 'faculty'),
+      tokenExpires: otpExpires,
+      lastSentAt: new Date()
+    };
+
+    await faculty.save();
+
+    console.log("New OTP generated for faculty:", otpCode);
+
+    // Send email with new OTP
+    try {
+      await sendOTPEmail(email, otpCode, 'faculty');
+      console.log("Resent OTP email to faculty:", email);
+    } catch (emailError) {
+      console.error("Failed to resend OTP email to faculty:", emailError);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "New OTP sent to your email",
+      otpExpires: otpExpires
     });
+
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: "Error resending OTP: " + error.message 
+    console.error("Resend OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error resending OTP: " + error.message
     });
   }
 };
@@ -795,14 +972,20 @@ export const studentLoginAttempt = async (req, res) => {
 
       console.log("OTP generated for student:", otpCode);
 
+      // Send email with OTP
+      try {
+        await sendOTPEmail(email, otpCode, 'student');
+        console.log("OTP email sent to student:", email);
+      } catch (emailError) {
+        console.error("Failed to send OTP email to student:", emailError);
+      }
+
       return res.status(200).json({
         success: true,
         requiresPasswordSetup: true,
         message: "OTP sent to your email for password setup",
         otpExpires: otpExpires,
-        email: email,
-        // Remove otp field in production - only for testing
-        otp: otpCode 
+        email: email
       });
     }
 
@@ -867,14 +1050,20 @@ export const facultyLoginAttempt = async (req, res) => {
 
       console.log("OTP generated for faculty:", otpCode);
 
+      // Send email with OTP
+      try {
+        await sendOTPEmail(email, otpCode, 'faculty');
+        console.log("OTP email sent to faculty:", email);
+      } catch (emailError) {
+        console.error("Failed to send OTP email to faculty:", emailError);
+      }
+
       return res.status(200).json({
         success: true,
         requiresPasswordSetup: true,
         message: "OTP sent to your email for password setup",
         otpExpires: otpExpires,
-        email: email,
-        // Remove otp field in production - only for testing
-        otp: otpCode 
+        email: email
       });
     }
 

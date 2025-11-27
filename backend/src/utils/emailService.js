@@ -1,15 +1,14 @@
-// utils/emailService.js
-import nodemailer from "nodemailer";
+import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+};
 
 export const sendOTPEmail = async (email, otp, role) => {
   const subject = role === 'student' 
@@ -38,10 +37,20 @@ export const sendOTPEmail = async (email, otp, role) => {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"EcoQuest" <${process.env.SMTP_FROM}>`,
-    to: email,
-    subject: subject,
-    html: html,
-  });
+  try {
+    const transporter = createTransporter();
+    
+    await transporter.sendMail({
+      from: `"EcoQuest" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: subject,
+      html: html,
+    });
+    
+    console.log(`OTP email sent successfully to ${email}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending OTP email:', error);
+    throw error;
+  }
 };
