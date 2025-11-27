@@ -1,5 +1,5 @@
 import express from "express";
-import { 
+import {
   registerUser,
   loginUser, 
   getUserDetails, 
@@ -10,7 +10,15 @@ import {
   getInstituteById, 
   addFaculty,
   getFacultyByInstitute,
-  addStudentsBulk
+  addStudentsBulk,
+  studentLoginAttempt,
+  verifyStudentOTP,
+  setStudentPassword,
+  facultyLoginAttempt,
+  verifyFacultyOTP,
+  setFacultyPassword,
+  resendStudentOTP,
+  resendFacultyOTP
 } from "../controllers/authController.js";
 
 import { protect } from "../middlewares/auth.js";
@@ -21,6 +29,18 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/me", protect, getUserDetails);
+
+// Student OTP routes
+router.post("/student/login-attempt", studentLoginAttempt);
+router.post("/student/verify-otp", verifyStudentOTP);
+router.post("/student/set-password", setStudentPassword);
+router.post("/student/resend-otp", resendStudentOTP);
+
+// Faculty OTP routes
+router.post("/faculty/login-attempt", facultyLoginAttempt);
+router.post("/faculty/verify-otp", verifyFacultyOTP);
+router.post("/faculty/set-password", setFacultyPassword);
+router.post("/faculty/resend-otp", resendFacultyOTP);
 
 // Institute Routes
 router.post("/institute-register", registerInstitute);
