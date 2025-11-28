@@ -1,5 +1,5 @@
 import express from "express";
-import { 
+import {
   registerUser,
   loginUser, 
   getUserDetails, 
@@ -10,30 +10,58 @@ import {
   getInstituteById, 
   addFaculty,
   getFacultyByInstitute,
-  addStudentsBulk
+  addStudentsBulk,
+  studentLoginAttempt,
+  verifyStudentOTP,
+  setStudentPassword,
+  facultyLoginAttempt,
+  verifyFacultyOTP,
+  setFacultyPassword,
+  resendStudentOTP,
+  resendFacultyOTP,
+  forgotPassword, 
+  resetPassword,
+  verifyOTP
 } from "../controllers/authController.js";
 
 import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// User Auth
+// ===== USER AUTH ROUTES =====
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/me", protect, getUserDetails);
 
-// Institute Routes
+// ===== STUDENT AUTH FLOW =====
+router.post("/student/login-attempt", studentLoginAttempt);
+router.post("/student/verify-otp", verifyStudentOTP);
+router.post("/student/set-password", setStudentPassword);
+router.post("/student/resend-otp", resendStudentOTP);
+
+// ===== FACULTY AUTH FLOW =====
+router.post("/faculty/login-attempt", facultyLoginAttempt);
+router.post("/faculty/verify-otp", verifyFacultyOTP);
+router.post("/faculty/set-password", setFacultyPassword);
+router.post("/faculty/resend-otp", resendFacultyOTP);
+
+// ===== PASSWORD RESET FLOW (Universal) =====
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-otp", verifyOTP);
+router.post("/reset-password", resetPassword);
+
+// ===== INSTITUTE MANAGEMENT =====
 router.post("/institute-register", registerInstitute);
-router.get("/", getAllInstitutes);
-router.put("/:id/approve", approveInstitute);
-router.put("/:id/reject", rejectInstitute);
-router.get("/:id", getInstituteById);
+router.get("/institutes", getAllInstitutes); // Added explicit path
+router.get("/institutes/:id", getInstituteById);
+router.put("/institutes/:id/approve", approveInstitute);
+router.put("/institutes/:id/reject", rejectInstitute);
 
-// Faculty Routes
-router.post("/:instituteId/faculty", addFaculty);
-router.get("/:instituteId/faculty", getFacultyByInstitute);
+// ===== FACULTY MANAGEMENT =====
+router.post("/institutes/:instituteId/faculty", addFaculty);
+router.get("/institutes/:instituteId/faculty", getFacultyByInstitute);
 
-// Bulk Student Upload
+// ===== BULK OPERATIONS =====
 router.post('/bulk/:instituteId', addStudentsBulk);
 
 export default router;

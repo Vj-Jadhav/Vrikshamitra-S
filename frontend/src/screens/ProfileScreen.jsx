@@ -25,22 +25,115 @@ const avatars = [
 ];
 
 export default function ProfileScreen({ navigation }) {
-  const [user, setUser] = useState(null);
+  const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
 
+  // Debug function to check what's in storage
+  const checkStorage = async () => {
+    try {
+      const studentId = await AsyncStorage.getItem("studentId");
+      const studentName = await AsyncStorage.getItem("studentName");
+      const studentEmail = await AsyncStorage.getItem("studentEmail");
+      const studentGrade = await AsyncStorage.getItem("studentGrade");
+      const studentRollNumber = await AsyncStorage.getItem("studentRollNumber");
+      const studentData = await AsyncStorage.getItem("studentData");
+      
+      console.log("=== PROFILE STORAGE CHECK ===");
+      console.log("Student ID:", studentId);
+      console.log("Student Name:", studentName);
+      console.log("Student Email:", studentEmail);
+      console.log("Student Grade:", studentGrade);
+      console.log("Student Roll Number:", studentRollNumber);
+      console.log("Complete Student Data:", studentData);
+      console.log("=============================");
+      
+      return { studentId, studentName, studentEmail, studentGrade, studentRollNumber, studentData };
+    } catch (error) {
+      console.log("Storage check error:", error);
+      return null;
+    }
+  };
+
   const fetchProfile = async () => {
     try {
-      const userId = await AsyncStorage.getItem("userId");
-      console.log("PROFILE USER ID:", userId);
+      // First, check what's actually in storage
+      const storageData = await checkStorage();
+      
+      // Get ALL student data from AsyncStorage
+      const studentId = await AsyncStorage.getItem("studentId");
+      const studentName = await AsyncStorage.getItem("studentName");
+      const studentEmail = await AsyncStorage.getItem("studentEmail"); // ✅ ADDED THIS
+      const studentGrade = await AsyncStorage.getItem("studentGrade");
+      const studentRollNumber = await AsyncStorage.getItem("studentRollNumber");
+      const completeStudentData = await AsyncStorage.getItem("studentData");
+      
+      console.log("PROFILE STUDENT DATA FROM STORAGE:", {
+        studentId,
+        studentName,
+        studentEmail, // ✅ NOW INCLUDING EMAIL
+        studentGrade,
+        studentRollNumber
+      });
 
-      if (!userId) {
-        setLoading(false);
+      if (completeStudentData) {
+        // ✅ PREFERRED: Use complete student data from storage
+        const parsedData = JSON.parse(completeStudentData);
+        console.log("✅ Using complete student data:", parsedData);
+        
+        const studentData = {
+          id: parsedData._id || parsedData.id || studentId,
+          name: parsedData.name || studentName || "Student Name",
+          email: parsedData.email || studentEmail || "student@school.com", // ✅ GET EMAIL
+          grade: parsedData.grade || studentGrade,
+          rollNumber: parsedData.rollNumber || studentRollNumber,
+          photo: parsedData.photo || avatars[0].uri,
+          points: parsedData.points || 2571,
+          rank: parsedData.rank || 3
+        };
+        
+        setStudent(studentData);
+      } else if (studentId && studentName) {
+        // ✅ FALLBACK: Use individual storage items
+        const studentData = {
+          id: studentId,
+          name: studentName,
+          email: studentEmail || "student@school.com", // ✅ GET EMAIL
+          grade: studentGrade,
+          rollNumber: studentRollNumber,
+          photo: avatars[0].uri,
+          points: 2571,
+          rank: 3
+        };
+        
+        console.log("✅ Using individual storage items:", studentData);
+        setStudent(studentData);
+        await AsyncStorage.setItem("studentData", JSON.stringify(studentData));
+      } else {
+        // Final fallback: Try to fetch from API
+        console.log("⚠️ No local data, fetching from API");
+        await fetchStudentFromAPI();
+      }
+
+    } catch (err) {
+      console.log("Profile Fetch Error:", err);
+      // Fallback to API fetch
+      await fetchStudentFromAPI();
+    }
+
+    setLoading(false);
+  };
+
+  const fetchStudentFromAPI = async () => {
+    try {
+      const studentId = await AsyncStorage.getItem("studentId");
+      if (!studentId) {
+        console.log("No student ID found");
         return;
       }
 
-      const API_URL = `http://10.168.69.133:5000/api/user/${userId}`;
-      console.log("Fetching from:", API_URL);
+      const API_URL = `http://10.168.69.133:5000/api/student/${studentId}`;
+      console.log("Fetching student from API:", API_URL);
       
       const res = await fetch(API_URL);
       
@@ -49,37 +142,68 @@ export default function ProfileScreen({ navigation }) {
       }
       
       const data = await res.json();
-      console.log("PROFILE DATA:", data);
+      console.log("PROFILE STUDENT API DATA:", data);
 
-      // If user doesn't have a photo, set default avatar
-      if (!data.photo) {
-        data.photo = avatars[0].uri;
+      if (data) {
+        // Ensure we have all required fields with fallbacks
+        const completeStudentData = {
+          id: data._id || studentId,
+          name: data.name || "Student Name",
+          email: data.email || await AsyncStorage.getItem("studentEmail") || "student@school.com", // ✅ GET EMAIL FROM STORAGE AS FALLBACK
+          grade: data.grade || "",
+          rollNumber: data.rollNumber || "",
+          photo: data.photo || avatars[0].uri,
+          points: data.points || 2571,
+          rank: data.rank || 3
+        };
+        
+        console.log("✅ API Student Data:", completeStudentData);
+        setStudent(completeStudentData);
+        await AsyncStorage.setItem("studentData", JSON.stringify(completeStudentData));
+        
+        // Also update individual fields for backward compatibility
+        if (data.name) await AsyncStorage.setItem("studentName", data.name);
+        if (data.email) await AsyncStorage.setItem("studentEmail", data.email);
+        if (data.grade) await AsyncStorage.setItem("studentGrade", data.grade);
+        if (data.rollNumber) await AsyncStorage.setItem("studentRollNumber", data.rollNumber);
       }
-
-      setUser(data);
 
     } catch (err) {
-      console.log("Profile Fetch Error:", err);
-      // Try to get user data from local storage as fallback
-      const localUser = await AsyncStorage.getItem("userData");
-      if (localUser) {
-        setUser(JSON.parse(localUser));
+      console.log("Student API Fetch Error:", err);
+      // Final fallback: try to get from local storage
+      const localStudent = await AsyncStorage.getItem("studentData");
+      if (localStudent) {
+        const parsedData = JSON.parse(localStudent);
+        console.log("✅ Using local storage fallback:", parsedData);
+        setStudent(parsedData);
+      } else {
+        // Ultimate fallback: create basic student object
+        const basicStudent = {
+          id: await AsyncStorage.getItem("studentId"),
+          name: await AsyncStorage.getItem("studentName") || "Student",
+          email: await AsyncStorage.getItem("studentEmail") || "student@school.com", // ✅ GET EMAIL
+          grade: await AsyncStorage.getItem("studentGrade"),
+          rollNumber: await AsyncStorage.getItem("studentRollNumber"),
+          photo: avatars[0].uri,
+          points: 2571,
+          rank: 3
+        };
+        console.log("⚠️ Using basic student fallback:", basicStudent);
+        setStudent(basicStudent);
       }
     }
-
-    setLoading(false);
   };
 
   const updateAvatar = async (avatarUri) => {
     try {
-      const userId = await AsyncStorage.getItem("userId");
-      if (!userId) {
-        Alert.alert("Error", "User not found");
+      const studentId = await AsyncStorage.getItem("studentId");
+      if (!studentId) {
+        Alert.alert("Error", "Student not found");
         return;
       }
 
-      const API_URL = `http://10.168.69.133:5000/api/user/${userId}/avatar`;
-      console.log("Updating avatar at:", API_URL);
+      const API_URL = `http://10.168.69.133:5000/api/student/${studentId}/avatar`;
+      console.log("Updating student avatar at:", API_URL);
       
       const response = await fetch(API_URL, {
         method: 'PUT',
@@ -92,23 +216,23 @@ export default function ProfileScreen({ navigation }) {
       });
 
       if (response.ok) {
-        const updatedUser = await response.json();
+        const updatedStudent = await response.json();
         
         // Update local state
-        setUser(prevUser => ({
-          ...prevUser,
+        setStudent(prevStudent => ({
+          ...prevStudent,
           photo: avatarUri
         }));
         
         // Also update local storage
-        await AsyncStorage.setItem("userData", JSON.stringify({
-          ...user,
+        await AsyncStorage.setItem("studentData", JSON.stringify({
+          ...student,
           photo: avatarUri
         }));
         
         setAvatarModalVisible(false);
         Alert.alert("Success", "Avatar updated successfully!");
-        console.log("Avatar updated successfully");
+        console.log("Student avatar updated successfully");
       } else {
         // If API fails, update locally only
         console.log("API failed, updating locally");
@@ -123,14 +247,14 @@ export default function ProfileScreen({ navigation }) {
 
   const updateAvatarLocally = async (avatarUri) => {
     // Update local state
-    setUser(prevUser => ({
-      ...prevUser,
+    setStudent(prevStudent => ({
+      ...prevStudent,
       photo: avatarUri
     }));
     
     // Update local storage
-    await AsyncStorage.setItem("userData", JSON.stringify({
-      ...user,
+    await AsyncStorage.setItem("studentData", JSON.stringify({
+      ...student,
       photo: avatarUri
     }));
     
@@ -140,9 +264,21 @@ export default function ProfileScreen({ navigation }) {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem("userId");
-      await AsyncStorage.removeItem("userData");
-      await AsyncStorage.removeItem("token");
+      // Remove all student-related data
+      await AsyncStorage.multiRemove([
+        "studentId",
+        "studentName",
+        "studentEmail", // ✅ REMOVE EMAIL TOO
+        "studentGrade",
+        "studentRollNumber",
+        "instituteId",
+        "studentData",
+        "authToken",
+        "userId",
+        "userData"
+      ]);
+      
+      console.log("✅ All student data cleared from storage");
       navigation.navigate("Login");
     } catch (error) {
       console.log("Logout error:", error);
@@ -170,7 +306,7 @@ export default function ProfileScreen({ navigation }) {
               <TouchableOpacity 
                 style={[
                   styles.avatarOption,
-                  user?.photo === item.uri && styles.selectedAvatar
+                  student?.photo === item.uri && styles.selectedAvatar
                 ]}
                 onPress={() => updateAvatar(item.uri)}
               >
@@ -206,10 +342,10 @@ export default function ProfileScreen({ navigation }) {
     );
   }
 
-  if (!user) {
+  if (!student) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={{ fontSize: 18, marginBottom: 10 }}>User not found</Text>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>Student profile not found</Text>
         <TouchableOpacity 
           style={styles.retryButton}
           onPress={fetchProfile}
@@ -229,7 +365,7 @@ export default function ProfileScreen({ navigation }) {
           onPress={() => setAvatarModalVisible(true)}
         >
           <Image 
-            source={{ uri: user.photo || avatars[0].uri }} 
+            source={{ uri: student.photo || avatars[0].uri }} 
             style={styles.profileIcon} 
             defaultSource={{ uri: avatars[0].uri }}
           />
@@ -241,7 +377,7 @@ export default function ProfileScreen({ navigation }) {
           <TouchableOpacity onPress={() => setAvatarModalVisible(true)}>
             <View style={styles.avatarContainer}>
               <Image 
-                source={{ uri: user.photo || avatars[0].uri }} 
+                source={{ uri: student.photo || avatars[0].uri }} 
                 style={styles.profileImage} 
                 defaultSource={{ uri: avatars[0].uri }}
               />
@@ -251,17 +387,26 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.userName}>{user.fullName || "User Name"}</Text>
-          <Text style={styles.userEmail}>{user.email || "user@example.com"}</Text>
+          <Text style={styles.userName}>{student.name || "Student Name"}</Text>
+          <Text style={styles.userEmail}>{student.email || "student@school.com"}</Text>
+          
+          {/* Student Info */}
+          {student.grade && (
+            <View style={styles.studentInfoContainer}>
+              <Text style={styles.studentInfo}>
+                Grade {student.grade} • Roll No: {student.rollNumber}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>{user.points || 0}</Text>
+              <Text style={styles.statValue}>{student.points || 2571}</Text>
               <Text style={styles.statLabel}>Eco Points</Text>
             </View>
 
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>#{user.rank || "N/A"}</Text>
+              <Text style={styles.statValue}>#{student.rank || 3}</Text>
               <Text style={styles.statLabel}>Rank</Text>
             </View>
           </View>
@@ -372,8 +517,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-  userName: { fontSize: 20, fontWeight: "bold", color: "#000", marginTop: 5 },
-  userEmail: { fontSize: 14, color: "#777", marginBottom: 20 },
+  userName: { 
+    fontSize: 20, 
+    fontWeight: "bold", 
+    color: "#000", 
+    marginTop: 5,
+    textAlign: 'center'
+  },
+  userEmail: { 
+    fontSize: 14, 
+    color: "#777", 
+    marginBottom: 10,
+    textAlign: 'center'
+  },
+  studentInfoContainer: {
+    marginBottom: 15,
+  },
+  studentInfo: { 
+    fontSize: 14, 
+    color: "#3a9322ff", 
+    fontWeight: "600",
+    textAlign: 'center'
+  },
   statsRow: {
     flexDirection: "row",
     justifyContent: "center",

@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const baseOptions = { discriminatorKey: "instituteType", timestamps: true };
 
 // ==============================
-// Base Schema (Common Fields)
+// Base Schema (Common Fields) - UPDATED
 // ==============================
 const BaseInstituteSchema = new mongoose.Schema({
   // Basic Info
@@ -24,13 +24,13 @@ const BaseInstituteSchema = new mongoose.Schema({
   website: { type: String },
   alternatePhone: { type: String },
 
-  // Institute Details
+  // Institute Details - UPDATED infrastructure to array
   totalStudents: { type: Number },
   totalStaff: { type: Number },
   totalFaculty: { type: Number },
   establishedYear: { type: Number },
   campusArea: { type: String },
-  infrastructure: { type: String },
+  infrastructure: [{ type: String }], // Changed from String to Array
 
   // Principal Details
   principalName: { type: String },
@@ -39,12 +39,12 @@ const BaseInstituteSchema = new mongoose.Schema({
   principalQualification: { type: String },
   principalExperience: { type: String },
 
-  // Academic Details
+  // Academic Details - UPDATED workingDays to array
   academicSession: { type: String },
-  workingDays: { type: Number },
+  workingDays: [{ type: String }], // Changed from Number to Array
 
-    // Approval (Government)
-  approvalStatus: { type: Boolean, default: null },  // <<--- NEW FIELD
+  // Approval (Government)
+  approvalStatus: { type: Boolean, default: null },
 
   // System Controlled
   isVerified: { type: Boolean, default: false },
@@ -54,7 +54,7 @@ const BaseInstituteSchema = new mongoose.Schema({
 const Institute = mongoose.model("Institute", BaseInstituteSchema);
 
 // ==============================
-// SCHOOL SCHEMA (unchanged)
+// SCHOOL SCHEMA - UPDATED (added board field)
 // ==============================
 const School = Institute.discriminator(
   "school",
@@ -71,12 +71,13 @@ const School = Institute.discriminator(
       ],
       required: true
     },
-    grades: [String]
+    grades: [{ type: String }],
+    board: { type: String, required: true } // Added board field
   })
 );
 
 // ==============================
-// COLLEGE SCHEMA (updated)
+// COLLEGE SCHEMA (unchanged)
 // ==============================
 const College = Institute.discriminator(
   "college",
@@ -88,12 +89,17 @@ const College = Institute.discriminator(
 );
 
 // ==============================
-// UNIVERSITY SCHEMA (updated)
+// UNIVERSITY SCHEMA (unchanged - correct)
 // ==============================
+const FacultySchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true, maxlength: 150 },
+  departments: [{ type: String, trim: true, maxlength: 100 }]
+});
+
 const University = Institute.discriminator(
   "university",
   new mongoose.Schema({
-    faculties: [{ type: String, trim: true, maxlength: 150 }],
+    faculties: [FacultySchema],
     programs: [{ type: String, trim: true, maxlength: 100 }],
     researchCenters: [{ type: String, trim: true, maxlength: 150 }]
   })

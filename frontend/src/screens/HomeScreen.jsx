@@ -20,30 +20,60 @@ const defaultAvatars = [
 ];
 
 export default function HomeScreen({ navigation }) {
-  const [user, setUser] = useState(null);
+  const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async () => {
+  const fetchStudentData = async () => {
     try {
-      const userId = await AsyncStorage.getItem("userId");
-      console.log("HomeScreen - User ID:", userId);
+      // Get student data from AsyncStorage (set during login)
+      const studentId = await AsyncStorage.getItem("studentId");
+      const studentName = await AsyncStorage.getItem("studentName");
+      const studentGrade = await AsyncStorage.getItem("studentGrade");
+      const studentRollNumber = await AsyncStorage.getItem("studentRollNumber");
+      
+      console.log("HomeScreen - Student data from storage:", {
+        studentId,
+        studentName,
+        studentGrade,
+        studentRollNumber
+      });
 
-      if (!userId) {
-        console.log("No user ID found");
-        // Set default user data when no userId is found
-        const defaultUser = {
-          fullName: "User",
-          points: 2571,
-          rank: 3,
-          photo: defaultAvatars[0]
+      if (studentId && studentName) {
+        // Use the data stored during login
+        const studentData = {
+          id: studentId,
+          name: studentName,
+          grade: studentGrade,
+          rollNumber: studentRollNumber,
+          photo: defaultAvatars[0] // Default avatar for students
         };
-        setUser(defaultUser);
-        setLoading(false);
+        
+        setStudent(studentData);
+        await AsyncStorage.setItem("studentData", JSON.stringify(studentData));
+      } else {
+        // Fallback: Try to fetch from API if storage data is missing
+        await fetchStudentFromAPI();
+      }
+
+    } catch (error) {
+      console.log("HomeScreen - Storage fetch error:", error);
+      // Fallback to API fetch
+      await fetchStudentFromAPI();
+    }
+
+    setLoading(false);
+  };
+
+  const fetchStudentFromAPI = async () => {
+    try {
+      const studentId = await AsyncStorage.getItem("studentId");
+      if (!studentId) {
+        console.log("No student ID found");
         return;
       }
 
-      const API_URL = `http://10.168.69.133:5000/api/user/${userId}`;
-      console.log("HomeScreen - Fetching from:", API_URL);
+      const API_URL = `http://10.168.69.133:5000/api/student/${studentId}`;
+      console.log("HomeScreen - Fetching student from:", API_URL);
 
       const res = await fetch(API_URL);
       
@@ -52,70 +82,59 @@ export default function HomeScreen({ navigation }) {
       }
       
       const data = await res.json();
-      console.log("HomeScreen - User data:", data);
+      console.log("HomeScreen - Student API data:", data);
 
-      // Set default avatar if none exists
-      const userData = {
-        ...data,
-        photo: data.photo || defaultAvatars[0],
-        points: data.points || 2571,
-        rank: data.rank || 3,
-        fullName: data.fullName || "User"
-      };
-
-      setUser(userData);
-      
-      // Store user data locally for quick access
-      await AsyncStorage.setItem("userData", JSON.stringify(userData));
+      if (data) {
+        // Set default avatar if none exists
+        if (!data.photo) {
+          data.photo = defaultAvatars[0];
+        }
+        setStudent(data);
+        await AsyncStorage.setItem("studentData", JSON.stringify(data));
+      }
 
     } catch (error) {
-      console.log("HomeScreen - Fetch error:", error);
-      // Try to get from local storage as fallback
+      console.log("HomeScreen - API fetch error:", error);
+      // Final fallback: try to get from local storage
       try {
-        const localUser = await AsyncStorage.getItem("userData");
-        if (localUser) {
-          setUser(JSON.parse(localUser));
-        } else {
-          // Set default user data if nothing in local storage
-          setUser({
-            fullName: "User",
-            points: 2571,
-            rank: 3,
-            photo: defaultAvatars[0]
-          });
+        const localStudent = await AsyncStorage.getItem("studentData");
+        if (localStudent) {
+          setStudent(JSON.parse(localStudent));
         }
       } catch (localError) {
         console.log("Local storage error:", localError);
-        // Set default user data as final fallback
-        setUser({
-          fullName: "User",
+        // Set default student data as final fallback
+        setStudent({
+          name: "Student",
           points: 2571,
           rank: 3,
-          photo: defaultAvatars[0]
+          photo: defaultAvatars[0],
+          grade: "N/A",
+          rollNumber: "N/A"
         });
       }
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchUserData();
+      fetchStudentData();
     });
 
     // Initial fetch
-    fetchUserData();
+    fetchStudentData();
 
     return unsubscribe;
   }, [navigation]);
 
-  // Safe user data with fallbacks
-  const userData = user || {
-    fullName: "User",
+  // Safe student data with fallbacks
+  const studentData = student || {
+    name: "Student",
     points: 2571,
     rank: 3,
-    photo: defaultAvatars[0]
+    photo: defaultAvatars[0],
+    grade: "N/A",
+    rollNumber: "N/A"
   };
 
   return (
@@ -147,13 +166,12 @@ export default function HomeScreen({ navigation }) {
             ) : (
               <Image
                 source={{
-                  uri: userData.photo
+                  uri: studentData.photo
                 }}
                 style={styles.profileImage}
                 defaultSource={{ uri: defaultAvatars[0] }}
                 onError={(e) => {
                   console.log("Image load error, using default");
-                  // Fallback to default avatar if image fails to load
                   e.nativeEvent.target.setNativeProps({
                     source: { uri: defaultAvatars[0] }
                   });
@@ -176,12 +194,17 @@ export default function HomeScreen({ navigation }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.welcomeText}>Welcome,</Text>
             <Text style={styles.userName}>
-              {loading ? "Loading..." : userData.fullName}
+              {loading ? "Loading..." : studentData.name}
             </Text>
+            {studentData?.grade && (
+              <Text style={styles.studentInfo}>
+                Grade {studentData.grade} • Roll No: {studentData.rollNumber}
+              </Text>
+            )}
           </View>
 
           <View style={styles.rankBadge}>
-            <Text style={styles.rankText}>RANK #{userData.rank}</Text>
+            <Text style={styles.rankText}>RANK #{studentData.rank}</Text>
           </View>
 
           <Text style={styles.characterEmoji}>🌺</Text>
@@ -214,7 +237,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.ecoPointsRow}>
             <Text style={styles.coinIcon}>🪙</Text>
             <Text style={styles.ecoPointsText}>
-              {userData.points} Eco-Points Collected
+              {studentData.points} Eco-Points Collected
             </Text>
           </View>
         </View>
@@ -396,6 +419,7 @@ const styles = StyleSheet.create({
   },
   welcomeText: { fontSize: 14, color: '#666' },
   userName: { fontSize: 18, fontWeight: 'bold', color: '#000', marginTop: 2 },
+  studentInfo: { fontSize: 12, color: '#666', marginTop: 4 },
   rankBadge: {
     backgroundColor: '#FF9533',
     paddingHorizontal: 15,
