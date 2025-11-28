@@ -29,6 +29,15 @@ export default function HomeScreen({ navigation }) {
       console.log("HomeScreen - User ID:", userId);
 
       if (!userId) {
+        console.log("No user ID found");
+        // Set default user data when no userId is found
+        const defaultUser = {
+          fullName: "User",
+          points: 2571,
+          rank: 3,
+          photo: defaultAvatars[0]
+        };
+        setUser(defaultUser);
         setLoading(false);
         return;
       }
@@ -46,14 +55,18 @@ export default function HomeScreen({ navigation }) {
       console.log("HomeScreen - User data:", data);
 
       // Set default avatar if none exists
-      if (data && !data.photo) {
-        data.photo = defaultAvatars[0];
-      }
+      const userData = {
+        ...data,
+        photo: data.photo || defaultAvatars[0],
+        points: data.points || 2571,
+        rank: data.rank || 3,
+        fullName: data.fullName || "User"
+      };
 
-      setUser(data);
+      setUser(userData);
       
       // Store user data locally for quick access
-      await AsyncStorage.setItem("userData", JSON.stringify(data));
+      await AsyncStorage.setItem("userData", JSON.stringify(userData));
 
     } catch (error) {
       console.log("HomeScreen - Fetch error:", error);
@@ -62,9 +75,24 @@ export default function HomeScreen({ navigation }) {
         const localUser = await AsyncStorage.getItem("userData");
         if (localUser) {
           setUser(JSON.parse(localUser));
+        } else {
+          // Set default user data if nothing in local storage
+          setUser({
+            fullName: "User",
+            points: 2571,
+            rank: 3,
+            photo: defaultAvatars[0]
+          });
         }
       } catch (localError) {
         console.log("Local storage error:", localError);
+        // Set default user data as final fallback
+        setUser({
+          fullName: "User",
+          points: 2571,
+          rank: 3,
+          photo: defaultAvatars[0]
+        });
       }
     }
 
@@ -81,6 +109,14 @@ export default function HomeScreen({ navigation }) {
 
     return unsubscribe;
   }, [navigation]);
+
+  // Safe user data with fallbacks
+  const userData = user || {
+    fullName: "User",
+    points: 2571,
+    rank: 3,
+    photo: defaultAvatars[0]
+  };
 
   return (
     <View style={styles.container}>
@@ -111,7 +147,7 @@ export default function HomeScreen({ navigation }) {
             ) : (
               <Image
                 source={{
-                  uri: user?.photo || defaultAvatars[0]
+                  uri: userData.photo
                 }}
                 style={styles.profileImage}
                 defaultSource={{ uri: defaultAvatars[0] }}
@@ -140,12 +176,12 @@ export default function HomeScreen({ navigation }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.welcomeText}>Welcome,</Text>
             <Text style={styles.userName}>
-              {loading ? "Loading..." : (user?.fullName || "User")}
+              {loading ? "Loading..." : userData.fullName}
             </Text>
           </View>
 
           <View style={styles.rankBadge}>
-            <Text style={styles.rankText}>RANK #{user?.rank || 3}</Text>
+            <Text style={styles.rankText}>RANK #{userData.rank}</Text>
           </View>
 
           <Text style={styles.characterEmoji}>🌺</Text>
@@ -178,7 +214,7 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.ecoPointsRow}>
             <Text style={styles.coinIcon}>🪙</Text>
             <Text style={styles.ecoPointsText}>
-              {user?.points || 2571} Eco-Points Collected
+              {userData.points} Eco-Points Collected
             </Text>
           </View>
         </View>
