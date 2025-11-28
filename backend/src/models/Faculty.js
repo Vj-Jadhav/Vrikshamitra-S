@@ -51,7 +51,7 @@ const facultySchema = new mongoose.Schema({
   // OTP and verification fields
   requiresPasswordSetup: {
     type: Boolean,
-    default: true
+    default: false
   },
   otp: {
     code: {

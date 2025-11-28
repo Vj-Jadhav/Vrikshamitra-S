@@ -44,7 +44,7 @@ export default function WelcomeScreen({ navigation }) {
         {/* Start Button */}
         <TouchableOpacity
           style={styles.gameButton}
-          onPress={() => navigation.navigate('Register')}
+          onPress={() => navigation.navigate('Login')}
           activeOpacity={0.8}
         >
           <Text style={styles.gameButtonText}>Let’s Start!</Text>
