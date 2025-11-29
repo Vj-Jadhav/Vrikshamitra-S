@@ -19,25 +19,6 @@ export default function GovernmentDashboard() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
 
-const [decodedToken, setDecodedToken] = useState(null);
-const [token, setToken] = useState(null);
-
-useEffect(() => {
-  const tk = localStorage.getItem("token");
-  setToken(tk);
-
-  if (tk) {
-    try {
-      const payload = JSON.parse(atob(tk.split('.')[1]));
-      console.log("Decoded payload:", payload);
-      setDecodedToken(payload);   // ⬅️ Save it for use
-    } catch (err) {
-      console.error("Failed to decode token:", err);
-    }
-  }
-}, []);
-
-
   const [adminData, setAdminData] = useState({
     name: user?.name || "Government Admin",
     department: user?.department || "Education Department",
@@ -221,9 +202,7 @@ const fetchAdminAnalytics = async () => {
     case "users":
       return <UserManagement />;
     case "challenges": // Add this case
-      return <ChallengeManagement  token={token} 
-      adminId={decodedToken?.id} 
-      role={decodedToken?.role} />;
+      return <ChallengeManagement />;
     case "registrations":
       return <RegistrationAnalytics />;
     case "reports":

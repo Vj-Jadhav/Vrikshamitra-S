@@ -150,7 +150,8 @@ export default function InstituteDashboard() {
         );
     }
   };
-return (
+
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <InstituteHeader instituteData={instituteData} stats={stats} />
       

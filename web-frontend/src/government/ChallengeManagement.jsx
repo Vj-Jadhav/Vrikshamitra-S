@@ -15,9 +15,9 @@ import {
   Calendar,
   Star
 } from 'lucide-react';
-import { API, createChallenge, updateChallenge, getChallenges, deleteChallenge  } from "../utils/api";
+import { API, createChallenge, updateChallenge, getChallenges  } from "../utils/api";
 
-const ChallengeManagement = ({ token, adminId }) => {
+const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -174,13 +174,13 @@ const handleSubmit = async (e) => {
   try {
     const payload = {
       ...formData,
-      createdBy: adminId
+      createdBy: "000000000000000000000001" // temporary admin ID
     };
 
     if (editingChallenge) {
       await updateChallenge(editingChallenge._id, payload);
     } else {
-      await createChallenge(payload,token);
+      await createChallenge(payload);
     }
 
     setIsModalOpen(false);
@@ -220,18 +220,16 @@ const handleSubmit = async (e) => {
     setIsModalOpen(true);
   };
 
-const handleDelete = async (challengeId) => {
-  if (window.confirm('Are you sure you want to delete this challenge?')) {
-    try {
-      await deleteChallenge(challengeId); // use your API helper
-      fetchChallenges(); // refresh the list
-    } catch (error) {
-      console.error('Error deleting challenge:', error);
-      alert('Failed to delete challenge. Please try again.');
+  const handleDelete = async (challengeId) => {
+    if (window.confirm('Are you sure you want to delete this challenge?')) {
+      try {
+        await API.delete(`/government/challenges/${challengeId}`);
+        fetchChallenges();
+      } catch (error) {
+        console.error('Error deleting challenge:', error);
+      }
     }
-  }
-};
-
+  };
 
   const handleApproveSubmission = async (submissionId) => {
     try {

@@ -9,9 +9,7 @@ import {
   FileText,
   LogOut,
   School,
-  Network, 
-  Target, // NEW
-  Send // NEW
+  Network
 } from "lucide-react";
 
 const InstituteSidebar = ({
@@ -35,7 +33,7 @@ const InstituteSidebar = ({
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
- return (
+  return (
     <aside className="w-72 bg-white shadow-2xl border-r-2 border-blue-100 flex flex-col sticky top-0 h-screen">
       {/* Sidebar Header */}
       <div className="p-6 border-b-2 border-blue-100">
