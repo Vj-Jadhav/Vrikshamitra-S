@@ -1,3 +1,4 @@
+import mongoose from "mongoose";     // if using ES modules
 import { Institute,School, College, University } from "../models/BaseInstituteSchema.js";
 
 export const getAllInstitutes = async (req, res) => {

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { Search, Moon, Sun, ChevronRight, UserPlus } from "lucide-react";
 
 // Simple Modal component
@@ -85,9 +84,67 @@ export default function Home() {
   ];
 
   const stats = [
-    { value: 12_450, label: "EcoPoints distributed" },
-    { value: 2_300, label: "Tasks completed" },
+    { value: 12450, label: "EcoPoints distributed" },
+    { value: 2300, label: "Tasks completed" },
     { value: 560, label: "Active schools" },
+  ];
+
+  const topInstitutions = [
+    { 
+      rank: 1, 
+      name: "Green Valley International School", 
+      points: 8450, 
+      students: 342, 
+      tasksCompleted: 156,
+      city: "Mumbai",
+      badge: "🥇",
+      color: "yellow",
+      trend: "+12%"
+    },
+    { 
+      rank: 2, 
+      name: "Eco Warriors College", 
+      points: 7820, 
+      students: 289, 
+      tasksCompleted: 142,
+      city: "Pune",
+      badge: "🥈",
+      color: "gray",
+      trend: "+8%"
+    },
+    { 
+      rank: 3, 
+      name: "Sustainable Future Academy", 
+      points: 7340, 
+      students: 256, 
+      tasksCompleted: 128,
+      city: "Bangalore",
+      badge: "🥉",
+      color: "orange",
+      trend: "+15%"
+    },
+    { 
+      rank: 4, 
+      name: "Nature's Pride School", 
+      points: 6890, 
+      students: 234, 
+      tasksCompleted: 119,
+      city: "Delhi",
+      badge: "4",
+      color: "blue",
+      trend: "+5%"
+    },
+    { 
+      rank: 5, 
+      name: "Earth Savers Institute", 
+      points: 6450, 
+      students: 198, 
+      tasksCompleted: 102,
+      city: "Chennai",
+      badge: "5",
+      color: "green",
+      trend: "+10%"
+    },
   ];
 
   // Search + filter for sample challenges
@@ -138,13 +195,13 @@ export default function Home() {
             {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
           </button>
 
-          <Link to="/login" className="hidden md:inline text-gray-700 hover:text-green-600 font-medium">
+          <a href="#login" className="hidden md:inline text-gray-700 hover:text-green-600 font-medium">
             Login
-          </Link>
-          <Link to="/register" className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl shadow hover:scale-105 transition-transform">
+          </a>
+          <a href="#register" className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-xl shadow hover:scale-105 transition-transform">
             <UserPlus size={16} />
             <span className="font-medium">Get Started</span>
-          </Link>
+          </a>
         </div>
       </nav>
 
@@ -159,9 +216,9 @@ export default function Home() {
           </p>
 
           <div className="flex gap-4">
-            <Link to="/register" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform">
+            <a href="#register" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform">
               Start Your Journey
-            </Link>
+            </a>
             <button onClick={() => document.getElementById('features')?.scrollIntoView({behavior:'smooth'})} className="border-2 border-green-500 text-green-700 px-6 py-3 rounded-xl hover:bg-green-50 transition-transform">
               Explore Features
             </button>
@@ -176,7 +233,7 @@ export default function Home() {
         </div>
 
         <div className="relative mt-10 md:mt-0">
-          <div className="w-72 h-72 md:w-96 md:h-96 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl animate-float">
+          <div className="w-72 h-72 md:w-96 md:h-96 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
             <img src="https://cdn-icons-png.flaticon.com/512/414/414927.png" alt="environment" className="w-64 h-64 object-contain" />
           </div>
         </div>
@@ -263,12 +320,183 @@ export default function Home() {
                 <div className="text-3xl mb-3">➕</div>
                 <h4 className="font-semibold mb-1">Create a Challenge</h4>
                 <p className="text-sm text-gray-500 mb-3">Teachers & admins can create tasks for their students</p>
-                <Link to="/create" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium">
+                <a href="#create" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium">
                   Create
-                </Link>
+                </a>
               </div>
             </div>
 
+          </div>
+        </div>
+      </section>
+
+      {/* Leaderboard Section */}
+      <section className="py-16 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="text-center mb-10">
+            <h3 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              🏆 Top Institutions Leaderboard
+            </h3>
+            <p className="text-gray-600 max-w-2xl mx-auto mt-2">
+              Celebrating schools and colleges leading the environmental revolution
+            </p>
+          </div>
+
+          {/* Leaderboard Stats Overview */}
+          <div className="grid grid-cols-3 gap-4 mb-8 max-w-3xl mx-auto">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-indigo-600">560+</div>
+              <div className="text-xs text-gray-600">Active Institutions</div>
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-purple-600">45K+</div>
+              <div className="text-xs text-gray-600">Students Engaged</div>
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 text-center shadow-sm">
+              <div className="text-2xl font-bold text-pink-600">2.3K+</div>
+              <div className="text-xs text-gray-600">Tasks Completed</div>
+            </div>
+          </div>
+
+          {/* Top 3 Podium */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            {/* 2nd Place */}
+            <div className="md:order-1 order-2 flex flex-col items-center">
+              <div className="w-full bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border-4 border-gray-300">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-4xl">{topInstitutions[1].badge}</div>
+                  <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                    {topInstitutions[1].trend}
+                  </div>
+                </div>
+                <div className="text-center mb-4">
+                  <div className="text-6xl font-bold text-gray-400 mb-2">2</div>
+                  <h4 className="font-bold text-lg mb-1">{topInstitutions[1].name}</h4>
+                  <p className="text-sm text-gray-500">{topInstitutions[1].city}</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">EcoPoints</span>
+                    <span className="font-bold text-indigo-600">{topInstitutions[1].points.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Students</span>
+                    <span className="font-semibold">{topInstitutions[1].students}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tasks Done</span>
+                    <span className="font-semibold">{topInstitutions[1].tasksCompleted}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 1st Place - Larger */}
+            <div className="md:order-2 order-1 flex flex-col items-center">
+              <div className="w-full bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-400 rounded-2xl shadow-2xl p-6 border-4 border-yellow-500 transform md:scale-110 md:-translate-y-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-5xl animate-bounce">{topInstitutions[0].badge}</div>
+                  <div className="text-xs bg-white text-green-700 px-2 py-1 rounded-full font-semibold">
+                    {topInstitutions[0].trend}
+                  </div>
+                </div>
+                <div className="text-center mb-4">
+                  <div className="text-7xl font-bold text-yellow-900 mb-2">1</div>
+                  <h4 className="font-bold text-xl mb-1 text-yellow-900">{topInstitutions[0].name}</h4>
+                  <p className="text-sm text-yellow-800">{topInstitutions[0].city}</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between text-yellow-900">
+                    <span>EcoPoints</span>
+                    <span className="font-bold">{topInstitutions[0].points.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-yellow-900">
+                    <span>Students</span>
+                    <span className="font-semibold">{topInstitutions[0].students}</span>
+                  </div>
+                  <div className="flex justify-between text-yellow-900">
+                    <span>Tasks Done</span>
+                    <span className="font-semibold">{topInstitutions[0].tasksCompleted}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3rd Place */}
+            <div className="md:order-3 order-3 flex flex-col items-center">
+              <div className="w-full bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all p-6 border-4 border-orange-300">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-4xl">{topInstitutions[2].badge}</div>
+                  <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">
+                    {topInstitutions[2].trend}
+                  </div>
+                </div>
+                <div className="text-center mb-4">
+                  <div className="text-6xl font-bold text-orange-400 mb-2">3</div>
+                  <h4 className="font-bold text-lg mb-1">{topInstitutions[2].name}</h4>
+                  <p className="text-sm text-gray-500">{topInstitutions[2].city}</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">EcoPoints</span>
+                    <span className="font-bold text-indigo-600">{topInstitutions[2].points.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Students</span>
+                    <span className="font-semibold">{topInstitutions[2].students}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Tasks Done</span>
+                    <span className="font-semibold">{topInstitutions[2].tasksCompleted}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Remaining Rankings */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+              <h4 className="text-white font-semibold text-lg">Full Rankings</h4>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {topInstitutions.slice(3).map((inst) => (
+                <div key={inst.rank} className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                      <span className="text-xl font-bold text-indigo-600">{inst.badge}</span>
+                    </div>
+                    <div className="flex-1">
+                      <h5 className="font-semibold text-gray-900">{inst.name}</h5>
+                      <p className="text-sm text-gray-500">{inst.city} • {inst.students} students</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <div className="font-bold text-indigo-600 text-lg">{inst.points.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500">EcoPoints</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-700">{inst.tasksCompleted}</div>
+                      <div className="text-xs text-gray-500">Tasks</div>
+                    </div>
+                    <div className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold">
+                      {inst.trend}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA in leaderboard */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 mb-4">Is your institution ready to join the leaderboard?</p>
+            <a href="#register" className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform font-semibold">
+              Register Your Institution
+              <ChevronRight size={18} />
+            </a>
           </div>
         </div>
       </section>
@@ -297,7 +525,7 @@ export default function Home() {
       <section className="py-12 bg-gradient-to-r from-green-600 to-emerald-700 text-white text-center">
         <h4 className="text-2xl font-bold mb-3">Ready to make a difference?</h4>
         <p className="mb-6">Join thousands of learners and start earning EcoPoints today.</p>
-        <Link to="/register" className="inline-block bg-white text-green-700 px-6 py-3 rounded-xl font-semibold shadow">Create Account</Link>
+        <a href="#register" className="inline-block bg-white text-green-700 px-6 py-3 rounded-xl font-semibold shadow">Create Account</a>
       </section>
 
       {/* Footer */}

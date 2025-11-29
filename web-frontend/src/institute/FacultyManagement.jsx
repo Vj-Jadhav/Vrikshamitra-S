@@ -5,8 +5,8 @@ import { addFaculty, getFacultyByInstitute, getInstituteById } from '../utils/ap
 
 const FacultyManagement = ({ instituteId }) => {
   const [faculty, setFaculty] = useState([]);
-  const [institute, setInstitute] = useState(null);
-  const [loading, setLoading] = useState(false);
+   const [loading, setLoading] = useState(false);
+   const [institute, setInstitute] = useState(null);  
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDept, setFilterDept] = useState('');
   const [filterFaculty, setFilterFaculty] = useState('');
@@ -78,7 +78,8 @@ const fetchInstitute = async () => {
     try {
       const payload = {
         ...newFaculty,
-        subjects: newFaculty.subjects.split(',').map(s => s.trim()).filter(s => s)
+        subjects: newFaculty.subjects.split(',').map(s => s.trim()).filter(s => s),
+        instituteType: institute?.instituteType
       };
 
       // Remove faculty field if not university

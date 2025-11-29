@@ -1,3 +1,4 @@
+import mongoose from "mongoose";     // if using ES modules
 import Challenge from "../models/Challenge.js";
 
 export const getChallenges = async (req, res) => {

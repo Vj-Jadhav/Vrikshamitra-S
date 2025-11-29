@@ -1,6 +1,6 @@
 // InstituteRegister.js
 import { useState } from "react";
-import { API } from "../utils/api";
+import { API, registerInstitute } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
@@ -213,7 +213,7 @@ const payload = {
       const res = await registerInstitute(payload);
       console.log(res);      
       
-      console.log("✅ Registration successful:", response.data);
+      console.log("✅ Registration successful:", res.data);
       alert("Institute registered successfully! You can now login.");
       navigate("/login");
       

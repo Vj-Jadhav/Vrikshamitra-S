@@ -11,7 +11,7 @@ import LearningModuleScreen from "./src/screens/LearningModuleScreen";
 import GamesScreen from "./src/screens/GamesScreen";
 import ChallengesScreen from "./src/screens/ChallengesScreen";
 
-// import Games from "./src/screens/Games.jsx";  
+import Games from "./src/screens/Games.jsx";  
 
 
 const Stack = createNativeStackNavigator();
@@ -20,7 +20,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        initialRouteName="Welcome"
+        initialRouteName="GarbageReport"
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -31,10 +31,8 @@ export default function App() {
         <Stack.Screen name="LearningModuleScreen" component={LearningModuleScreen} />
         <Stack.Screen name="GamesScreen" component={GamesScreen} />
         <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
-
-
-        
-        {/* <Stack.Screen name="Games" component={Games} /> */}
+ 
+        <Stack.Screen name="Games" component={Games} />
       </Stack.Navigator>
     </NavigationContainer>
   );

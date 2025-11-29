@@ -1,8 +1,11 @@
+import mongoose from "mongoose";     // if using ES modules
+
 import { Institute, School, College, University} from "../models/BaseInstituteSchema.js";
 import Challenge from "../models/Challenge.js";
 import ChallengeAssignment from "../models/ChallengeAssignment.js";
 import Faculty from "../models/Faculty.js";
 import Student from "../models/Student.js";
+import StudentChallengeProgress from "../models/StudentChallengeProgress.js";
 
 
 
@@ -10,31 +13,38 @@ import Student from "../models/Student.js";
 export const addFaculty = async (req, res) => {
   try {
     const { instituteId } = req.params;
-    const { name, email, phone, department, subjects } = req.body;
+    const { name, email, phone, department, subjects, instituteType } = req.body;
 
-    // Validate required fields
-    if (!name || !email || !department) {
-      return res.status(400).json({ message: "Name, Email, and Department are required." });
+    // BASIC validation for name & email
+    if (!name || !email) {
+      return res.status(400).json({ message: "Name and Email are required." });
+    }
+
+    // CONDITIONAL validation based on instituteType
+    if (instituteType !== "school" && !department) {
+      return res.status(400).json({ message: "Department is required for this institute type." });
     }
 
     // Check if institute exists
     const institute = await Institute.findById(instituteId);
-    if (!institute) return res.status(404).json({ message: "Institute not found" });
+    if (!institute) {
+      return res.status(404).json({ message: "Institute not found" });
+    }
 
     // Create new faculty
     const newFaculty = await Faculty.create({
       name,
       email,
       phone,
-      department,
-      subjects, // array expected
+      department: instituteType === "school" ? null : department,
+      subjects,
       instituteId
     });
 
     res.status(201).json(newFaculty);
   } catch (err) {
     console.error("Error adding faculty:", err);
-    res.status(500).json({ message: "Failed to add faculty error printend in console" });
+    res.status(500).json({ message: "Failed to add faculty" });
   }
 };
 

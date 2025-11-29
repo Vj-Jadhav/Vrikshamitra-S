@@ -25,12 +25,12 @@ export const registerInstitute = async (payload) => {
 
 // API helper functions
 export const addFaculty = async (instituteId, facultyData) => {
-  const response = await API.post(`/auth/${instituteId}/faculty`, facultyData);
+  const response = await API.post(`/institute/${instituteId}/faculty`, facultyData);
   return response.data;
 };
 
 export const getFacultyByInstitute = async (instituteId) => {
-  const response = await API.get(`/auth/${instituteId}/faculty`);
+  const response = await API.get(`/institute/${instituteId}/faculty`);
   return response.data;
 };
 
@@ -46,7 +46,7 @@ export const getInstituteById = async (id) => {
 
 export const addStudentsBulk = async (instituteId, students) => {
   try {
-    const response = await API.post(`/auth/bulk/${instituteId}`, { students });
+    const response = await API.post(`/institute/bulk/${instituteId}`, { students });
     return response.data;
   } catch (error) {
     throw error;

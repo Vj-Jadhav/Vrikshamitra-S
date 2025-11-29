@@ -30,7 +30,7 @@ const facultySchema = new mongoose.Schema({
   }, // Only for University type
   department: { 
     type: String, 
-    required: true 
+    required: false 
   },
   subjects: [String],
   joinDate: { 
