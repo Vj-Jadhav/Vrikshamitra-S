@@ -10,7 +10,7 @@ import Header from "../Student/Header";
 import DashboardContent from "../Student/DashboardContent";
 import ChallengesContent from "../Student/ChallengesContent";
 import LearningContent from "../Student/LearningContent";
-import Games from "../Student/GamesPage.jsx";
+// import Games from "../Student/GamesPage.jsx";
 import LibraryContent from "../Student/LibraryContent.jsx";
 import LeaderboardContent from "../Student/LeaderboardContent";
 import RewardsContent from "../Student/RewardsContent";

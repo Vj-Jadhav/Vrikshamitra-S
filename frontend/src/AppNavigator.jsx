@@ -13,7 +13,7 @@ import LearningModuleScreen from './screens/LearningModuleScreen';
 import GamesScreen from './screens/GamesScreen';
 import ChallengesScreen from './screens/ChallengesScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import NotificationsScreen from './screens/NotificationsScreen';
+import GarbageReport from './screens/GarbageReport.jsx';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,6 +34,7 @@ export default function AppNavigator() {
         <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
+        <Stack.Screen name="GarbageReport" component={GarbageReport} />
       </Stack.Navigator>
     </NavigationContainer>
   );

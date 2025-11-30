@@ -11,8 +11,9 @@ import LeaderboardScreen from "./src/screens/LeaderboardScreen";       // 👈 A
 import LearningModuleScreen from "./src/screens/LearningModuleScreen";  
 import GamesScreen from "./src/screens/GamesScreen";
 import ChallengesScreen from "./src/screens/ChallengesScreen";
+import GarbageReport from './src/screens/GarbageReport.jsx';
 
-import Games from "./src/screens/Games.jsx";  
+// import Games from "./src/screens/Games.jsx";  
 
 
 const Stack = createNativeStackNavigator();
@@ -21,7 +22,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator 
-        initialRouteName="GarbageReport"
+        initialRouteName="Welcome"
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
@@ -31,9 +32,9 @@ export default function App() {
         <Stack.Screen name="LeaderboardScreen" component={LeaderboardScreen} />
         <Stack.Screen name="LearningModuleScreen" component={LearningModuleScreen} />
         <Stack.Screen name="GamesScreen" component={GamesScreen} />
-        <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
+        <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} /> 
  
-        <Stack.Screen name="Games" component={Games} />
+        <Stack.Screen name="GarbageReport" component={GarbageReport} />
       </Stack.Navigator>
     </NavigationContainer>
   );
