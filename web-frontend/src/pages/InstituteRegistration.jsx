@@ -148,71 +148,73 @@ export default function InstituteRegister() {
 
     setLoading(true);
     try {
-      // In your handleSubmit function in InstituteRegister.js
-const payload = {
-  // Basic Info
-  instituteName: form.instituteName.trim(),
-  instituteCode: form.instituteCode.trim(),
-  email: form.email.trim(),
-  password: form.password,
-  instituteType: form.instituteType,
-  accreditation: form.accreditation?.trim() || "",
-  affiliation: form.affiliation?.trim() || "",
-  
-  // Contact Info
-  address: form.address.trim(),
-  city: form.city.trim(),
-  state: form.state.trim(),
-  country: form.country.trim(),
-  pincode: form.pincode.trim(),
-  phone: form.phone.trim(),
-  website: form.website?.trim() || "",
-  alternatePhone: form.alternatePhone?.trim() || "",
-  
-  // Institute Details
-  totalStudents: form.totalStudents ? parseInt(form.totalStudents) : 0,
-  totalStaff: form.totalStaff ? parseInt(form.totalStaff) : 0,
-  totalFaculty: form.totalFaculty ? parseInt(form.totalFaculty) : 0,
-  establishedYear: form.establishedYear ? parseInt(form.establishedYear) : null,
-  campusArea: form.campusArea?.trim() || "",
-  infrastructure: form.infrastructure || [],
-  
-  // Principal Details
-  principalName: form.principalName.trim(),
-  principalEmail: form.principalEmail?.trim() || "",
-  principalPhone: form.principalPhone?.trim() || "",
-  principalQualification: form.principalQualification?.trim() || "",
-  principalExperience: form.principalExperience?.trim() || "",
-  
-  // Academic Details - Send as array
-  academicSession: form.academicSession || "",
-  workingDays: form.workingDays || [],
+      // Create the payload for registration
+      const payload = {
+        // Basic Info
+        instituteName: form.instituteName.trim(),
+        instituteCode: form.instituteCode.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        instituteType: form.instituteType,
+        accreditation: form.accreditation?.trim() || "",
+        affiliation: form.affiliation?.trim() || "",
+        
+        // Contact Info
+        address: form.address.trim(),
+        city: form.city.trim(),
+        state: form.state.trim(),
+        country: form.country.trim(),
+        pincode: form.pincode.trim(),
+        phone: form.phone.trim(),
+        website: form.website?.trim() || "",
+        alternatePhone: form.alternatePhone?.trim() || "",
+        
+        // Institute Details
+        totalStudents: form.totalStudents ? parseInt(form.totalStudents) : 0,
+        totalStaff: form.totalStaff ? parseInt(form.totalStaff) : 0,
+        totalFaculty: form.totalFaculty ? parseInt(form.totalFaculty) : 0,
+        establishedYear: form.establishedYear ? parseInt(form.establishedYear) : null,
+        campusArea: form.campusArea?.trim() || "",
+        infrastructure: form.infrastructure || [],
+        
+        // Principal Details
+        principalName: form.principalName.trim(),
+        principalEmail: form.principalEmail?.trim() || "",
+        principalPhone: form.principalPhone?.trim() || "",
+        principalQualification: form.principalQualification?.trim() || "",
+        principalExperience: form.principalExperience?.trim() || "",
+        
+        // Academic Details - Send as array
+        academicSession: form.academicSession || "",
+        workingDays: form.workingDays || [],
 
-  // Type-specific data
-  ...(form.instituteType === "school" && {
-    schoolLevel: form.schoolLevel,
-    grades: form.grades || [],
-    board: form.board
-  }),
-  ...(form.instituteType === "college" && {
-    departments: form.departments || [],
-    courses: form.courses || [],
-    universityAffiliated: form.universityAffiliated?.trim() || ""
-  }),
-  ...(form.instituteType === "university" && {
-    faculties: (form.faculties || []).map(faculty => ({
-      name: faculty.name,
-      departments: faculty.departments || []
-    })),
-    programs: form.programs || [],
-    researchCenters: form.researchCenters || []
-  })
-};
+        // Type-specific data
+        ...(form.instituteType === "school" && {
+          schoolLevel: form.schoolLevel,
+          grades: form.grades || [],
+          board: form.board
+        }),
+        ...(form.instituteType === "college" && {
+          departments: form.departments || [],
+          courses: form.courses || [],
+          universityAffiliated: form.universityAffiliated?.trim() || ""
+        }),
+        ...(form.instituteType === "university" && {
+          faculties: (form.faculties || []).map(faculty => ({
+            name: faculty.name,
+            departments: faculty.departments || []
+          })),
+          programs: form.programs || [],
+          researchCenters: form.researchCenters || []
+        })
+      };
 
       console.log("📤 Sending registration payload:", payload);
-      const response = await API.post("/auth/institute-register", payload);
       
+      // FIXED: Use API instance to make the registration request
+      const response = await API.post("/api/institute/register", payload);
       console.log("✅ Registration successful:", response.data);
+      
       alert("Institute registered successfully! You can now login.");
       navigate("/login");
       

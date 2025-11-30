@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, GraduationCap, Upload, Download, Building, School, Users } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { addStudentsBulk, getInstituteById, getStudentsByInstitute } from '../utils/api';
+import { addStudent, addStudentsBulk, getInstituteById, getStudentsByInstitute } from '../utils/api';
 
 const StudentManagement = ({ instituteId }) => {
   const [students, setStudents] = useState([]);
@@ -66,6 +66,7 @@ const StudentManagement = ({ instituteId }) => {
     try {
       const data = await getStudentsByInstitute(instituteId);
       setStudents(data);
+      console.log('Fetched students:', data); // Debug log
     } catch (error) {
       console.error("Error fetching students:", error);
     } finally {
@@ -80,7 +81,7 @@ const StudentManagement = ({ instituteId }) => {
 
     switch (institute?.instituteType) {
       case 'university':
-        instituteSpecificFields = ['faculty', 'department', 'enrollmentNumber', 'batch']; // Added batch
+        instituteSpecificFields = ['faculty', 'department', 'enrollmentNumber', 'batch'];
         break;
       case 'college':
         instituteSpecificFields = ['department', 'program'];
@@ -122,13 +123,19 @@ const StudentManagement = ({ instituteId }) => {
         delete payload.section;
       }
 
-      // TODO: Add API call for single student
-      // const res = await addStudent(instituteId, payload);
-      // setStudents(prev => [...prev, res]);
+      // Use the new API call for single student
+      const response = await addStudent(instituteId, payload);
+      
+      // Update local state with the new student
+      const newStudentData = response.data || response;
+      setStudents(prev => [...prev, newStudentData]);
       
       setShowAddModal(false);
       resetNewStudent();
-      fetchStudents(); // Refresh the list
+      
+      // Optional: Refresh from server to ensure consistency
+      // fetchStudents();
+      
     } catch (err) {
       console.error("Failed to add student:", err);
       alert(err.response?.data?.message || "Failed to add student");
@@ -253,7 +260,10 @@ const StudentManagement = ({ instituteId }) => {
     try {
       setUploadStatus('Saving students to server...');
       const savedStudents = await addStudentsBulk(instituteId, newStudents);
+      
+      // Update local state with the new students
       setStudents(prev => [...prev, ...savedStudents]);
+      
       setUploadStatus(`Successfully added ${savedStudents.length} students`);
       setShowCSVModal(false);
       setCsvData([]);
@@ -270,10 +280,10 @@ const StudentManagement = ({ instituteId }) => {
     
     switch (institute?.instituteType) {
       case 'university':
-        headers.push('faculty', 'department', 'enrollmentNumber', 'academicYear', 'program', 'batch'); // Added batch
+        headers.push('faculty', 'department', 'enrollmentNumber', 'academicYear', 'program', 'batch');
         break;
       case 'college':
-        headers.push('department','enrollmentNumber', 'program', 'semester', 'batch'); // Added batch
+        headers.push('department','enrollmentNumber', 'program', 'semester', 'batch');
         break;
       case 'school':
         headers.push('grade', 'batch', 'section','enrollmentNumber');
@@ -363,6 +373,11 @@ const StudentManagement = ({ instituteId }) => {
 
   return (
     <div className="space-y-6">
+      {/* Debug info - remove in production */}
+      <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+        Debug: {students.length} students loaded | Institute: {instituteId}
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Student Management</h1>

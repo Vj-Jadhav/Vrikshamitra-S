@@ -19,6 +19,7 @@ const FacultyManagement = ({ instituteId }) => {
     department: '',
     subjects: ''
   });
+  const [addingFaculty, setAddingFaculty] = useState(false);
 
   // Fetch institute details and faculty list
   useEffect(() => {
@@ -28,31 +29,29 @@ const FacultyManagement = ({ instituteId }) => {
     }
   }, [instituteId]);
 
-  
-const fetchInstitute = async () => {
-  try {
-    console.log("Calling API with ID:", instituteId);
-
-    const data = await getInstituteById(instituteId);
-
-    console.log("API returned:", data);
-
-    setInstitute(data.data);
-
-    console.log("State updated:", data);
-  } catch (error) {
-    console.error("Error fetching institute:", error);
-  }
-};
-
+  const fetchInstitute = async () => {
+    try {
+      console.log("🔍 Fetching institute with ID:", instituteId);
+      const data = await getInstituteById(instituteId);
+      console.log("🏫 Institute data:", data);
+      setInstitute(data.data || data);
+    } catch (error) {
+      console.error("❌ Error fetching institute:", error);
+      alert('Failed to load institute details');
+    }
+  };
 
   const fetchFaculty = async () => {
     setLoading(true);
     try {
+      console.log("🔍 Fetching faculty for institute:", instituteId);
       const data = await getFacultyByInstitute(instituteId);
-      setFaculty(data);
+      console.log("👨‍🏫 Faculty data:", data);
+      setFaculty(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching faculty:", error);
+      console.error("❌ Error fetching faculty:", error);
+      setFaculty([]);
+      alert('Failed to load faculty list');
     } finally {
       setLoading(false);
     }
@@ -67,7 +66,6 @@ const fetchInstitute = async () => {
     } else if (institute?.instituteType === 'college') {
       requiredFields.push('department');
     }
-    // School doesn't require department
 
     const missingFields = requiredFields.filter(field => !newFaculty[field]);
     if (missingFields.length > 0) {
@@ -75,30 +73,68 @@ const fetchInstitute = async () => {
       return;
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newFaculty.email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    setAddingFaculty(true);
+    
     try {
+      console.log('📝 Preparing faculty data...');
+      
       const payload = {
-        ...newFaculty,
+        name: newFaculty.name.trim(),
+        email: newFaculty.email.trim(),
+        phone: newFaculty.phone.trim(),
         subjects: newFaculty.subjects.split(',').map(s => s.trim()).filter(s => s)
       };
 
-      // Remove faculty field if not university
-      if (institute?.instituteType !== 'university') {
-        delete payload.faculty;
+      // Add faculty-specific fields based on institute type
+      if (institute?.instituteType === 'university') {
+        payload.faculty = newFaculty.faculty;
+        payload.department = newFaculty.department;
+      } else if (institute?.instituteType === 'college') {
+        payload.department = newFaculty.department;
+      } else if (institute?.instituteType === 'school' && newFaculty.department) {
+        payload.department = newFaculty.department;
       }
 
-      // Remove department if school and empty
-      if (institute?.instituteType === 'school' && !payload.department) {
-        delete payload.department;
-      }
+      console.log('📤 Sending payload:', payload);
+      console.log('🏫 Institute ID:', instituteId);
 
-      const res = await addFaculty(instituteId, payload);
+      // Add faculty
+      const response = await addFaculty(instituteId, payload);
+      console.log('✅ Faculty added successfully:', response);
 
-      setFaculty([...faculty, res]);
+      // Refresh the faculty list
+      await fetchFaculty();
+      
       setShowModal(false);
       resetNewFaculty();
+      
+      alert(`✅ ${institute?.instituteType === 'school' ? 'Teacher' : 'Faculty member'} added successfully!`);
     } catch (err) {
-      console.error("Failed to add faculty:", err);
-      alert(err.response?.data?.message || "Failed to add faculty");
+      console.error('❌ Failed to add faculty:', err);
+      
+      // Enhanced error handling
+      if (err.response) {
+        // Server responded with error status
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error ||
+                            `Server error: ${err.response.status}`;
+        alert(`Failed to add faculty: ${errorMessage}`);
+      } else if (err.request) {
+        // Request was made but no response received
+        alert('Network error: Could not connect to server. Please check if the server is running.');
+      } else {
+        // Something else happened
+        alert('Failed to add faculty: ' + err.message);
+      }
+    } finally {
+      setAddingFaculty(false);
     }
   };
 
@@ -115,7 +151,7 @@ const fetchInstitute = async () => {
 
   // Filter faculty based on search and filters
   const filteredFaculty = faculty.filter(fac =>
-    fac.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    fac.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
     (filterDept === '' || fac.department === filterDept) &&
     (filterFaculty === '' || fac.faculty === filterFaculty)
   );
@@ -126,7 +162,7 @@ const fetchInstitute = async () => {
 
   // Get available faculties from institute data for university
   const universityFaculties = institute?.instituteType === 'university' 
-    ? institute.faculties?.map(f => f.name) || []
+    ? (institute.faculties?.map(f => f.name) || [])
     : [];
 
   // Get available departments based on institute type
@@ -180,9 +216,17 @@ const fetchInstitute = async () => {
           />
         );
       default:
-        return <div>Loading institute type...</div>;
+        return <div className="text-center py-4">Loading institute type...</div>;
     }
   };
+
+  if (loading && faculty.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg text-gray-600">Loading faculty data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -198,9 +242,11 @@ const fetchInstitute = async () => {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600"
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+          disabled={addingFaculty}
         >
-          <Plus size={20} /> Add Faculty
+          <Plus size={20} /> 
+          {addingFaculty ? 'Adding...' : `Add ${institute?.instituteType === 'school' ? 'Teacher' : 'Faculty'}`}
         </button>
       </div>
 
@@ -249,73 +295,34 @@ const fetchInstitute = async () => {
       </div>
 
       {/* Faculty Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredFaculty.map(fac => (
-          <div key={fac._id} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="font-bold text-lg text-gray-800">{fac.name}</h3>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {fac.faculty && (
-                    <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                      <Building size={12} /> {fac.faculty}
-                    </span>
-                  )}
-                  {fac.department && (
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                      <School size={12} /> {fac.department}
-                    </span>
-                  )}
-                  {institute?.instituteType === 'school' && (
-                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-                      <GraduationCap size={12} /> Teacher
-                    </span>
-                  )}
-                </div>
-              </div>
-              <span className={`px-2 py-1 rounded-full text-xs ${fac.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {fac.status}
-              </span>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail size={16} /><span className="text-sm">{fac.email}</span>
-              </div>
-              {fac.phone && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Phone size={16} /><span className="text-sm">{fac.phone}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mb-4">
-              <div className="flex items-center gap-2 text-gray-600 mb-2">
-                <BookOpen size={16} /><span className="text-sm font-medium">Subjects</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {fac.subjects?.map((subject, idx) => (
-                  <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">{subject}</span>
-                ))}
-                {(!fac.subjects || fac.subjects.length === 0) && (
-                  <span className="text-gray-400 text-xs">No subjects assigned</span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center text-sm text-gray-500">
-              <span>Joined: {new Date(fac.joinDate).toLocaleDateString()}</span>
-              <button className="text-blue-500 hover:text-blue-700 font-medium">View Profile</button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredFaculty.length === 0 && !loading && (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-          <Users className="mx-auto text-gray-300 mb-4" size={48} />
-          <div className="text-gray-500">No faculty members found</div>
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-lg text-gray-600">Loading faculty...</div>
         </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredFaculty.map(fac => (
+              <FacultyCard 
+                key={fac._id || fac.id} 
+                faculty={fac} 
+                instituteType={institute?.instituteType}
+              />
+            ))}
+          </div>
+
+          {filteredFaculty.length === 0 && (
+            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+              <Users className="mx-auto text-gray-300 mb-4" size={48} />
+              <div className="text-gray-500">
+                {searchTerm || filterDept || filterFaculty 
+                  ? "No faculty members match your search criteria" 
+                  : "No faculty members found"
+                }
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add Faculty Modal */}
@@ -339,15 +346,24 @@ const fetchInstitute = async () => {
                   setShowModal(false);
                   resetNewFaculty();
                 }} 
-                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 transition-colors disabled:bg-gray-100"
+                disabled={addingFaculty}
               >
                 Cancel
               </button>
               <button 
                 onClick={handleAddFaculty} 
-                className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:bg-blue-300 flex items-center gap-2"
+                disabled={addingFaculty}
               >
-                Add {institute?.instituteType === 'school' ? 'Teacher' : 'Faculty'}
+                {addingFaculty ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Adding...
+                  </>
+                ) : (
+                  `Add ${institute?.instituteType === 'school' ? 'Teacher' : 'Faculty'}`
+                )}
               </button>
             </div>
           </div>
@@ -356,6 +372,67 @@ const fetchInstitute = async () => {
     </div>
   );
 };
+
+// Faculty Card Component
+const FacultyCard = ({ faculty, instituteType }) => (
+  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+    <div className="flex items-start justify-between mb-4">
+      <div>
+        <h3 className="font-bold text-lg text-gray-800">{faculty.name}</h3>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {faculty.faculty && (
+            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+              <Building size={12} /> {faculty.faculty}
+            </span>
+          )}
+          {faculty.department && (
+            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+              <School size={12} /> {faculty.department}
+            </span>
+          )}
+          {instituteType === 'school' && (
+            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+              <GraduationCap size={12} /> Teacher
+            </span>
+          )}
+        </div>
+      </div>
+      <span className={`px-2 py-1 rounded-full text-xs ${faculty.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+        {faculty.status || 'active'}
+      </span>
+    </div>
+
+    <div className="space-y-2 mb-4">
+      <div className="flex items-center gap-2 text-gray-600">
+        <Mail size={16} /><span className="text-sm">{faculty.email}</span>
+      </div>
+      {faculty.phone && (
+        <div className="flex items-center gap-2 text-gray-600">
+          <Phone size={16} /><span className="text-sm">{faculty.phone}</span>
+        </div>
+      )}
+    </div>
+
+    <div className="mb-4">
+      <div className="flex items-center gap-2 text-gray-600 mb-2">
+        <BookOpen size={16} /><span className="text-sm font-medium">Subjects</span>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {faculty.subjects?.map((subject, idx) => (
+          <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">{subject}</span>
+        ))}
+        {(!faculty.subjects || faculty.subjects.length === 0) && (
+          <span className="text-gray-400 text-xs">No subjects assigned</span>
+        )}
+      </div>
+    </div>
+
+    <div className="flex justify-between items-center text-sm text-gray-500">
+      <span>Joined: {new Date(faculty.joinDate || faculty.createdAt).toLocaleDateString()}</span>
+      <button className="text-blue-500 hover:text-blue-700 font-medium">View Profile</button>
+    </div>
+  </div>
+);
 
 // University Faculty Form Component
 const UniversityFacultyForm = ({ newFaculty, setNewFaculty, universityFaculties, availableDepartments }) => (
@@ -412,6 +489,7 @@ const UniversityFacultyForm = ({ newFaculty, setNewFaculty, universityFaculties,
         className="w-full border px-3 py-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-400" 
         value={newFaculty.name} 
         onChange={e => setNewFaculty({ ...newFaculty, name: e.target.value })} 
+        required
       />
       <input 
         type="email" 
@@ -419,6 +497,7 @@ const UniversityFacultyForm = ({ newFaculty, setNewFaculty, universityFaculties,
         className="w-full border px-3 py-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-purple-400" 
         value={newFaculty.email} 
         onChange={e => setNewFaculty({ ...newFaculty, email: e.target.value })} 
+        required
       />
       <input 
         type="text" 
@@ -484,6 +563,7 @@ const CollegeFacultyForm = ({ newFaculty, setNewFaculty, availableDepartments })
         className="w-full border px-3 py-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
         value={newFaculty.name} 
         onChange={e => setNewFaculty({ ...newFaculty, name: e.target.value })} 
+        required
       />
       <input 
         type="email" 
@@ -491,6 +571,7 @@ const CollegeFacultyForm = ({ newFaculty, setNewFaculty, availableDepartments })
         className="w-full border px-3 py-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-blue-400" 
         value={newFaculty.email} 
         onChange={e => setNewFaculty({ ...newFaculty, email: e.target.value })} 
+        required
       />
       <input 
         type="text" 
@@ -551,6 +632,7 @@ const SchoolFacultyForm = ({ newFaculty, setNewFaculty }) => (
         className="w-full border px-3 py-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-green-400" 
         value={newFaculty.name} 
         onChange={e => setNewFaculty({ ...newFaculty, name: e.target.value })} 
+        required
       />
       <input 
         type="email" 
@@ -558,6 +640,7 @@ const SchoolFacultyForm = ({ newFaculty, setNewFaculty }) => (
         className="w-full border px-3 py-2 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-green-400" 
         value={newFaculty.email} 
         onChange={e => setNewFaculty({ ...newFaculty, email: e.target.value })} 
+        required
       />
       <input 
         type="text" 

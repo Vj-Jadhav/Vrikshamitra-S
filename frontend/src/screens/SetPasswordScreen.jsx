@@ -29,7 +29,7 @@ export default function SetPasswordScreen({ route, navigation }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://10.168.69.133:5000/api/auth/set-student-password', {
+      const response = await fetch('http://10.147.34.133:5000/api/auth/set-student-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -3,7 +3,7 @@ import { getAllInstitutes,
          approveInstitute, 
          rejectInstitute,
          getInstituteById, 
-        } from "../controllers/webController.js";
+        } from "../controllers/governmentController.js";
 
 const router = express.Router();
 

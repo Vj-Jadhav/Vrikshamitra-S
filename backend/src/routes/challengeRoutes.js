@@ -4,7 +4,7 @@ import {
   createChallenge,
   updateChallenge,
   deleteChallenge
-} from "../controllers/webController.js";   // ← FIXED (.js added)
+} from "../controllers/challengeController.js";   // ← FIXED (.js added)
 
 const router = express.Router();
 
