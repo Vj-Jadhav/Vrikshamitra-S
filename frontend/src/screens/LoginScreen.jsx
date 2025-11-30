@@ -27,10 +27,10 @@ export default function LoginScreen({ navigation }) {
   const [receivedOtp, setReceivedOtp] = useState(""); // Store the OTP received from backend
 
   // Backend API URLs
-  const API_URL = "http://10.168.69.133:5000/api/auth/login";
-  const FORGOT_PASSWORD_URL = "http://10.168.69.133:5000/api/auth/forgot-password";
-  const VERIFY_OTP_URL = "http://10.168.69.133:5000/api/auth/verify-otp";
-  const RESET_PASSWORD_URL = "http://10.168.69.133:5000/api/auth/reset-password";
+  const API_URL = "http://10.147.34.133:5000/api/auth/login";
+  const FORGOT_PASSWORD_URL = "http://10.147.34.133:5000/api/auth/forgot-password";
+  const VERIFY_OTP_URL = "http://10.147.34.133:5000/api/auth/verify-otp";
+  const RESET_PASSWORD_URL = "http://10.147.34.133:5000/api/auth/reset-password";
 
   // Debug function to check storage
   const checkStorage = async () => {
