@@ -9,7 +9,8 @@ import InstituteSidebar from "../institute/InstituteSidebar";
 import InstituteOverview from "../institute/InstituteTypeOverview ";
 import FacultyManagement from "../institute/FacultyManagement";
 import StudentManagement from "../institute/StudentManagement";
-import DepartmentStructure from "../institute/DepartmentStructure";
+import ChallengeManagement from "../institute/ChallengeManagement";
+import ChallengeSubmissions from "../institute/ChallengeSubmissions";
 // import AnalyticsDashboard from "../institute/AnalyticsDashboard";
 // import InstituteSettings from "../institute/InstituteSettings";
 // import Reports from "../institute/Reports";
@@ -54,20 +55,20 @@ export default function InstituteDashboard() {
   };
 
   // Fetch institute statistics
-  // const fetchInstituteStats = async () => {
-  //   if (!user || !user._id) return;
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-  //     const res = await API.get(`/institute/${user._id}/stats`);
-  //     setStats(res.data);
-  //   } catch (err) {
-  //     console.error("Error fetching institute stats:", err);
-  //     setError(err.response?.data?.message || "Failed to load statistics");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const fetchInstituteStats = async () => {
+    if (!user || !user._id) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await API.get(`/institute/${user._id}/stats`);
+      setStats(res.data);
+    } catch (err) {
+      console.error("Error fetching institute stats:", err);
+      setError(err.response?.data?.message || "Failed to load statistics");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
   // Get token from localStorage
@@ -89,27 +90,27 @@ export default function InstituteDashboard() {
   }
 }, []);
 
-  // useEffect(() => {
-  //   fetchInstituteStats();
-  //   // Initialize institute data from user context
-  //   if (user) {
-  //     setInstituteData({
-  //       name: user.instituteName || "Institute",
-  //       type: user.instituteType || "school",
-  //       email: user.email || "",
-  //       address: user.address || "",
-  //       phone: user.phone || "",
-  //       website: user.website || "",
-  //       establishedYear: user.establishedYear || "",
-  //       totalStudents: user.totalStudents || 0,
-  //       schoolLevel: user.schoolLevel || "",
-  //       grades: user.grades || [],
-  //       departments: user.departments || [],
-  //       faculties: user.faculties || [],
-  //       programs: user.programs || []
-  //     });
-  //   }
-  // }, [user]);
+  useEffect(() => {
+    fetchInstituteStats();
+    // Initialize institute data from user context
+    if (user) {
+      setInstituteData({
+        name: user.instituteName || "Institute",
+        type: user.instituteType || "school",
+        email: user.email || "",
+        address: user.address || "",
+        phone: user.phone || "",
+        website: user.website || "",
+        establishedYear: user.establishedYear || "",
+        totalStudents: user.totalStudents || 0,
+        schoolLevel: user.schoolLevel || "",
+        grades: user.grades || [],
+        departments: user.departments || [],
+        faculties: user.faculties || [],
+        programs: user.programs || []
+      });
+    }
+  }, [user]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -127,8 +128,10 @@ export default function InstituteDashboard() {
         return <FacultyManagement instituteId={user?._id} />; 
       case "students":
         return <StudentManagement instituteId={user?._id} />;
-      case "structure":
-        return <DepartmentStructure instituteData={instituteData} />;
+       case "challenges": // NEW
+        return <ChallengeManagement instituteId={user?._id} instituteData={instituteData} />;
+      case "submissions": // NEW
+        return <ChallengeSubmissions instituteId={user?._id} />;
     //   case "analytics":
     //     return <AnalyticsDashboard instituteData={instituteData} stats={stats} />;
     //   case "reports":

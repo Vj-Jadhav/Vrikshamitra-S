@@ -1,7 +1,7 @@
 // src/institute/ChallengeManagement.jsx
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Target, CheckCircle, Clock, AlertCircle, Users, Calendar, FileText, Plus, BookOpen, X, BarChart3, Award, TrendingUp } from 'lucide-react';
-import { API, getChallenges, getInstituteById, getStudentsByInstitute, createChallengeAssignment, getFacultyByInstitute } from "../utils/api";
+import { getChallenges, getInstituteById, getStudentsByInstitute, createChallengeAssignment, getFacultyByInstitute } from "../utils/api";
 
 const ChallengeManagement = ({ instituteId }) => {
   const [challenges, setChallenges] = useState([]);
@@ -49,7 +49,7 @@ const ChallengeManagement = ({ instituteId }) => {
     }
   }, [instituteId]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (!instituteId) {
       console.error('Institute ID is missing!');
     } else {
@@ -62,10 +62,10 @@ const ChallengeManagement = ({ instituteId }) => {
     try {
       const data = await getInstituteById(instituteId);
       setInstitute(data.data);
-       console.log("Fetched institute data:", data);
+      console.log("Fetched institute data:", data);
       setAssignmentData(prev => ({
         ...prev,
-        assignmentType: data.instituteType
+        assignmentType: data.data?.instituteType || ''
       }));
     } catch (error) {
       console.error("Error fetching institute:", error);
@@ -76,9 +76,11 @@ const ChallengeManagement = ({ instituteId }) => {
     try {
       const data = await getStudentsByInstitute(instituteId);
       console.log("Fetched students:", data);
-      setStudents(data);
+      // Ensure students is always an array
+      setStudents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching students:", error);
+      setStudents([]);
     }
   };
 
@@ -86,9 +88,12 @@ const ChallengeManagement = ({ instituteId }) => {
     try {
       const data = await getFacultyByInstitute(instituteId);
       console.log("Fetched faculties:", data);
-      setFaculties(data.data || data);
+      // Handle different response formats
+      const facultiesData = data.data || data;
+      setFaculties(Array.isArray(facultiesData) ? facultiesData : []);
     } catch (error) {
       console.error("Error fetching faculties:", error);
+      setFaculties([]);
     }
   };
 
@@ -96,7 +101,7 @@ const ChallengeManagement = ({ instituteId }) => {
     try {
       setLoading(true);
       const res = await getChallenges();
-      const allChallenges = res.data;
+      const allChallenges = res.data || [];
 
       const challengesWithProgress = allChallenges.map(challenge => ({
         ...challenge,
@@ -110,76 +115,92 @@ const ChallengeManagement = ({ instituteId }) => {
       setChallenges(challengesWithProgress);
     } catch (error) {
       console.error("Error fetching challenges:", error);
+      setChallenges([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Enhanced getAvailableData function
+  // Enhanced getAvailableData function with safe array handling
   const getAvailableData = () => {
-    if (!institute || !students.length) return {};
+    if (!institute || !Array.isArray(students) || students.length === 0) {
+      return {
+        faculties: [],
+        departments: [],
+        grades: [],
+        batches: [],
+        sections: [],
+        programs: [],
+        academicYears: [],
+        semesters: []
+      };
+    }
+    
+    const safeStudents = students.filter(student => student && typeof student === 'object');
     
     switch (institute.instituteType) {
       case 'university':
         return {
-          faculties: [...new Set(students.map(s => s.faculty).filter(Boolean))],
-          departments: [...new Set(students.map(s => s.department).filter(Boolean))],
-          batches: [...new Set(students.map(s => s.batch).filter(Boolean))],
-          programs: [...new Set(students.map(s => s.program).filter(Boolean))],
-          academicYears: [...new Set(students.map(s => s.academicYear).filter(Boolean))]
+          faculties: [...new Set(safeStudents.map(s => s.faculty).filter(Boolean))],
+          departments: [...new Set(safeStudents.map(s => s.department).filter(Boolean))],
+          batches: [...new Set(safeStudents.map(s => s.batch).filter(Boolean))],
+          programs: [...new Set(safeStudents.map(s => s.program).filter(Boolean))],
+          academicYears: [...new Set(safeStudents.map(s => s.academicYear).filter(Boolean))]
         };
       case 'college':
         return {
-          departments: [...new Set(students.map(s => s.department).filter(Boolean))],
-          programs: [...new Set(students.map(s => s.program).filter(Boolean))],
-          batches: [...new Set(students.map(s => s.batch).filter(Boolean))],
-          semesters: [...new Set(students.map(s => s.semester).filter(Boolean).sort())]
+          departments: [...new Set(safeStudents.map(s => s.department).filter(Boolean))],
+          programs: [...new Set(safeStudents.map(s => s.program).filter(Boolean))],
+          batches: [...new Set(safeStudents.map(s => s.batch).filter(Boolean))],
+          semesters: [...new Set(safeStudents.map(s => s.semester).filter(Boolean).sort())]
         };
       case 'school':
         return {
-          grades: [...new Set(students.map(s => s.grade).filter(Boolean))],
-          batches: [...new Set(students.map(s => s.batch).filter(Boolean))],
-          sections: [...new Set(students.map(s => s.section).filter(Boolean))]
+          grades: [...new Set(safeStudents.map(s => s.grade).filter(Boolean))],
+          batches: [...new Set(safeStudents.map(s => s.batch).filter(Boolean))],
+          sections: [...new Set(safeStudents.map(s => s.section).filter(Boolean))]
         };
       default:
         return {};
     }
   };
 
-  // Enhanced student matching logic with batch support
+  // Enhanced student matching logic with batch support and safe array handling
   const getMatchingStudents = (assignmentData) => {
+    if (!Array.isArray(students)) return [];
+    
     return students.filter(student => {
-      if (student.status !== 'active') return false;
+      if (!student || student.status !== 'active') return false;
 
       switch (assignmentData.assignmentType) {
         case 'university':
           const universityMatch = assignmentData.faculties.length === 0 || 
             assignmentData.faculties.some(f => {
               const facultyMatch = !f.faculty || f.faculty === student.faculty;
-              const departmentMatch = f.departments.length === 0 || 
+              const departmentMatch = !f.departments || f.departments.length === 0 || 
                 f.departments.includes(student.department);
-              const batchMatch = f.batches.length === 0 || 
+              const batchMatch = !f.batches || f.batches.length === 0 || 
                 f.batches.includes(student.batch);
               return facultyMatch && departmentMatch && batchMatch;
             });
           
-          const programMatch = assignmentData.programs.length === 0 || 
+          const programMatch = !assignmentData.programs || assignmentData.programs.length === 0 || 
             assignmentData.programs.includes(student.program);
           
-          const academicYearMatch = assignmentData.academicYears.length === 0 || 
+          const academicYearMatch = !assignmentData.academicYears || assignmentData.academicYears.length === 0 || 
             assignmentData.academicYears.includes(student.academicYear);
           
           return universityMatch && programMatch && academicYearMatch;
 
         case 'college':
-          const collegeMatch = assignmentData.departments.length === 0 ||
+          const collegeMatch = !assignmentData.departments || assignmentData.departments.length === 0 ||
             assignmentData.departments.some(d => {
               const deptMatch = !d.name || d.name === student.department;
-              const programMatch = d.programs.length === 0 || 
+              const programMatch = !d.programs || d.programs.length === 0 || 
                 d.programs.includes(student.program);
-              const batchMatch = d.batches.length === 0 || 
+              const batchMatch = !d.batches || d.batches.length === 0 || 
                 d.batches.includes(student.batch);
-              const semesterMatch = d.semesters.length === 0 || 
+              const semesterMatch = !d.semesters || d.semesters.length === 0 || 
                 d.semesters.includes(student.semester);
               return deptMatch && programMatch && batchMatch && semesterMatch;
             });
@@ -187,11 +208,11 @@ const ChallengeManagement = ({ instituteId }) => {
           return collegeMatch;
 
         case 'school':
-          const gradeMatch = assignmentData.grades.length === 0 || 
+          const gradeMatch = !assignmentData.grades || assignmentData.grades.length === 0 || 
             assignmentData.grades.includes(student.grade);
-          const batchMatch = assignmentData.batches.length === 0 || 
+          const batchMatch = !assignmentData.batches || assignmentData.batches.length === 0 || 
             assignmentData.batches.includes(student.batch);
-          const sectionMatch = assignmentData.sections.length === 0 || 
+          const sectionMatch = !assignmentData.sections || assignmentData.sections.length === 0 || 
             assignmentData.sections.includes(student.section);
           return gradeMatch && batchMatch && sectionMatch;
 
@@ -314,7 +335,7 @@ const ChallengeManagement = ({ instituteId }) => {
       console.log('Final assignment payload:', assignmentPayload);
 
       // Create assignment in backend
-      const assignment = await createChallengeAssignment(assignmentPayload);
+        const assignment = await createChallengeAssignment(instituteId, assignmentPayload);
       
       // Update local state
       const updatedChallenge = {
@@ -394,13 +415,10 @@ const ChallengeManagement = ({ instituteId }) => {
     }
   };
 
-  const getMatchingStudentsCount = () => {
-    return getMatchingStudents(assignmentData).length;
-  };
-
   const getAssignmentBreakdown = () => {
     const matchingStudents = getMatchingStudents(assignmentData);
     const batchBreakdown = matchingStudents.reduce((acc, student) => {
+      if (!student) return acc;
       const batch = student.batch || 'No Batch';
       if (!acc[batch]) acc[batch] = [];
       acc[batch].push(student);
@@ -433,8 +451,8 @@ const ChallengeManagement = ({ instituteId }) => {
   };
 
   const filteredChallenges = challenges.filter(challenge =>
-    challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    challenge.description.toLowerCase().includes(searchTerm.toLowerCase())
+    challenge.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    challenge.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -491,7 +509,7 @@ const ChallengeManagement = ({ instituteId }) => {
             <div>
               <p className="text-sm text-gray-600">Avg Progress</p>
               <p className="text-2xl font-bold text-gray-800">
-                {Math.round(challenges.reduce((acc, c) => acc + (c.progress || 0), 0) / challenges.length)}%
+                {challenges.length > 0 ? Math.round(challenges.reduce((acc, c) => acc + (c.progress || 0), 0) / challenges.length) : 0}%
               </p>
             </div>
             <BarChart3 className="text-green-500" size={24} />
@@ -502,7 +520,7 @@ const ChallengeManagement = ({ instituteId }) => {
             <div>
               <p className="text-sm text-gray-600">Participation</p>
               <p className="text-2xl font-bold text-gray-800">
-                {Math.round(challenges.reduce((acc, c) => acc + (c.studentParticipation || 0), 0) / challenges.length)}%
+                {challenges.length > 0 ? Math.round(challenges.reduce((acc, c) => acc + (c.studentParticipation || 0), 0) / challenges.length) : 0}%
               </p>
             </div>
             <Users className="text-purple-500" size={24} />
@@ -795,7 +813,7 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
           </label>
           <select
             multiple
-            value={assignmentData.programs}
+            value={assignmentData.programs || []}
             onChange={(e) => setAssignmentData(prev => ({
               ...prev,
               programs: Array.from(e.target.selectedOptions, option => option.value)
@@ -803,9 +821,9 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             size="3"
           >
-            {availableData.programs.map(program => (
+            {availableData.programs?.map(program => (
               <option key={program} value={program}>{program}</option>
-            ))}
+            )) || []}
           </select>
         </div>
         
@@ -815,7 +833,7 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
           </label>
           <select
             multiple
-            value={assignmentData.academicYears}
+            value={assignmentData.academicYears || []}
             onChange={(e) => setAssignmentData(prev => ({
               ...prev,
               academicYears: Array.from(e.target.selectedOptions, option => option.value)
@@ -823,9 +841,9 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             size="3"
           >
-            {availableData.academicYears.map(year => (
+            {availableData.academicYears?.map(year => (
               <option key={year} value={year}>{year}</option>
-            ))}
+            )) || []}
           </select>
         </div>
       </div>
@@ -842,9 +860,9 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select Faculty</option>
-            {availableData.faculties.map(faculty => (
+            {availableData.faculties?.map(faculty => (
               <option key={faculty} value={faculty}>{faculty}</option>
-            ))}
+            )) || []}
           </select>
           <button
             onClick={handleAddFaculty}
@@ -855,7 +873,7 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
           </button>
         </div>
 
-        {assignmentData.faculties.map((faculty, index) => (
+        {assignmentData.faculties?.map((faculty, index) => (
           <div key={index} className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50">
             <div className="flex justify-between items-center mb-3">
               <h4 className="font-medium text-gray-800">{faculty.faculty}</h4>
@@ -874,16 +892,16 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
                 </label>
                 <select
                   multiple
-                  value={faculty.departments}
+                  value={faculty.departments || []}
                   onChange={(e) => updateFaculty(index, 'departments', 
                     Array.from(e.target.selectedOptions, option => option.value)
                   )}
                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                   size="3"
                 >
-                  {availableData.departments.map(dept => (
+                  {availableData.departments?.map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
-                  ))}
+                  )) || []}
                 </select>
               </div>
               
@@ -893,16 +911,16 @@ const UniversityAssignmentForm = ({ assignmentData, setAssignmentData, available
                 </label>
                 <select
                   multiple
-                  value={faculty.batches}
+                  value={faculty.batches || []}
                   onChange={(e) => updateFaculty(index, 'batches',
                     Array.from(e.target.selectedOptions, option => option.value)
                   )}
                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                   size="3"
                 >
-                  {availableData.batches.map(batch => (
+                  {availableData.batches?.map(batch => (
                     <option key={batch} value={batch}>Batch {batch}</option>
-                  ))}
+                  )) || []}
                 </select>
               </div>
             </div>
@@ -964,9 +982,9 @@ const CollegeAssignmentForm = ({ assignmentData, setAssignmentData, availableDat
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select Department</option>
-            {availableData.departments.map(dept => (
+            {availableData.departments?.map(dept => (
               <option key={dept} value={dept}>{dept}</option>
-            ))}
+            )) || []}
           </select>
           <button
             onClick={handleAddDepartment}
@@ -977,7 +995,7 @@ const CollegeAssignmentForm = ({ assignmentData, setAssignmentData, availableDat
           </button>
         </div>
 
-        {assignmentData.departments.map((dept, index) => (
+        {assignmentData.departments?.map((dept, index) => (
           <div key={index} className="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50">
             <div className="flex justify-between items-center mb-3">
               <h4 className="font-medium text-gray-800">{dept.name}</h4>
@@ -996,16 +1014,16 @@ const CollegeAssignmentForm = ({ assignmentData, setAssignmentData, availableDat
                 </label>
                 <select
                   multiple
-                  value={dept.programs}
+                  value={dept.programs || []}
                   onChange={(e) => updateDepartment(index, 'programs',
                     Array.from(e.target.selectedOptions, option => option.value)
                   )}
                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                   size="2"
                 >
-                  {availableData.programs.map(program => (
+                  {availableData.programs?.map(program => (
                     <option key={program} value={program}>{program}</option>
-                  ))}
+                  )) || []}
                 </select>
               </div>
               
@@ -1015,16 +1033,16 @@ const CollegeAssignmentForm = ({ assignmentData, setAssignmentData, availableDat
                 </label>
                 <select
                   multiple
-                  value={dept.batches}
+                  value={dept.batches || []}
                   onChange={(e) => updateDepartment(index, 'batches',
                     Array.from(e.target.selectedOptions, option => option.value)
                   )}
                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                   size="2"
                 >
-                  {availableData.batches.map(batch => (
+                  {availableData.batches?.map(batch => (
                     <option key={batch} value={batch}>Batch {batch}</option>
-                  ))}
+                  )) || []}
                 </select>
               </div>
               
@@ -1034,16 +1052,16 @@ const CollegeAssignmentForm = ({ assignmentData, setAssignmentData, availableDat
                 </label>
                 <select
                   multiple
-                  value={dept.semesters}
+                  value={dept.semesters || []}
                   onChange={(e) => updateDepartment(index, 'semesters',
                     Array.from(e.target.selectedOptions, option => parseInt(option.value))
                   )}
                   className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                   size="2"
                 >
-                  {availableData.semesters.map(sem => (
+                  {availableData.semesters?.map(sem => (
                     <option key={sem} value={sem}>Sem {sem}</option>
-                  ))}
+                  )) || []}
                 </select>
               </div>
             </div>
@@ -1065,7 +1083,7 @@ const SchoolAssignmentForm = ({ assignmentData, setAssignmentData, availableData
           </label>
           <select
             multiple
-            value={assignmentData.grades}
+            value={assignmentData.grades || []}
             onChange={(e) => setAssignmentData(prev => ({
               ...prev,
               grades: Array.from(e.target.selectedOptions, option => option.value)
@@ -1073,9 +1091,9 @@ const SchoolAssignmentForm = ({ assignmentData, setAssignmentData, availableData
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             size="4"
           >
-            {availableData.grades.map(grade => (
+            {availableData.grades?.map(grade => (
               <option key={grade} value={grade}>{grade}</option>
-            ))}
+            )) || []}
           </select>
         </div>
         
@@ -1085,7 +1103,7 @@ const SchoolAssignmentForm = ({ assignmentData, setAssignmentData, availableData
           </label>
           <select
             multiple
-            value={assignmentData.batches}
+            value={assignmentData.batches || []}
             onChange={(e) => setAssignmentData(prev => ({
               ...prev,
               batches: Array.from(e.target.selectedOptions, option => option.value)
@@ -1093,9 +1111,9 @@ const SchoolAssignmentForm = ({ assignmentData, setAssignmentData, availableData
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             size="4"
           >
-            {availableData.batches.map(batch => (
+            {availableData.batches?.map(batch => (
               <option key={batch} value={batch}>Batch {batch}</option>
-            ))}
+            )) || []}
           </select>
         </div>
         
@@ -1105,7 +1123,7 @@ const SchoolAssignmentForm = ({ assignmentData, setAssignmentData, availableData
           </label>
           <select
             multiple
-            value={assignmentData.sections}
+            value={assignmentData.sections || []}
             onChange={(e) => setAssignmentData(prev => ({
               ...prev,
               sections: Array.from(e.target.selectedOptions, option => option.value)
@@ -1113,9 +1131,9 @@ const SchoolAssignmentForm = ({ assignmentData, setAssignmentData, availableData
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             size="4"
           >
-            {availableData.sections.map(section => (
+            {availableData.sections?.map(section => (
               <option key={section} value={section}>Section {section}</option>
-            ))}
+            )) || []}
           </select>
         </div>
       </div>
@@ -1284,7 +1302,7 @@ const AssignmentModal = ({ selectedChallenge, assignmentData, setAssignmentData,
                   required
                 >
                   <option value="">Select Faculty Coordinator</option>
-                  {faculties.map(faculty => (
+                  {Array.isArray(faculties) && faculties.map(faculty => (
                     <option key={faculty._id} value={faculty._id}>
                       {faculty.name} - {faculty.department || faculty.email}
                     </option>
@@ -1329,7 +1347,7 @@ const AssignmentModal = ({ selectedChallenge, assignmentData, setAssignmentData,
                 <p>Deadline: <strong>{assignmentData.submissionDeadline}</strong></p>
                 {assignmentData.facultyCoordinator && (
                   <p>Faculty Coordinator: <strong>{
-                    faculties.find(f => f._id === assignmentData.facultyCoordinator)?.name || 'Selected'
+                    Array.isArray(faculties) ? faculties.find(f => f._id === assignmentData.facultyCoordinator)?.name || 'Selected' : 'Selected'
                   }</strong></p>
                 )}
               </div>

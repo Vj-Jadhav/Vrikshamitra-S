@@ -11,7 +11,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
   const [token, setToken] = useState(route.params?.token || "");
   const [email, setEmail] = useState(route.params?.email || "");
 
-  const RESET_PASSWORD_URL = "http://10.168.69.133:5000/api/auth/reset-password";
+  const RESET_PASSWORD_URL = "http://10.147.34.133:5000/api/auth/reset-password";
 
   const handleResetPassword = async () => {
     if (!password || !confirmPassword) {

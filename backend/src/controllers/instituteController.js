@@ -1,94 +1,287 @@
-// import mongoose from "mongoose";
-
+import mongoose from "mongoose";
 import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
-// import Faculty from "../models/Faculty.js";
-import Student from "../models/Student.js";
 import Challenge from "../models/Challenge.js";
-import ChallengeAssignment from '../models/ChallengeAssignment.js';
-import StudentChallengeProgress from '../models/StudentChallengeProgress.js';
+import ChallengeAssignment from "../models/ChallengeAssignment.js";
+import Faculty from "../models/Faculty.js";
+import Student from "../models/Student.js";
+import StudentChallengeProgress from "../models/StudentChallengeProgress.js";
 
-//government dashboard
-export const getAllInstitutes = async (req, res) => {
+// Get institute by ID
+export const getInstituteById = async (req, res) => {
   try {
-    const institutes = await Institute.find().lean();
+    const { instituteId } = req.params;
 
-    res.status(200).json({
-      success: true,
-      data: institutes
-    });
-  } catch (error) {
-    console.error("Error fetching institutes:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch institutes"
-    });
-  }
-};
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid institute ID format",
+      });
+    }
 
-export const approveInstitute = async (req, res) => {
-  try {
-    // Approve institute by updating approvalStatus
-    const institute = await Institute.findByIdAndUpdate(
-      req.params.id,
-      { approvalStatus: true },
-      { new: true }
-    );
+    // Find institute - adjust based on your Institute model structure
+    const institute = await Institute.findById(instituteId)
+      .select('name email phone address type instituteType establishedYear status faculties departments')
+      .lean();
 
     if (!institute) {
-      return res.status(404).json({ success: false, message: "Institute not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Institute not found",
+      });
     }
+
+    // Get counts for dashboard
+    const studentCount = await Student.countDocuments({ instituteId });
+    const facultyCount = await Faculty.countDocuments({ instituteId });
+    const assignmentCount = await ChallengeAssignment.countDocuments({ instituteId });
 
     return res.status(200).json({
       success: true,
-      message: "Institute approved",
-      data: institute
+      data: {
+        ...institute,
+        studentCount,
+        facultyCount,
+        assignmentCount
+      },
     });
-
-  } catch (err) {
-    console.error("ERROR in approveInstitute:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-
-export const rejectInstitute = async (req, res) => {
-  try {
-    const result = await Institute.findByIdAndUpdate(
-      req.params.id,
-      { approvalStatus: false },
-      { new: true }
-    );
-
-    res.status(200).json({ success: true, data: result });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
-  }
-};
-
-export const getInstituteById = async (req, res) => {
-  const { id } = req.params;
-
-  // Validate MongoDB ObjectId
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ success: false, message: "Invalid ID" });
-  }
-
-  try {
-    const institute = await Institute.findById(id);
-
-    if (!institute) {
-      return res.status(404).json({ success: false, message: "Institute not found" });
-    }
-
-    res.status(200).json({ success: true, data: institute });
   } catch (error) {
     console.error("Error fetching institute:", error);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching institute",
+      error: error.message
+    });
   }
 };
 
+// Add single student
+export const addStudent = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+    const studentData = req.body;
 
+    // Validate required fields
+    if (!studentData.name || !studentData.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name and email are required fields'
+      });
+    }
+
+    // Check if institute exists
+    const institute = await Institute.findById(instituteId);
+    if (!institute) {
+      return res.status(404).json({
+        success: false,
+        message: 'Institute not found'
+      });
+    }
+
+    // Create student with instituteId
+    const student = new Student({
+      ...studentData,
+      instituteId,
+      status: studentData.status || 'active',
+      joinDate: studentData.joinDate || new Date(),
+      ecoPoints: studentData.ecoPoints || 0
+    });
+
+    const savedStudent = await student.save();
+
+    res.status(201).json({
+      success: true,
+      data: savedStudent
+    });
+
+  } catch (error) {
+    console.error('Error adding student:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: error.message
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Student with this email or roll number already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add student',
+      error: error.message
+    });
+  }
+};
+
+// Add faculty
+export const addFaculty = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+    const { name, email, phone, department, subjects, faculty } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !department) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Name, Email, and Department are required." 
+      });
+    }
+
+    // Check if institute exists
+    const institute = await Institute.findById(instituteId);
+    if (!institute) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Institute not found" 
+      });
+    }
+
+    // Create new faculty
+    const newFaculty = await Faculty.create({
+      name,
+      email,
+      phone,
+      department,
+      faculty,
+      subjects: subjects || [],
+      instituteId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: newFaculty
+    });
+  } catch (err) {
+    console.error("Error adding faculty:", err);
+    
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: err.message
+      });
+    }
+
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Faculty with this email already exists'
+      });
+    }
+
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to add faculty",
+      error: err.message
+    });
+  }
+};
+
+// Get faculty by institute
+export const getFacultyByInstitute = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    // Check if institute exists
+    const institute = await Institute.findById(instituteId);
+    if (!institute) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Institute not found" 
+      });
+    }
+
+    // Find all faculty belonging to this institute
+    const faculty = await Faculty.find({ instituteId });
+
+    return res.status(200).json({
+      success: true,
+      data: faculty
+    });
+  } catch (err) {
+    console.error("Error fetching faculty:", err);
+    return res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch faculty",
+      error: err.message
+    });
+  }
+};
+
+// Add students in bulk
+export const addStudentsBulk = async (req, res) => {
+  try {
+    const { students } = req.body;
+    const { instituteId } = req.params;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'No students provided' 
+      });
+    }
+
+    // Validate all students have required fields
+    const invalidStudents = students.filter(s => !s.name || !s.email);
+    if (invalidStudents.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'All students must have name and email fields'
+      });
+    }
+
+    // Add instituteId to each student
+    const studentsWithInstitute = students.map(s => ({
+      ...s,
+      instituteId,
+      status: s.status || 'active',
+      joinDate: s.joinDate || new Date(),
+      ecoPoints: s.ecoPoints || 0
+    }));
+
+    // Save all students at once
+    const savedStudents = await Student.insertMany(studentsWithInstitute, { ordered: false });
+
+    res.status(201).json({
+      success: true,
+      data: savedStudents,
+      message: `Successfully added ${savedStudents.length} students`
+    });
+  } catch (error) {
+    console.error('Error adding students in bulk:', error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error in student data',
+        error: error.message
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Some students with duplicate emails or roll numbers were skipped',
+        error: error.message
+      });
+    }
+
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to save students',
+      error: error.message
+    });
+  }
+};
+
+// Get students by institute ID
 export const getStudentsByInstituteId = async (req, res) => {
   const { instituteId } = req.params;
 
@@ -103,13 +296,6 @@ export const getStudentsByInstituteId = async (req, res) => {
   try {
     const students = await Student.find({ instituteId });
 
-    if (!students.length) {
-      return res.status(404).json({
-        success: false,
-        message: "No students found for this institute",
-      });
-    }
-
     return res.status(200).json({
       success: true,
       data: students,
@@ -119,11 +305,12 @@ export const getStudentsByInstituteId = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error while fetching students",
+      error: error.message
     });
   }
 };
 
-
+// Create challenge assignment
 export const createChallengeAssignment = async (req, res) => {
   try {
     const {
@@ -218,7 +405,7 @@ export const createChallengeAssignment = async (req, res) => {
     const assignmentData = {
       challengeId,
       instituteId,
-      assignedBy: assignedBy, // Can be string or ObjectId
+      assignedBy: assignedBy,
       assignedByRef,
       assignmentType,
       submissionDeadline: new Date(submissionDeadline),
@@ -536,8 +723,16 @@ export const getAssignmentStatistics = async (req, res) => {
   try {
     const { instituteId } = req.params;
 
+    // Validate instituteId
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid institute ID'
+      });
+    }
+
     const stats = await ChallengeAssignment.aggregate([
-      { $match: { instituteId: mongoose.Types.ObjectId(instituteId) } },
+      { $match: { instituteId: new mongoose.Types.ObjectId(instituteId) } },
       {
         $group: {
           _id: null,
@@ -566,7 +761,7 @@ export const getAssignmentStatistics = async (req, res) => {
         }
       },
       { $unwind: '$assignment' },
-      { $match: { 'assignment.instituteId': mongoose.Types.ObjectId(instituteId) } },
+      { $match: { 'assignment.instituteId': new mongoose.Types.ObjectId(instituteId) } },
       {
         $group: {
           _id: '$status',
@@ -603,107 +798,130 @@ export const getAssignmentStatistics = async (req, res) => {
   }
 };
 
-
-
-/**
- * @desc    Get all challenges
- * @route   GET /challenges
- */
-export const getChallenges = async (req, res) => {
+// Update student
+export const updateStudent = async (req, res) => {
   try {
-    const challenges = await Challenge.find().sort({ createdAt: -1 });
-    res.status(200).json(challenges);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch challenges", error });
-  }
-};
+    const { instituteId, studentId } = req.params;
+    const updateData = req.body;
 
-/**
- * @desc    Create new challenge
- * @route   POST /challenges
- */
-export const createChallenge = async (req, res) => {
-  try {
-    const {
-      title,
-      description,
-      category,
-      priority,
-      status,
-      mandatory,
-      startDate,
-      deadline,
-      requirements,
-      resources,
-      createdBy
-    } = req.body;
-
-    // Auto-sync mandatory with priority
-    const isMandatory = priority === "mandatory";
-
-    const challenge = await Challenge.create({
-      title,
-      description,
-      category,
-      priority,
-      status,
-      mandatory: isMandatory,
-      startDate,
-      deadline,
-      requirements,
-      resources,
-      createdBy
-    });
-
-    res.status(201).json(challenge);
-  } catch (error) {
-    res.status(400).json({ message: "Failed to create challenge", error });
-  }
-};
-
-/**
- * @desc    Update a challenge
- * @route   PUT /challenges/:id
- */
-export const updateChallenge = async (req, res) => {
-  try {
-    const updates = { ...req.body };
-
-    // Keep mandatory consistent with priority if changed
-    if (updates.priority) {
-      updates.mandatory = updates.priority === "mandatory";
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(instituteId) || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid institute ID or student ID"
+      });
     }
 
-    const updatedChallenge = await Challenge.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
+    // Check if student exists and belongs to institute
+    const student = await Student.findOne({ _id: studentId, instituteId });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found in this institute"
+      });
+    }
+
+    // Update student
+    const updatedStudent = await Student.findByIdAndUpdate(
+      studentId,
+      { $set: updateData },
+      { new: true, runValidators: true }
     );
 
-    if (!updatedChallenge) {
-      return res.status(404).json({ message: "Challenge not found" });
+    res.status(200).json({
+      success: true,
+      message: "Student updated successfully",
+      data: updatedStudent
+    });
+
+  } catch (error) {
+    console.error("Error updating student:", error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: error.message
+      });
     }
 
-    res.status(200).json(updatedChallenge);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to update challenge", error });
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Student with this email or roll number already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update student",
+      error: error.message
+    });
   }
 };
 
-/**
- * @desc    Delete a challenge
- * @route   DELETE /challenges/:id
- */
-export const deleteChallenge = async (req, res) => {
+// Delete student
+export const deleteStudent = async (req, res) => {
   try {
-    const challenge = await Challenge.findByIdAndDelete(req.params.id);
+    const { instituteId, studentId } = req.params;
 
-    if (!challenge) {
-      return res.status(404).json({ message: "Challenge not found" });
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(instituteId) || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid institute ID or student ID"
+      });
     }
 
-    res.status(200).json({ message: "Challenge deleted successfully" });
+    // Check if student exists and belongs to institute
+    const student = await Student.findOne({ _id: studentId, instituteId });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found in this institute"
+      });
+    }
+
+    // Check if student has any challenge progress
+    const hasProgress = await StudentChallengeProgress.findOne({ studentId });
+    if (hasProgress) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete student with existing challenge progress"
+      });
+    }
+
+    // Delete student
+    await Student.findByIdAndDelete(studentId);
+
+    res.status(200).json({
+      success: true,
+      message: "Student deleted successfully"
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Failed to delete challenge", error });
+    console.error("Error deleting student:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete student",
+      error: error.message
+    });
   }
+};
+
+export default {
+  getInstituteById,
+  addStudent,
+  addFaculty,
+  getFacultyByInstitute,
+  addStudentsBulk,
+  getStudentsByInstituteId,
+  createChallengeAssignment,
+  getInstituteAssignments,
+  getAssignmentDetails,
+  updateAssignmentStatus,
+  deleteAssignment,
+  getAssignmentStatistics,
+  updateStudent,
+  deleteStudent
 };

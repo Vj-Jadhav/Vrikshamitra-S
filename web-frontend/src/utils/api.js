@@ -1,3 +1,4 @@
+// src/utils/api.js
 import axios from "axios";
 
 // Create a reusable Axios instance
@@ -17,22 +18,20 @@ API.interceptors.response.use(
   }
 );
 
-// ================================
-// Faculty / Institute / Students
-// ================================
-export const addFaculty = async (instituteId, facultyData) => {
-  const response = await API.post(`/auth/${instituteId}/faculty`, facultyData);
-  return response.data;
-};
-
-export const getFacultyByInstitute = async (instituteId) => {
-  const response = await API.get(`/auth/${instituteId}/faculty`);
-  return response.data;
+// ========== AUTH & INSTITUTE ENDPOINTS ==========
+export const registerInstitute = async (payload) => {
+  try {
+    const response = await API.post("/auth/institute-register", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error registering institute:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const getInstituteById = async (id) => {
   try {
-    const response = await API.get(`/government/${id}`);
+    const response = await API.get(`/institute/${id}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching institute:", error.response?.data || error);
@@ -40,55 +39,127 @@ export const getInstituteById = async (id) => {
   }
 };
 
-export const addStudentsBulk = async (instituteId, students) => {
+// ========== FACULTY ENDPOINTS ==========
+export const addFaculty = async (instituteId, facultyData) => {
   try {
-    const response = await API.post(`/auth/bulk/${instituteId}`, { students });
+    console.log(`📤 Adding faculty to institute ${instituteId}`);
+    const response = await API.post(`/institute/${instituteId}/faculty`, facultyData);
     return response.data;
   } catch (error) {
+    console.error("Error adding faculty:", error.response?.data || error);
     throw error;
   }
 };
 
-// MERGE CONFLICT FIXED ✔ — imported both functions
+export const getFacultyByInstitute = async (instituteId) => {
+  try {
+    console.log(`📥 Fetching faculty for institute ${instituteId}`);
+    const response = await API.get(`/institute/${instituteId}/faculty`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching faculty:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// ========== STUDENT ENDPOINTS ==========
+export const addStudent = async (instituteId, studentData) => {
+  try {
+    const response = await API.post(`/institute/${instituteId}/students`, studentData);
+    return response.data;
+  } catch (error) {
+    console.error("Error adding student:", error.response?.data || error);
+    throw error;
+  }
+};
+
 export const getStudentsByInstitute = async (instituteId) => {
   try {
-    const response = await API.get(`/institute/${instituteId}`);
-    return response.data.data; // returns student list
+    const response = await API.get(`/institute/${instituteId}/students`);
+    
+    // Ensure consistent response format
+    if (response.data && Array.isArray(response.data)) {
+      return response.data;
+    } else if (response.data && response.data.students) {
+      return response.data.students;
+    } else if (response.data && response.data.data) {
+      return response.data.data;
+    } else {
+      console.warn('Unexpected API response format:', response.data);
+      return [];
+    }
   } catch (error) {
-    console.error("Error fetching students:", error.response?.data || error);
+    console.error('Error fetching students:', error);
     throw error;
   }
 };
 
-const TEMP_ADMIN_ID = "000000000000000000000001";
-
-// ======================
-// Challenge API
-// ======================
-export const getChallenges = () => API.get("/challenges");
-
-export const deleteChallenge = (id) => API.delete(`/challenges/${id}`);
-
-export const createChallenge = (data) => {
-  return API.post("/challenges", {
-    ...data,
-    createdBy: TEMP_ADMIN_ID,
-  });
-};
-
-export const updateChallenge = (id, data) => {
-  return API.put(`/challenges/${id}`, {
-    ...data,
-    createdBy: TEMP_ADMIN_ID,
-  });
-};
-
-// ================================
-// Challenge Assignment APIs
-// ================================
-export const createChallengeAssignment = async (data) => {
+export const addStudentsBulk = async (instituteId, students) => {
   try {
-    const response = await API.post(`/institute/assignments`, data);
+    const response = await API.post(`/institute/${instituteId}/students/bulk`, { students });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding bulk students:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// ========== CHALLENGE ENDPOINTS ==========
+export const getChallenges = async () => {
+  try {
+    const response = await API.get("/challenges");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching challenges:", error.response?.data || error);
+    throw error;
+  }
+};
+
+export const deleteChallenge = async (id) => {
+  try {
+    const response = await API.delete(`/challenges/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting challenge:", error.response?.data || error);
+    throw error;
+  }
+};
+
+export const createChallenge = async (data, token) => {
+  try {
+    const response = await API.post("/challenges", data, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating challenge:", error.response?.data || error);
+    throw error;
+  }
+};
+
+export const updateChallenge = async (id, data, token) => {
+  try {
+    const response = await API.put(`/challenges/${id}`, data, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating challenge:", error.response?.data || error);
+    throw error;
+  }
+};
+
+// ========== ASSIGNMENT ENDPOINTS ==========
+export const createChallengeAssignment = async (instituteId, data) => {
+  try {
+    const response = await API.post(`/institute/${instituteId}/assignments`, data);
+    console.log('📤 Assignment created:', response.data);
     return response.data;
   } catch (error) {
     console.error("API Error Details:", {
@@ -101,70 +172,103 @@ export const createChallengeAssignment = async (data) => {
 };
 
 export const getInstituteAssignments = async (instituteId, filters = {}) => {
-  const response = await API.get(
-    `/challenge-assignments/institute/${instituteId}/assignments`,
-    { params: filters }
-  );
-  return response.data;
+  try {
+    const response = await API.get(`/institute/${instituteId}/assignments`, {
+      params: filters
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching assignments:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const getAssignmentDetails = async (assignmentId) => {
-  const response = await API.get(
-    `/challenge-assignments/assignments/${assignmentId}`
-  );
-  return response.data;
+  try {
+    const response = await API.get(`/assignments/${assignmentId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching assignment details:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const updateAssignmentStatus = async (assignmentId, statusData) => {
-  const response = await API.put(
-    `/challenge-assignments/assignments/${assignmentId}/status`,
-    statusData
-  );
-  return response.data;
+  try {
+    const response = await API.put(`/assignments/${assignmentId}/status`, statusData);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating assignment status:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const deleteAssignment = async (assignmentId) => {
-  const response = await API.delete(
-    `/challenge-assignments/assignments/${assignmentId}`
-  );
-  return response.data;
+  try {
+    const response = await API.delete(`/assignments/${assignmentId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting assignment:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const getAssignmentStatistics = async (instituteId) => {
-  const response = await API.get(
-    `/challenge-assignments/institute/${instituteId}/assignment-stats`
-  );
-  return response.data;
+  try {
+    const response = await API.get(`/institute/${instituteId}/assignment-stats`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching assignment statistics:", error.response?.data || error);
+    throw error;
+  }
 };
 
-// ================================
-// Student Challenge Progress APIs
-// ================================
+// ========== STUDENT PROGRESS ENDPOINTS ==========
 export const getStudentChallengeProgress = async (studentId, filters = {}) => {
-  const response = await API.get(
-    `/student-progress/student/${studentId}`,
-    { params: filters }
-  );
-  return response.data;
+  try {
+    const response = await API.get(
+      `/student-progress/student/${studentId}`,
+      { params: filters }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching student progress:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const updateStudentProgress = async (progressId, progressData) => {
-  const response = await API.put(`/student-progress/${progressId}`, progressData);
-  return response.data;
+  try {
+    const response = await API.put(`/student-progress/${progressId}`, progressData);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating student progress:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const submitChallengeCompletion = async (progressId, submissionData) => {
-  const response = await API.post(
-    `/student-progress/${progressId}/submit`,
-    submissionData
-  );
-  return response.data;
+  try {
+    const response = await API.post(
+      `/student-progress/${progressId}/submit`,
+      submissionData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting challenge completion:", error.response?.data || error);
+    throw error;
+  }
 };
 
 export const reviewStudentSubmission = async (progressId, reviewData) => {
-  const response = await API.put(
-    `/student-progress/${progressId}/review`,
-    reviewData
-  );
-  return response.data;
+  try {
+    const response = await API.put(
+      `/student-progress/${progressId}/review`,
+      reviewData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error reviewing student submission:", error.response?.data || error);
+    throw error;
+  }
 };

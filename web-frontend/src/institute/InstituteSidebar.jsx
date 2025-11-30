@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   GraduationCap,
-  Building,
   BarChart3,
   Settings,
   FileText,
@@ -23,7 +22,8 @@ const InstituteSidebar = ({
     { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
     { id: "faculty", icon: Users, label: "Faculty Management" },
     { id: "students", icon: GraduationCap, label: "Student Management" },
-    { id: "structure", icon: Network, label: "Department Structure" },
+    { id: "challenges", icon: Target, label: "Challenges" }, // NEW
+    { id: "submissions", icon: Send, label: "My Submissions" }, // NEW
     { id: "analytics", icon: BarChart3, label: "Analytics" },
     { id: "reports", icon: FileText, label: "Reports" },
     { id: "settings", icon: Settings, label: "Institute Settings" },
