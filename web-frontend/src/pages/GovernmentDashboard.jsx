@@ -19,6 +19,25 @@ export default function GovernmentDashboard() {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
 
+const [decodedToken, setDecodedToken] = useState(null);
+const [token, setToken] = useState(null);
+
+useEffect(() => {
+  const tk = localStorage.getItem("token");
+  setToken(tk);
+
+  if (tk) {
+    try {
+      const payload = JSON.parse(atob(tk.split('.')[1]));
+      console.log("Decoded payload:", payload);
+      setDecodedToken(payload);   // ⬅ Save it for use
+    } catch (err) {
+      console.error("Failed to decode token:", err);
+    }
+  }
+}, []);
+
+
   const [adminData, setAdminData] = useState({
     name: user?.name || "Government Admin",
     department: user?.department || "Education Department",
@@ -42,7 +61,7 @@ export default function GovernmentDashboard() {
   //   try {
   //     setLoadingAnalytics(true);
   //     setAnalyticsError(null);
-  //     const res = await API.get(`/government/${user._id}/analytics`);
+  //     const res = await API.get(/government/${user._id}/analytics);
   //     setAnalytics(res.data);
   //     setAdminData(prev => ({
   //       ...prev,
@@ -202,7 +221,9 @@ const fetchAdminAnalytics = async () => {
     case "users":
       return <UserManagement />;
     case "challenges": // Add this case
-      return <ChallengeManagement />;
+      return <ChallengeManagement  token={token} 
+      adminId={decodedToken?.id} 
+      role={decodedToken?.role} />;
     case "registrations":
       return <RegistrationAnalytics />;
     case "reports":

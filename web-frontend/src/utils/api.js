@@ -55,7 +55,13 @@ export const getFacultyByInstitute = async (instituteId) => {
   try {
     console.log(`📥 Fetching faculty for institute ${instituteId}`);
     const response = await API.get(`/institute/${instituteId}/faculty`);
-    return response.data;
+    console.log("📡 API Response structure:", {
+      success: response.data?.success,
+      hasData: !!response.data?.data,
+      dataIsArray: Array.isArray(response.data?.data),
+      dataLength: response.data?.data?.length
+    });
+    return response.data; // This returns { success: true, data: [...] }
   } catch (error) {
     console.error("Error fetching faculty:", error.response?.data || error);
     throw error;
