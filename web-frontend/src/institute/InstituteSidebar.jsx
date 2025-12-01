@@ -9,7 +9,9 @@ import {
   FileText,
   LogOut,
   School,
-  Network
+  Network,
+  Target,
+  Send
 } from "lucide-react";
 
 const InstituteSidebar = ({

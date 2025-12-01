@@ -3,24 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Target, 
   CheckCircle, 
-  Clock, 
   Edit, 
   Trash2, 
-  Download,
   FileText,
   Users,
   Calendar,
   Star,
   Award
 } from 'lucide-react';
-import { API, createChallenge, updateChallenge, getChallenges, deleteChallenge  } from "../utils/api";
+import { API, createChallenge, updateChallenge, getChallenges, deleteChallenge } from "../utils/api";
 
-const ChallengeManagement = () => {
+const ChallengeManagement = ({ token, adminId }) => {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,7 +26,7 @@ const ChallengeManagement = () => {
   const [submissions, setSubmissions] = useState([]);
   const [viewingSubmissions, setViewingSubmissions] = useState(null);
 
-  // Form state - UPDATED: Added ecoPoints field
+  // Form state - Fixed field name to match backend
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -38,7 +36,7 @@ const ChallengeManagement = () => {
     requirements: '',
     resources: '',
     mandatory: false,
-    ecoPoints: 0 // NEW: Added ecoPoints field
+    ecoPoints: 0 // Changed to match backend field name
   });
 
   useEffect(() => {
@@ -49,15 +47,59 @@ const ChallengeManagement = () => {
   const fetchChallenges = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log("Fetching challenges...");
+      
       const res = await getChallenges();
-      // Ensure all challenges have ecoPoints field with default value
-      const challengesWithEcoPoints = res.data.map(challenge => ({
-        ...challenge,
-        ecoPoints: challenge.ecoPoints || 0 // Ensure ecoPoints exists
+      console.log("API Response:", res);
+      console.log("Response data:", res.data);
+      
+      // Handle different possible response structures
+      let challengesData = [];
+      
+      if (Array.isArray(res)) {
+        challengesData = res;
+      } else if (Array.isArray(res?.data)) {
+        challengesData = res.data;
+      } else if (res?.data && typeof res.data === 'object') {
+        // If it's an object, check for common properties
+        if (Array.isArray(res.data.challenges)) {
+          challengesData = res.data.challenges;
+        } else if (Array.isArray(res.data.items)) {
+          challengesData = res.data.items;
+        } else {
+          // Convert object to array if needed
+          challengesData = Object.values(res.data);
+        }
+      }
+      
+      console.log("Processed challenges data:", challengesData);
+      
+      // Ensure each challenge has required fields with defaults - Fixed field names
+      const processedChallenges = challengesData.map(challenge => ({
+        _id: challenge._id || challenge.id,
+        title: challenge.title || 'Untitled Challenge',
+        description: challenge.description || 'No description',
+        category: challenge.category || 'environmental',
+        priority: challenge.priority || 'optional',
+        status: challenge.status || 'active',
+        deadline: challenge.deadline || '',
+        requirements: challenge.requirements || '',
+        resources: challenge.resources || '',
+        mandatory: challenge.mandatory || challenge.priority === 'mandatory',
+        ecoPoints: challenge.ecoPoints || challenge.ecopoints || 0, // Handle both cases
+        createdAt: challenge.createdAt || challenge.createdDate || new Date().toISOString(),
+        totalSubmissions: challenge.totalSubmissions || challenge.submissionCount || 0,
+        approvedSubmissions: challenge.approvedSubmissions || challenge.approvedCount || 0
       }));
-      setChallenges(challengesWithEcoPoints);
+      
+      console.log("Final processed challenges:", processedChallenges);
+      setChallenges(processedChallenges);
+      
     } catch (error) {
       console.error("Error fetching challenges:", error);
+      setError('Failed to load challenges. Please try again.');
+      setChallenges([]);
     } finally {
       setLoading(false);
     }
@@ -77,61 +119,37 @@ const ChallengeManagement = () => {
           documents: ['Campaign Report.pdf', 'Data Analysis.xlsx', 'Photos.zip'],
           description: 'Successfully reduced plastic waste by 60% through various initiatives',
           approvedBy: 'Admin User',
-          approvedAt: '2024-06-20',
-          ecoPointsAwarded: 500
-        },
-        {
-          _id: 's2',
-          challengeId: '1',
-          instituteName: 'Bright Future Institute',
-          instituteId: 'i2',
-          submissionDate: '2024-06-10',
-          status: 'pending',
-          documents: ['Implementation Report.pdf'],
-          description: 'Ongoing campaign with promising initial results',
-          approvedBy: null,
-          approvedAt: null,
-          ecoPointsAwarded: 0
-        },
-        {
-          _id: 's3',
-          challengeId: '2',
-          instituteName: 'Riverdale Academy',
-          instituteId: 'i3',
-          submissionDate: '2024-05-20',
-          status: 'approved',
-          documents: ['Energy Audit.pdf', 'Conservation Plan.docx'],
-          description: 'Implemented energy saving measures reducing consumption by 25%',
-          approvedBy: 'Admin User',
-          approvedAt: '2024-05-25',
-          ecoPointsAwarded: 300
+          approvedAt: '2024-06-20'
         }
       ];
-
       setSubmissions(sampleSubmissions);
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setSubmissions([]);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const payload = {
         ...formData,
-        createdBy: adminId
+        createdBy: adminId,
+        status: 'active'
       };
+
+      console.log("Submitting challenge:", payload);
 
       if (editingChallenge) {
         await updateChallenge(editingChallenge._id, payload);
+        console.log("Challenge updated successfully");
       } else {
         await createChallenge(payload, token);
+        console.log("Challenge created successfully");
       }
 
       setIsModalOpen(false);
       setEditingChallenge(null);
-
       setFormData({
         title: "",
         description: "",
@@ -141,28 +159,30 @@ const ChallengeManagement = () => {
         requirements: "",
         resources: "",
         mandatory: false,
-        ecoPoints: 0 // NEW: Reset ecoPoints
+        ecoPoints: 0 // Reset to match backend
       });
 
-      fetchChallenges();
+      await fetchChallenges();
 
     } catch (error) {
       console.error("Error saving challenge:", error);
+      alert('Failed to save challenge. Please try again.');
     }
   };
 
   const handleEdit = (challenge) => {
+    console.log("Editing challenge:", challenge);
     setEditingChallenge(challenge);
     setFormData({
-      title: challenge.title,
-      description: challenge.description,
-      category: challenge.category,
-      priority: challenge.priority,
-      deadline: challenge.deadline,
-      requirements: challenge.requirements,
-      resources: challenge.resources,
-      mandatory: challenge.mandatory,
-      ecoPoints: challenge.ecoPoints || 0 // NEW: Include ecoPoints
+      title: challenge.title || '',
+      description: challenge.description || '',
+      category: challenge.category || 'environmental',
+      priority: challenge.priority || 'optional',
+      deadline: challenge.deadline || '',
+      requirements: challenge.requirements || '',
+      resources: challenge.resources || '',
+      mandatory: challenge.mandatory || false,
+      ecoPoints: challenge.ecoPoints || 0 // Fixed field name
     });
     setIsModalOpen(true);
   };
@@ -171,7 +191,8 @@ const ChallengeManagement = () => {
     if (window.confirm('Are you sure you want to delete this challenge?')) {
       try {
         await deleteChallenge(challengeId);
-        fetchChallenges();
+        console.log("Challenge deleted successfully");
+        await fetchChallenges();
       } catch (error) {
         console.error('Error deleting challenge:', error);
         alert('Failed to delete challenge. Please try again.');
@@ -181,8 +202,7 @@ const ChallengeManagement = () => {
 
   const handleApproveSubmission = async (submissionId) => {
     try {
-      await API.put(`/government/submissions/${submissionId}/approve`);
-      fetchSubmissions();
+      console.log("Approving submission:", submissionId);
     } catch (error) {
       console.error('Error approving submission:', error);
     }
@@ -190,22 +210,35 @@ const ChallengeManagement = () => {
 
   const handleRejectSubmission = async (submissionId) => {
     try {
-      await API.put(`/government/submissions/${submissionId}/reject`);
-      fetchSubmissions();
+      console.log("Rejecting submission:", submissionId);
     } catch (error) {
       console.error('Error rejecting submission:', error);
     }
   };
 
+  // Safe filtering with null checks
   const filteredChallenges = challenges.filter(challenge => {
-    const matchesSearch = challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         challenge.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      challenge.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      challenge.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesStatus = statusFilter === 'all' || challenge.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
   });
 
   const getSubmissionsForChallenge = (challengeId) => {
     return submissions.filter(sub => sub.challengeId === challengeId);
+  };
+
+  // Safe date formatting helper
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No date set';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   if (loading) {
@@ -216,13 +249,35 @@ const ChallengeManagement = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 text-lg mb-2">Error</div>
+          <div className="text-gray-600 mb-4">{error}</div>
+          <button
+            onClick={fetchChallenges}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Challenge Management</h2>
-          <p className="text-gray-600">Create and manage environmental challenges for institutes</p>
+          <p className="text-gray-600">
+            {challenges.length > 0 
+              ? `Managing ${challenges.length} challenges` 
+              : 'Create and manage environmental challenges for institutes'
+            }
+          </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -232,6 +287,23 @@ const ChallengeManagement = () => {
           Add Challenge
         </button>
       </div>
+
+      {/* Debug Info - Uncomment to see what's being rendered
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4">
+          <h3 className="font-bold text-yellow-800">Debug Info</h3>
+          <p className="text-yellow-700 text-sm">
+            Challenges loaded: {challenges.length}<br />
+            First challenge data: {challenges[0] && JSON.stringify(challenges[0])}
+          </p>
+          <button 
+            onClick={() => console.log("All Challenges:", challenges)}
+            className="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Log Challenges to Console
+          </button>
+        </div>
+      )} */}
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -257,7 +329,7 @@ const ChallengeManagement = () => {
         </select>
       </div>
 
-      {/* Challenges Grid - FIXED: Eco Points display properly positioned */}
+      {/* Challenges Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredChallenges.map((challenge) => (
           <div key={challenge._id} className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6">
@@ -317,38 +389,25 @@ const ChallengeManagement = () => {
 
             <p className="text-gray-600 text-sm mb-4">{challenge.description}</p>
 
-            {/* FIXED: Eco Points Display - Now properly showing */}
-            <div className="flex items-center gap-3 mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-              <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                <Award size={16} className="text-green-600" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-bold text-green-800">
-                    {challenge.ecoPoints || 0}
-                  </span>
-                  <span className="text-sm font-semibold text-green-700">Eco Points</span>
-                </div>
-                <p className="text-xs text-green-600 mt-1">
-                  Awarded upon successful completion
-                </p>
-              </div>
-            </div>
-
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar size={14} />
-                <span>Deadline: {new Date(challenge.deadline).toLocaleDateString()}</span>
+                <span>Deadline: {formatDate(challenge.deadline)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Users size={14} />
                 <span>Submissions: {challenge.totalSubmissions} ({challenge.approvedSubmissions} approved)</span>
               </div>
+              {/* Ecopoints display - Fixed field name */}
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Award size={14} className="text-green-600" />
+                <span>Ecopoints: {challenge.ecoPoints || 0}</span>
+              </div>
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <span className="text-xs text-gray-500">
-                Created: {new Date(challenge.createdAt).toLocaleDateString()}
+                Created: {formatDate(challenge.createdAt)}
               </span>
               {challenge.mandatory && (
                 <Star size={14} className="text-yellow-500" />
@@ -358,14 +417,28 @@ const ChallengeManagement = () => {
         ))}
       </div>
 
-      {filteredChallenges.length === 0 && (
+      {filteredChallenges.length === 0 && challenges.length > 0 && (
         <div className="text-center py-12">
-          <Target size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-500">No challenges found</p>
+          <Search size={48} className="mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500">No challenges match your search criteria</p>
         </div>
       )}
 
-      {/* Add/Edit Challenge Modal - UPDATED: Added eco points field */}
+      {challenges.length === 0 && (
+        <div className="text-center py-12">
+          <Target size={48} className="mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500">No challenges found</p>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto"
+          >
+            <Plus size={20} />
+            Create Your First Challenge
+          </button>
+        </div>
+      )}
+
+      {/* Add/Edit Challenge Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -440,42 +513,35 @@ const ChallengeManagement = () => {
                   </div>
                 </div>
 
-                {/* NEW: Eco Points Input Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Eco Points *
-                  </label>
-                  <div className="relative">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Deadline
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.deadline}
+                      onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Ecopoints input - Fixed field name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ecopoints Reward *
+                    </label>
                     <input
                       type="number"
                       required
                       min="0"
                       max="1000"
                       value={formData.ecoPoints}
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        ecoPoints: parseInt(e.target.value) || 0 
-                      }))}
-                      className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter eco points reward"
+                      onChange={(e) => setFormData(prev => ({ ...prev, ecoPoints: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter ecopoints reward"
                     />
-                    <Award className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500" size={16} />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Points awarded to institutes upon successful completion
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Deadline
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
                 </div>
 
                 <div>
@@ -544,7 +610,7 @@ const ChallengeManagement = () => {
         </div>
       )}
 
-      {/* Submissions Modal - UPDATED: Added eco points display */}
+      {/* Submissions Modal */}
       {viewingSubmissions && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -571,26 +637,18 @@ const ChallengeManagement = () => {
                       <div>
                         <h4 className="font-semibold text-gray-800">{submission.instituteName}</h4>
                         <p className="text-sm text-gray-600">
-                          Submitted: {new Date(submission.submissionDate).toLocaleDateString()}
+                          Submitted: {formatDate(submission.submissionDate)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          submission.status === 'approved' 
-                            ? 'bg-green-100 text-green-800'
-                            : submission.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {submission.status}
-                        </span>
-                        {submission.ecoPointsAwarded > 0 && (
-                          <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                            <Award size={12} />
-                            {submission.ecoPointsAwarded} pts
-                          </span>
-                        )}
-                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        submission.status === 'approved' 
+                          ? 'bg-green-100 text-green-800'
+                          : submission.status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-orange-100 text-orange-800'
+                      }`}>
+                        {submission.status}
+                      </span>
                     </div>
 
                     <p className="text-gray-700 text-sm mb-3">{submission.description}</p>
@@ -630,16 +688,9 @@ const ChallengeManagement = () => {
                     )}
 
                     {submission.status === 'approved' && submission.approvedBy && (
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-gray-600">
-                          Approved by {submission.approvedBy} on {new Date(submission.approvedAt).toLocaleDateString()}
-                        </p>
-                        {submission.ecoPointsAwarded > 0 && (
-                          <p className="text-sm font-medium text-green-700">
-                            Awarded: {submission.ecoPointsAwarded} Eco Points
-                          </p>
-                        )}
-                      </div>
+                      <p className="text-sm text-gray-600">
+                        Approved by {submission.approvedBy} on {formatDate(submission.approvedAt)}
+                      </p>
                     )}
                   </div>
                 ))}

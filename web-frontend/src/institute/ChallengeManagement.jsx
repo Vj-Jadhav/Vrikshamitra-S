@@ -9,6 +9,7 @@ const ChallengeManagement = ({ instituteId }) => {
   const [students, setStudents] = useState([]);
   const [faculties, setFaculties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedChallenge, setSelectedChallenge] = useState(null);
@@ -49,15 +50,6 @@ const ChallengeManagement = ({ instituteId }) => {
     }
   }, [instituteId]);
 
-  useEffect(() => {
-    if (!instituteId) {
-      console.error('Institute ID is missing!');
-    } else {
-      console.log('Institute ID from props:', instituteId);
-      console.log('Type of instituteId:', typeof instituteId);
-    }
-  }, [instituteId]);
-
   const fetchInstitute = async () => {
     try {
       const data = await getInstituteById(instituteId);
@@ -76,7 +68,6 @@ const ChallengeManagement = ({ instituteId }) => {
     try {
       const data = await getStudentsByInstitute(instituteId);
       console.log("Fetched students:", data);
-      // Ensure students is always an array
       setStudents(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching students:", error);
@@ -88,7 +79,6 @@ const ChallengeManagement = ({ instituteId }) => {
     try {
       const data = await getFacultyByInstitute(instituteId);
       console.log("Fetched faculties:", data);
-      // Handle different response formats
       const facultiesData = data.data || data;
       setFaculties(Array.isArray(facultiesData) ? facultiesData : []);
     } catch (error) {
@@ -100,21 +90,63 @@ const ChallengeManagement = ({ instituteId }) => {
   const fetchChallenges = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log("Fetching challenges for institute...");
+      
       const res = await getChallenges();
-      const allChallenges = res.data || [];
-
-      const challengesWithProgress = allChallenges.map(challenge => ({
-        ...challenge,
-        instituteStatus: Math.random() > 0.7 ? 'in-progress' : 'not-started',
-        studentParticipation: Math.floor(Math.random() * 100),
-        progress: Math.floor(Math.random() * 100),
+      console.log("Raw API response:", res);
+      
+      // Handle different response structures
+      let challengesData = [];
+      
+      if (Array.isArray(res)) {
+        challengesData = res;
+      } else if (Array.isArray(res?.data)) {
+        challengesData = res.data;
+      } else if (res?.data && typeof res.data === 'object') {
+        // If it's an object, check for common properties
+        if (Array.isArray(res.data.challenges)) {
+          challengesData = res.data.challenges;
+        } else if (Array.isArray(res.data.items)) {
+          challengesData = res.data.items;
+        } else {
+          // Convert object to array if needed
+          challengesData = Object.values(res.data);
+        }
+      }
+      
+      console.log("Processed challenges data:", challengesData);
+      
+      // Ensure each challenge has required fields with defaults
+      const processedChallenges = challengesData.map(challenge => ({
+        _id: challenge._id || challenge.id,
+        title: challenge.title || 'Untitled Challenge',
+        description: challenge.description || 'No description',
+        category: challenge.category || 'environmental',
+        priority: challenge.priority || 'optional',
+        status: challenge.status || 'active',
+        deadline: challenge.deadline || '',
+        requirements: challenge.requirements || '',
+        resources: challenge.resources || '',
+        mandatory: challenge.mandatory || challenge.priority === 'mandatory',
+        ecoPoints: challenge.ecoPoints || challenge.ecopoints || 0,
+        createdAt: challenge.createdAt || challenge.createdDate || new Date().toISOString(),
+        totalSubmissions: challenge.totalSubmissions || challenge.submissionCount || 0,
+        approvedSubmissions: challenge.approvedSubmissions || challenge.approvedCount || 0,
+        // Institute-specific fields
+        instituteStatus: 'not-started', // Default status
+        studentParticipation: 0,
+        progress: 0,
         assignedBatches: [],
         assignmentDetails: null
       }));
 
-      setChallenges(challengesWithProgress);
+      console.log("Final challenges to display:", processedChallenges);
+      setChallenges(processedChallenges);
+      
     } catch (error) {
       console.error("Error fetching challenges:", error);
+      setError('Failed to load challenges. Please try again.');
       setChallenges([]);
     } finally {
       setLoading(false);
@@ -463,8 +495,44 @@ const ChallengeManagement = ({ instituteId }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 text-lg mb-2">Error</div>
+          <div className="text-gray-600 mb-4">{error}</div>
+          <button
+            onClick={fetchChallenges}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Debug Info - Remove in production */}
+      {/* {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4">
+          <h3 className="font-bold text-yellow-800">Debug Info</h3>
+          <p className="text-yellow-700 text-sm">
+            Institute ID: {instituteId}<br />
+            Challenges loaded: {challenges.length}<br />
+            Students loaded: {students.length}<br />
+            Faculties loaded: {faculties.length}
+          </p>
+          <button 
+            onClick={() => console.log("All Challenges:", challenges)}
+            className="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Log Challenges to Console
+          </button>
+        </div>
+      )} */}
+
       {/* Header with Add Challenge Button */}
       <div className="flex justify-between items-center">
         <div>
@@ -567,7 +635,7 @@ const ChallengeManagement = ({ instituteId }) => {
       </div>
 
       {/* Empty State */}
-      {filteredChallenges.length === 0 && (
+      {filteredChallenges.length === 0 && challenges.length === 0 && (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
           <Target className="mx-auto text-gray-300 mb-4" size={48} />
           <div className="text-gray-500">No challenges found</div>

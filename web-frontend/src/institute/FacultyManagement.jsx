@@ -42,20 +42,37 @@ const FacultyManagement = ({ instituteId }) => {
   };
 
   const fetchFaculty = async () => {
-    setLoading(true);
-    try {
-      console.log("🔍 Fetching faculty for institute:", instituteId);
-      const data = await getFacultyByInstitute(instituteId);
-      console.log("👨‍🏫 Faculty data:", data);
-      setFaculty(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("❌ Error fetching faculty:", error);
-      setFaculty([]);
-      alert('Failed to load faculty list');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    console.log("🔍 Fetching faculty for institute:", instituteId);
+    const response = await getFacultyByInstitute(instituteId);
+    console.log("👨‍🏫 Raw API response:", response);
+    
+    // Your backend returns { success: true, data: facultyArray }
+    let facultyData = [];
+    
+    if (response && response.success === true && Array.isArray(response.data)) {
+      facultyData = response.data;
+      console.log("✅ Found faculty array in response.data");
+    } else {
+      console.warn("⚠️ Unexpected response structure:", response);
+      facultyData = [];
     }
-  };
+    
+    console.log("✅ Final faculty data:", facultyData);
+    console.log("📊 Number of faculty members:", facultyData.length);
+    
+    setFaculty(facultyData);
+    
+  } catch (error) {
+    console.error("❌ Error fetching faculty:", error);
+    console.error("❌ Error details:", error.response?.data);
+    setFaculty([]);
+    alert('Failed to load faculty list');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleAddFaculty = async () => {
     // Validation based on institute type
@@ -374,65 +391,88 @@ const FacultyManagement = ({ instituteId }) => {
 };
 
 // Faculty Card Component
-const FacultyCard = ({ faculty, instituteType }) => (
-  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
-    <div className="flex items-start justify-between mb-4">
-      <div>
-        <h3 className="font-bold text-lg text-gray-800">{faculty.name}</h3>
-        <div className="flex flex-wrap gap-1 mt-1">
-          {faculty.faculty && (
-            <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-              <Building size={12} /> {faculty.faculty}
-            </span>
-          )}
-          {faculty.department && (
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-              <School size={12} /> {faculty.department}
-            </span>
-          )}
-          {instituteType === 'school' && (
-            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
-              <GraduationCap size={12} /> Teacher
-            </span>
-          )}
-        </div>
-      </div>
-      <span className={`px-2 py-1 rounded-full text-xs ${faculty.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-        {faculty.status || 'active'}
-      </span>
-    </div>
+const FacultyCard = ({ faculty, instituteType }) => {
+  // Safely access properties with fallbacks
+  const facultyName = faculty.name || faculty.fullName || 'Unknown Name';
+  const facultyEmail = faculty.email || faculty.emailAddress || 'No email';
+  const facultyPhone = faculty.phone || faculty.phoneNumber || faculty.mobile || '';
+  const facultyDept = faculty.department || faculty.dept || faculty.departmentName || '';
+  const facultyFaculty = faculty.faculty || faculty.facultyName || '';
+  
+  // Handle subjects - could be array, string, or undefined
+  let subjectsArray = [];
+  if (Array.isArray(faculty.subjects)) {
+    subjectsArray = faculty.subjects;
+  } else if (typeof faculty.subjects === 'string') {
+    subjectsArray = faculty.subjects.split(',').map(s => s.trim());
+  }
+  
+  const joinDate = faculty.joinDate || faculty.createdAt || faculty.joinedDate || new Date();
+  const status = faculty.status || faculty.accountStatus || 'active';
 
-    <div className="space-y-2 mb-4">
-      <div className="flex items-center gap-2 text-gray-600">
-        <Mail size={16} /><span className="text-sm">{faculty.email}</span>
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="font-bold text-lg text-gray-800">{facultyName}</h3>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {facultyFaculty && (
+              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                <Building size={12} /> {facultyFaculty}
+              </span>
+            )}
+            {facultyDept && (
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                <School size={12} /> {facultyDept}
+              </span>
+            )}
+            {instituteType === 'school' && (
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                <GraduationCap size={12} /> Teacher
+              </span>
+            )}
+          </div>
+        </div>
+        <span className={`px-2 py-1 rounded-full text-xs ${status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+          {status}
+        </span>
       </div>
-      {faculty.phone && (
+
+      <div className="space-y-2 mb-4">
         <div className="flex items-center gap-2 text-gray-600">
-          <Phone size={16} /><span className="text-sm">{faculty.phone}</span>
+          <Mail size={16} /><span className="text-sm">{facultyEmail}</span>
         </div>
-      )}
-    </div>
-
-    <div className="mb-4">
-      <div className="flex items-center gap-2 text-gray-600 mb-2">
-        <BookOpen size={16} /><span className="text-sm font-medium">Subjects</span>
-      </div>
-      <div className="flex flex-wrap gap-1">
-        {faculty.subjects?.map((subject, idx) => (
-          <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">{subject}</span>
-        ))}
-        {(!faculty.subjects || faculty.subjects.length === 0) && (
-          <span className="text-gray-400 text-xs">No subjects assigned</span>
+        {facultyPhone && (
+          <div className="flex items-center gap-2 text-gray-600">
+            <Phone size={16} /><span className="text-sm">{facultyPhone}</span>
+          </div>
         )}
       </div>
-    </div>
 
-    <div className="flex justify-between items-center text-sm text-gray-500">
-      <span>Joined: {new Date(faculty.joinDate || faculty.createdAt).toLocaleDateString()}</span>
-      <button className="text-blue-500 hover:text-blue-700 font-medium">View Profile</button>
+      <div className="mb-4">
+        <div className="flex items-center gap-2 text-gray-600 mb-2">
+          <BookOpen size={16} /><span className="text-sm font-medium">Subjects</span>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {subjectsArray.length > 0 ? (
+            subjectsArray.map((subject, idx) => (
+              <span key={idx} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                {subject}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-400 text-xs">No subjects assigned</span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-sm text-gray-500">
+        <span>Joined: {new Date(joinDate).toLocaleDateString()}</span>
+        <button className="text-blue-500 hover:text-blue-700 font-medium">View Profile</button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // University Faculty Form Component
 const UniversityFacultyForm = ({ newFaculty, setNewFaculty, universityFaculties, availableDepartments }) => (
