@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
 import Faculty from "../models/Faculty.js";
 import Student from "../models/Student.js";
-// import Admin from "../models/AdminSchema.js";
+import Admin from "../models/AdminSchema.js";
 import { sendOTPEmail } from "../utils/emailService.js";
 
 // ===============================
