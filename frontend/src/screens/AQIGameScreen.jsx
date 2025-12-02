@@ -2,7 +2,7 @@ import React from "react";
 import { View, Platform } from "react-native";
 import { WebView } from "react-native-webview";
 
-export default function OceanGameScreen() {
+export default function AQIGameScreen() {
   return (
     <View style={{ flex: 1 }}>
       <WebView
@@ -10,8 +10,8 @@ export default function OceanGameScreen() {
 
         source={
           Platform.OS === "android"
-            ? { uri: "file:///android_asset/OceanGame/index.html" }
-            : require("../assets/OceanGame/index.html")
+            ? { uri: "file:///android_asset/AQIGame/home.html" }
+            : require("../assets/AQIGame/home.html")
         }
 
         allowFileAccess={true}

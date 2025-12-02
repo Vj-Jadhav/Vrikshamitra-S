@@ -642,27 +642,25 @@ export default function GamesScreen() {
           </View>
         </View>
 
-        {/* Mini Games Banner */}
-        <View style={[styles.featuredBanner, styles.miniGamesBanner]}>
-          <View style={styles.featuredContent}>
-            <Text style={[styles.featuredTitle, styles.miniGamesTitle]}>Quick Play</Text>
-            <Text style={[styles.featuredSubtitle, styles.miniGamesSubtitle]}>Mini Games Collection</Text>
-            <Text style={styles.featuredDescription}>
-              Explore a variety of quick eco-games designed to teach and entertain!
-            </Text>
-            <TouchableOpacity 
-              style={[styles.featuredButton, styles.miniGamesButton]}
-              onPress={() => navigation.navigate('MiniGames')}
-            >
-              <Text style={styles.featuredButtonText}>Explore Mini Games</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.featuredIcon}>
-            <Text style={styles.featuredIconText}>🎮</Text>
-          </View>
-        </View>
+        <View style={[styles.featuredBanner, styles.aqiBanner]}>
+  <View style={styles.featuredContent}>
+    <Text style={[styles.featuredTitle, styles.aqiTitle]}>AQI Adventure</Text>
+    <Text style={[styles.featuredSubtitle, styles.aqiSubtitle]}>Air Quality Awareness Game</Text>
+    <Text style={styles.featuredDescription}>
+      Play an interactive AQI learning game! Identify pollution sources, improve air quality, and discover ways to protect your health.
+    </Text>
+    <TouchableOpacity 
+      style={[styles.featuredButton, styles.aqiButton]}
+      onPress={() => navigation.navigate('AQIGame')}
+    >
+      <Text style={styles.featuredButtonText}>Start AQI Mission</Text>
+    </TouchableOpacity>
+  </View>
+  <View style={styles.featuredIcon}>
+    <Text style={styles.featuredIconText}>🌬️</Text>
+  </View>
+</View>
       </ScrollView>
-      
       {renderGameModal()}
     </View>
   );
