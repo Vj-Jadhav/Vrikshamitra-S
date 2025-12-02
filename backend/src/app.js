@@ -4,7 +4,13 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
+
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/user.js";
+import governmentRoutes from "./routes/governmentRoutes.js";
+import instituteRoutes from "./routes/instituteRoutes.js";
+import challengeRoutes from "./routes/challengeRoutes.js";
+import learningModuleRoutes from "./routes/learningModule.js";
 
 const app = express();
 
@@ -17,5 +23,10 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/government", governmentRoutes);
+app.use("/api/institute", instituteRoutes);
+app.use("/api/challenges", challengeRoutes);
+app.use("/api/learningmodules", learningModuleRoutes);
 
 export default app;
