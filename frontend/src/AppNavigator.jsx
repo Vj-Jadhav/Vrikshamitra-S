@@ -29,6 +29,8 @@ import MiniGamesScreen from './screens/MiniGamesScreen';
 import GardenScreen from './screens/GardenScreen';
 import RecycleScreen from './screens/RecycleScreen';
 import LearningScreen from './screens/LearningScreen';
+import OceanGameScreen from './screens/OceanGameScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -65,6 +67,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Garden" component={GardenScreen} />
         <Stack.Screen name="Recycle" component={RecycleScreen} />
         <Stack.Screen name="Learning" component={LearningScreen} />
+        <Stack.Screen name="OceanGame" component={OceanGameScreen}/>
+
 
       </Stack.Navigator>
     </NavigationContainer>
