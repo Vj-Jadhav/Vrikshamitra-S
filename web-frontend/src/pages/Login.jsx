@@ -11,14 +11,65 @@ export default function Login() {
     password: "", 
     role: "" 
   });
+  const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const handleOTPFlow = async (email, role) => {
+    try {
+      setLoading(true);
+      
+      // FIXED: Correct endpoint URLs
+      const endpoint = role === "student" 
+        ? "/auth/student/login-attempt" 
+        : "/auth/faculty/login-attempt";
+      
+      console.log("Calling OTP endpoint:", endpoint, "with email:", email);
+      
+      const attemptResponse = await API.post(endpoint, { email });
+      
+      console.log("OTP response:", attemptResponse.data);
+      
+      if (attemptResponse.data.requiresPasswordSetup) {
+        // Redirect to OTP verification page
+        navigate("/setup-password", { 
+          state: { 
+            email: email,
+            role: role,
+            otpExpires: attemptResponse.data.otpExpires,
+            message: attemptResponse.data.message
+          } 
+        });
+        return true; // OTP flow initiated
+      }
+      
+      return false; // No OTP needed, proceed with normal login
+      
+    } catch (error) {
+      console.error("OTP flow error:", error);
+      alert(error.response?.data?.message || "Error initiating password setup");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      // console.log("Submitting form:", form);
+    setLoading(true);
 
+    try {
+      // Special handling for student and faculty roles
+      if (form.role === "student" || form.role === "faculty") {
+        const otpInitiated = await handleOTPFlow(form.email, form.role);
+        if (otpInitiated) {
+          return; // Stop here, OTP flow started
+        }
+        // If no OTP needed, continue with normal login
+      }
+
+      // Normal login for all roles
+      console.log("Normal login attempt:", form);
       const res = await API.post("/auth/login", form);
 
       const userFromApi = res.data.user;
@@ -35,7 +86,7 @@ export default function Login() {
       // Role-based navigation
       switch (user.role) {
         case "admin":
-          navigate("/GovernmentDashboard");
+          navigate("/governmentDashboard");
           break;
         case "institute":
           navigate("/InstituteDashboard");
@@ -43,14 +94,58 @@ export default function Login() {
         case "faculty":
           navigate("/FacultyDashboard");
           break;
+        case "student":
+          navigate("/StudentDashboard");
+          break;
         default:
+          navigate("/");
           break;
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert("Invalid credentials. Please try again.");
+      
+      // Handle specific error cases
+      if (error.response?.data?.requiresPasswordSetup) {
+        // This shouldn't happen with our flow, but as backup
+        navigate("/setup-password", { 
+          state: { 
+            email: form.email,
+            role: form.role,
+            message: error.response.data.message
+          } 
+        });
+      } else {
+        alert(error.response?.data?.message || "Invalid credentials. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
+  const isFirstTimeLogin = () => {
+    return (form.role === "student" || form.role === "faculty") && !form.password;
+  };
+
+  const getRoleSpecificInfo = () => {
+    if (form.role === "student") {
+      return {
+        message: "First time student? Leave password blank and we'll send an OTP to your email for password setup.",
+        bgColor: "bg-blue-50",
+        borderColor: "border-blue-200",
+        textColor: "text-blue-700"
+      };
+    } else if (form.role === "faculty") {
+      return {
+        message: "First time faculty? Leave password blank and we'll send an OTP to your email for password setup.",
+        bgColor: "bg-purple-50",
+        borderColor: "border-purple-200",
+        textColor: "text-purple-700"
+      };
+    }
+    return null;
+  };
+
+  const roleInfo = getRoleSpecificInfo();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 via-green-200 to-green-300">
@@ -90,8 +185,13 @@ export default function Login() {
               value={form.password}
               className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
+              required={!isFirstTimeLogin()}
             />
+            {(form.role === "student" || form.role === "faculty") && (
+              <p className="text-xs text-gray-500 mt-1">
+                Leave blank if this is your first login
+              </p>
+            )}
           </div>
 
           {/* Role Dropdown */}
@@ -107,6 +207,7 @@ export default function Login() {
               <option value="admin">Admin</option>
               <option value="institute">Institute</option>
               <option value="faculty">Faculty</option>
+              <option value="student">Student</option>
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,9 +218,10 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300"
+            disabled={loading}
+            className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-300 disabled:bg-green-400 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? "Processing..." : "Login"}
           </button>
         </form>
 
@@ -132,6 +234,15 @@ export default function Login() {
             Register
           </span>
         </p>
+
+        {/* Role-specific info */}
+        {roleInfo && (
+          <div className={`mt-4 p-3 ${roleInfo.bgColor} rounded-lg border ${roleInfo.borderColor}`}>
+            <p className={`text-xs ${roleInfo.textColor} text-center`}>
+              <strong>First time {form.role}?</strong> {roleInfo.message}
+            </p>
+          </div>
+        )}
       </motion.div>
     </div>
   );

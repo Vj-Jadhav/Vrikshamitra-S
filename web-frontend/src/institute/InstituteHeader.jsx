@@ -1,6 +1,6 @@
 // Enhanced InstituteHeader.jsx
 import React from 'react';
-import { Building2, Users, GraduationCap, Award, School, University, Target } from 'lucide-react';
+import { Building2, Users, GraduationCap, Award, School, University } from 'lucide-react';
 
 const InstituteHeader = ({ instituteData, stats }) => {
   const getInstituteTypeIcon = (type) => {
@@ -18,11 +18,11 @@ const InstituteHeader = ({ instituteData, stats }) => {
 
   const getInstituteSpecificStats = () => {
     const baseStats = [
-      // {
-      //   title: "Faculty",
-      //   value: stats.totalFaculty,
-      //   icon: Users,
-      // },
+      {
+        title: "Faculty",
+        value: stats.totalFaculty,
+        icon: Users,
+      },
       {
         title: "Students", 
         value: stats.totalStudents,
@@ -32,14 +32,8 @@ const InstituteHeader = ({ instituteData, stats }) => {
         title: "Eco Points",
         value: stats.totalEcoPoints,
         icon: Award,
-      },
-          {
-      title: "Active Challenges",
-      value: stats.activeChallenges,
-      icon: Target,
-    }
-  ];
-
+      }
+    ];
 
     switch (instituteData.type) {
       case 'school':

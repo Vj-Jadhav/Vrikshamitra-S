@@ -30,7 +30,7 @@ useEffect(() => {
     try {
       const payload = JSON.parse(atob(tk.split('.')[1]));
       console.log("Decoded payload:", payload);
-      setDecodedToken(payload);   // ⬅️ Save it for use
+      setDecodedToken(payload);   // ⬅ Save it for use
     } catch (err) {
       console.error("Failed to decode token:", err);
     }
@@ -61,7 +61,7 @@ useEffect(() => {
   //   try {
   //     setLoadingAnalytics(true);
   //     setAnalyticsError(null);
-  //     const res = await API.get(`/government/${user._id}/analytics`);
+  //     const res = await API.get(/government/${user._id}/analytics);
   //     setAnalytics(res.data);
   //     setAdminData(prev => ({
   //       ...prev,

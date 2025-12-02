@@ -3,23 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Target, 
   CheckCircle, 
-  Clock, 
   Edit, 
   Trash2, 
-  Download,
   FileText,
   Users,
   Calendar,
-  Star
+  Star,
+  Award
 } from 'lucide-react';
-import { API, createChallenge, updateChallenge, getChallenges, deleteChallenge  } from "../utils/api";
+import { API, createChallenge, updateChallenge, getChallenges, deleteChallenge } from "../utils/api";
 
 const ChallengeManagement = ({ token, adminId }) => {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,7 +26,7 @@ const ChallengeManagement = ({ token, adminId }) => {
   const [submissions, setSubmissions] = useState([]);
   const [viewingSubmissions, setViewingSubmissions] = useState(null);
 
-  // Form state
+  // Form state - Fixed field name to match backend
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,7 +35,8 @@ const ChallengeManagement = ({ token, adminId }) => {
     deadline: '',
     requirements: '',
     resources: '',
-    mandatory: false
+    mandatory: false,
+    ecoPoints: 0 // Changed to match backend field name
   });
 
   useEffect(() => {
@@ -44,81 +44,66 @@ const ChallengeManagement = ({ token, adminId }) => {
     fetchSubmissions();
   }, []);
 
-  // Mock data for challenges
-//   const fetchChallenges = async () => {
-//     try {
-//       setLoading(true);
-//       await new Promise(resolve => setTimeout(resolve, 1000));
+  const fetchChallenges = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("Fetching challenges...");
       
-//       const sampleChallenges = [
-//         {
-//           _id: '1',
-//           title: 'Plastic Waste Reduction Campaign',
-//           description: 'Organize a campus-wide campaign to reduce single-use plastic consumption by 50%',
-//           category: 'environmental',
-//           priority: 'mandatory',
-//           status: 'active',
-//           deadline: '2024-12-31',
-//           requirements: 'Documentation of campaign activities, before-after data collection, student participation metrics',
-//           resources: 'Guidelines PDF, Data collection templates',
-//           mandatory: true,
-//           createdAt: '2024-01-15',
-//           totalSubmissions: 8,
-//           approvedSubmissions: 5
-//         },
-//         {
-//           _id: '2',
-//           title: 'Energy Conservation Audit',
-//           description: 'Conduct energy audit and implement conservation measures',
-//           category: 'energy',
-//           priority: 'optional',
-//           status: 'active',
-//           deadline: '2024-11-30',
-//           requirements: 'Audit report, Implementation plan, Energy savings data',
-//           resources: 'Audit checklist, Measurement tools guide',
-//           mandatory: false,
-//           createdAt: '2024-01-10',
-//           totalSubmissions: 12,
-//           approvedSubmissions: 8
-//         },
-//         {
-//           _id: '3',
-//           title: 'Tree Plantation Drive',
-//           description: 'Plant and maintain 1000 trees on campus and surrounding areas',
-//           category: 'green-cover',
-//           priority: 'mandatory',
-//           status: 'completed',
-//           deadline: '2024-06-30',
-//           requirements: 'Plantation records, Maintenance schedule, Survival rate data',
-//           resources: 'Species selection guide, Maintenance manual',
-//           mandatory: true,
-//           createdAt: '2024-01-05',
-//           totalSubmissions: 15,
-//           approvedSubmissions: 12
-//         }
-//       ];
-
-//       setChallenges(sampleChallenges);
-//     } catch (error) {
-//       console.error('Error fetching challenges:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-const fetchChallenges = async () => {
-  try {
-    setLoading(true);
-
-    const res = await getChallenges();
-    setChallenges(res.data);
-
-  } catch (error) {
-    console.error("Error fetching challenges:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      const res = await getChallenges();
+      console.log("API Response:", res);
+      console.log("Response data:", res.data);
+      
+      // Handle different possible response structures
+      let challengesData = [];
+      
+      if (Array.isArray(res)) {
+        challengesData = res;
+      } else if (Array.isArray(res?.data)) {
+        challengesData = res.data;
+      } else if (res?.data && typeof res.data === 'object') {
+        // If it's an object, check for common properties
+        if (Array.isArray(res.data.challenges)) {
+          challengesData = res.data.challenges;
+        } else if (Array.isArray(res.data.items)) {
+          challengesData = res.data.items;
+        } else {
+          // Convert object to array if needed
+          challengesData = Object.values(res.data);
+        }
+      }
+      
+      console.log("Processed challenges data:", challengesData);
+      
+      // Ensure each challenge has required fields with defaults - Fixed field names
+      const processedChallenges = challengesData.map(challenge => ({
+        _id: challenge._id || challenge.id,
+        title: challenge.title || 'Untitled Challenge',
+        description: challenge.description || 'No description',
+        category: challenge.category || 'environmental',
+        priority: challenge.priority || 'optional',
+        status: challenge.status || 'active',
+        deadline: challenge.deadline || '',
+        requirements: challenge.requirements || '',
+        resources: challenge.resources || '',
+        mandatory: challenge.mandatory || challenge.priority === 'mandatory',
+        ecoPoints: challenge.ecoPoints || challenge.ecopoints || 0, // Handle both cases
+        createdAt: challenge.createdAt || challenge.createdDate || new Date().toISOString(),
+        totalSubmissions: challenge.totalSubmissions || challenge.submissionCount || 0,
+        approvedSubmissions: challenge.approvedSubmissions || challenge.approvedCount || 0
+      }));
+      
+      console.log("Final processed challenges:", processedChallenges);
+      setChallenges(processedChallenges);
+      
+    } catch (error) {
+      console.error("Error fetching challenges:", error);
+      setError('Failed to load challenges. Please try again.');
+      setChallenges([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Mock data for submissions
   const fetchSubmissions = async () => {
@@ -135,108 +120,89 @@ const fetchChallenges = async () => {
           description: 'Successfully reduced plastic waste by 60% through various initiatives',
           approvedBy: 'Admin User',
           approvedAt: '2024-06-20'
-        },
-        {
-          _id: 's2',
-          challengeId: '1',
-          instituteName: 'Bright Future Institute',
-          instituteId: 'i2',
-          submissionDate: '2024-06-10',
-          status: 'pending',
-          documents: ['Implementation Report.pdf'],
-          description: 'Ongoing campaign with promising initial results',
-          approvedBy: null,
-          approvedAt: null
-        },
-        {
-          _id: 's3',
-          challengeId: '2',
-          instituteName: 'Riverdale Academy',
-          instituteId: 'i3',
-          submissionDate: '2024-05-20',
-          status: 'approved',
-          documents: ['Energy Audit.pdf', 'Conservation Plan.docx'],
-          description: 'Implemented energy saving measures reducing consumption by 25%',
-          approvedBy: 'Admin User',
-          approvedAt: '2024-05-25'
         }
       ];
-
       setSubmissions(sampleSubmissions);
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setSubmissions([]);
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...formData,
+        createdBy: adminId,
+        status: 'active'
+      };
 
-  try {
-    const payload = {
-      ...formData,
-      createdBy: adminId
-    };
+      console.log("Submitting challenge:", payload);
 
-    if (editingChallenge) {
-      await updateChallenge(editingChallenge._id, payload);
-    } else {
-      await createChallenge(payload,token);
+      if (editingChallenge) {
+        await updateChallenge(editingChallenge._id, payload);
+        console.log("Challenge updated successfully");
+      } else {
+        await createChallenge(payload, token);
+        console.log("Challenge created successfully");
+      }
+
+      setIsModalOpen(false);
+      setEditingChallenge(null);
+      setFormData({
+        title: "",
+        description: "",
+        category: "environmental",
+        priority: "optional",
+        deadline: "",
+        requirements: "",
+        resources: "",
+        mandatory: false,
+        ecoPoints: 0 // Reset to match backend
+      });
+
+      await fetchChallenges();
+
+    } catch (error) {
+      console.error("Error saving challenge:", error);
+      alert('Failed to save challenge. Please try again.');
     }
-
-    setIsModalOpen(false);
-    setEditingChallenge(null);
-
-    setFormData({
-      title: "",
-      description: "",
-      category: "environmental",
-      priority: "optional",
-      deadline: "",
-      requirements: "",
-      resources: "",
-      mandatory: false
-    });
-
-    fetchChallenges();
-
-  } catch (error) {
-    console.error("Error saving challenge:", error);
-  }
-};
-
+  };
 
   const handleEdit = (challenge) => {
+    console.log("Editing challenge:", challenge);
     setEditingChallenge(challenge);
     setFormData({
-      title: challenge.title,
-      description: challenge.description,
-      category: challenge.category,
-      priority: challenge.priority,
-      deadline: challenge.deadline,
-      requirements: challenge.requirements,
-      resources: challenge.resources,
-      mandatory: challenge.mandatory
+      title: challenge.title || '',
+      description: challenge.description || '',
+      category: challenge.category || 'environmental',
+      priority: challenge.priority || 'optional',
+      deadline: challenge.deadline || '',
+      requirements: challenge.requirements || '',
+      resources: challenge.resources || '',
+      mandatory: challenge.mandatory || false,
+      ecoPoints: challenge.ecoPoints || 0 // Fixed field name
     });
     setIsModalOpen(true);
   };
 
-const handleDelete = async (challengeId) => {
-  if (window.confirm('Are you sure you want to delete this challenge?')) {
-    try {
-      await deleteChallenge(challengeId); // use your API helper
-      fetchChallenges(); // refresh the list
-    } catch (error) {
-      console.error('Error deleting challenge:', error);
-      alert('Failed to delete challenge. Please try again.');
+  const handleDelete = async (challengeId) => {
+    if (window.confirm('Are you sure you want to delete this challenge?')) {
+      try {
+        await deleteChallenge(challengeId);
+        console.log("Challenge deleted successfully");
+        await fetchChallenges();
+      } catch (error) {
+        console.error('Error deleting challenge:', error);
+        alert('Failed to delete challenge. Please try again.');
+      }
     }
-  }
-};
-
+  };
 
   const handleApproveSubmission = async (submissionId) => {
     try {
-      await API.put(`/government/submissions/${submissionId}/approve`);
-      fetchSubmissions();
+      console.log("Approving submission:", submissionId);
     } catch (error) {
       console.error('Error approving submission:', error);
     }
@@ -244,22 +210,35 @@ const handleDelete = async (challengeId) => {
 
   const handleRejectSubmission = async (submissionId) => {
     try {
-      await API.put(`/government/submissions/${submissionId}/reject`);
-      fetchSubmissions();
+      console.log("Rejecting submission:", submissionId);
     } catch (error) {
       console.error('Error rejecting submission:', error);
     }
   };
 
+  // Safe filtering with null checks
   const filteredChallenges = challenges.filter(challenge => {
-    const matchesSearch = challenge.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         challenge.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      challenge.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      challenge.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
     const matchesStatus = statusFilter === 'all' || challenge.status === statusFilter;
+    
     return matchesSearch && matchesStatus;
   });
 
   const getSubmissionsForChallenge = (challengeId) => {
     return submissions.filter(sub => sub.challengeId === challengeId);
+  };
+
+  // Safe date formatting helper
+  const formatDate = (dateString) => {
+    if (!dateString) return 'No date set';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch (error) {
+      return 'Invalid date';
+    }
   };
 
   if (loading) {
@@ -270,13 +249,35 @@ const handleDelete = async (challengeId) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 text-lg mb-2">Error</div>
+          <div className="text-gray-600 mb-4">{error}</div>
+          <button
+            onClick={fetchChallenges}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Challenge Management</h2>
-          <p className="text-gray-600">Create and manage environmental challenges for institutes</p>
+          <p className="text-gray-600">
+            {challenges.length > 0 
+              ? `Managing ${challenges.length} challenges` 
+              : 'Create and manage environmental challenges for institutes'
+            }
+          </p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -286,6 +287,23 @@ const handleDelete = async (challengeId) => {
           Add Challenge
         </button>
       </div>
+
+      {/* Debug Info - Uncomment to see what's being rendered
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4">
+          <h3 className="font-bold text-yellow-800">Debug Info</h3>
+          <p className="text-yellow-700 text-sm">
+            Challenges loaded: {challenges.length}<br />
+            First challenge data: {challenges[0] && JSON.stringify(challenges[0])}
+          </p>
+          <button 
+            onClick={() => console.log("All Challenges:", challenges)}
+            className="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm"
+          >
+            Log Challenges to Console
+          </button>
+        </div>
+      )} */}
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -374,17 +392,22 @@ const handleDelete = async (challengeId) => {
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar size={14} />
-                <span>Deadline: {new Date(challenge.deadline).toLocaleDateString()}</span>
+                <span>Deadline: {formatDate(challenge.deadline)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Users size={14} />
                 <span>Submissions: {challenge.totalSubmissions} ({challenge.approvedSubmissions} approved)</span>
               </div>
+              {/* Ecopoints display - Fixed field name */}
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Award size={14} className="text-green-600" />
+                <span>Ecopoints: {challenge.ecoPoints || 0}</span>
+              </div>
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <span className="text-xs text-gray-500">
-                Created: {new Date(challenge.createdAt).toLocaleDateString()}
+                Created: {formatDate(challenge.createdAt)}
               </span>
               {challenge.mandatory && (
                 <Star size={14} className="text-yellow-500" />
@@ -394,10 +417,24 @@ const handleDelete = async (challengeId) => {
         ))}
       </div>
 
-      {filteredChallenges.length === 0 && (
+      {filteredChallenges.length === 0 && challenges.length > 0 && (
+        <div className="text-center py-12">
+          <Search size={48} className="mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500">No challenges match your search criteria</p>
+        </div>
+      )}
+
+      {challenges.length === 0 && (
         <div className="text-center py-12">
           <Target size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-500">No challenges found</p>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto"
+          >
+            <Plus size={20} />
+            Create Your First Challenge
+          </button>
         </div>
       )}
 
@@ -476,16 +513,35 @@ const handleDelete = async (challengeId) => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Deadline
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Deadline
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.deadline}
+                      onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* Ecopoints input - Fixed field name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ecopoints Reward *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      max="1000"
+                      value={formData.ecoPoints}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ecoPoints: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter ecopoints reward"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -581,7 +637,7 @@ const handleDelete = async (challengeId) => {
                       <div>
                         <h4 className="font-semibold text-gray-800">{submission.instituteName}</h4>
                         <p className="text-sm text-gray-600">
-                          Submitted: {new Date(submission.submissionDate).toLocaleDateString()}
+                          Submitted: {formatDate(submission.submissionDate)}
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -633,7 +689,7 @@ const handleDelete = async (challengeId) => {
 
                     {submission.status === 'approved' && submission.approvedBy && (
                       <p className="text-sm text-gray-600">
-                        Approved by {submission.approvedBy} on {new Date(submission.approvedAt).toLocaleDateString()}
+                        Approved by {submission.approvedBy} on {formatDate(submission.approvedAt)}
                       </p>
                     )}
                   </div>
