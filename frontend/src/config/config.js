@@ -9,4 +9,8 @@ export const API_ENDPOINTS = {
 
   REPORTS: `${BASE_URL}/api/reports`,
   TEST: `${BASE_URL}/`, 
+  COMPLAINTS: `${BASE_URL}/api/reports`,
+  SCHEDULE_CLEANUP: `${BASE_URL}/api/reports/schedule`,
+  SCHEDULE_COUNTS: `${BASE_URL}/api/reports/schedule/counts`,
+
 };
