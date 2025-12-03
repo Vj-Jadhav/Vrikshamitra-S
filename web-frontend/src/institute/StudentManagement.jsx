@@ -65,10 +65,35 @@ const StudentManagement = ({ instituteId }) => {
     setLoading(true);
     try {
       const data = await getStudentsByInstitute(instituteId);
-      setStudents(data);
-      console.log('Fetched students:', data); // Debug log
+      
+      // Handle different API response formats
+      console.log('Raw API response:', data);
+      console.log('Type of response:', typeof data);
+      console.log('Is array?', Array.isArray(data));
+      
+      if (Array.isArray(data)) {
+        setStudents(data);
+      } else if (data && typeof data === 'object') {
+        // Check for common response formats
+        if (Array.isArray(data.data)) {
+          setStudents(data.data);
+        } else if (Array.isArray(data.students)) {
+          setStudents(data.students);
+        } else if (data.success && Array.isArray(data.data)) {
+          setStudents(data.data);
+        } else {
+          console.warn('Unexpected response format:', data);
+          setStudents([]);
+        }
+      } else {
+        console.warn('Unexpected response type:', data);
+        setStudents([]);
+      }
+      
+      console.log('Processed students:', students);
     } catch (error) {
       console.error("Error fetching students:", error);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -302,21 +327,29 @@ const StudentManagement = ({ instituteId }) => {
     window.URL.revokeObjectURL(url);
   };
 
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (filters.grade === '' || student.grade === filters.grade) &&
-    (filters.department === '' || student.department === filters.department) &&
-    (filters.faculty === '' || student.faculty === filters.faculty) &&
-    (filters.batch === '' || student.batch === filters.batch) &&
-    (filters.program === '' || student.program === filters.program)
-  );
+  // Safeguard filter with array check
+  const filteredStudents = Array.isArray(students) 
+    ? students.filter(student => {
+        if (!student || !student.name) return false;
+        
+        const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGrade = filters.grade === '' || student.grade === filters.grade;
+        const matchesDepartment = filters.department === '' || student.department === filters.department;
+        const matchesFaculty = filters.faculty === '' || student.faculty === filters.faculty;
+        const matchesBatch = filters.batch === '' || student.batch === filters.batch;
+        const matchesProgram = filters.program === '' || student.program === filters.program;
+        
+        return matchesSearch && matchesGrade && matchesDepartment && 
+               matchesFaculty && matchesBatch && matchesProgram;
+      })
+    : [];
 
-  // Get unique values for filters
-  const grades = [...new Set(students.map(s => s.grade).filter(Boolean))];
-  const departments = [...new Set(students.map(s => s.department).filter(Boolean))];
-  const faculties = [...new Set(students.map(s => s.faculty).filter(Boolean))];
-  const batches = [...new Set(students.map(s => s.batch).filter(Boolean))];
-  const programs = [...new Set(students.map(s => s.program).filter(Boolean))];
+  // Get unique values for filters with array check
+  const grades = Array.isArray(students) ? [...new Set(students.map(s => s?.grade).filter(Boolean))] : [];
+  const departments = Array.isArray(students) ? [...new Set(students.map(s => s?.department).filter(Boolean))] : [];
+  const faculties = Array.isArray(students) ? [...new Set(students.map(s => s?.faculty).filter(Boolean))] : [];
+  const batches = Array.isArray(students) ? [...new Set(students.map(s => s?.batch).filter(Boolean))] : [];
+  const programs = Array.isArray(students) ? [...new Set(students.map(s => s?.program).filter(Boolean))] : [];
 
   const renderAddStudentForm = () => {
     if (!institute) return <div>Loading institute details...</div>;
@@ -334,6 +367,8 @@ const StudentManagement = ({ instituteId }) => {
   };
 
   const renderStudentBadges = (student) => {
+    if (!student) return null;
+    
     const badges = [];
     
     if (student.faculty) {
@@ -375,7 +410,7 @@ const StudentManagement = ({ instituteId }) => {
     <div className="space-y-6">
       {/* Debug info - remove in production */}
       <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-        Debug: {students.length} students loaded | Institute: {instituteId}
+        Debug: {Array.isArray(students) ? students.length : 'not array'} students loaded | Institute: {instituteId}
       </div>
 
       <div className="flex justify-between items-center">
@@ -487,63 +522,74 @@ const StudentManagement = ({ instituteId }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStudents.map((student) => (
-                <tr key={student._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {student.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                        <div className="text-sm text-gray-500">{student.rollNumber}</div>
-                        {student.enrollmentNumber && (
-                          <div className="text-xs text-gray-400">{student.enrollmentNumber}</div>
-                        )}
-                      </div>
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-8">
+                    <div className="flex justify-center items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <span className="ml-2">Loading students...</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{student.email}</div>
-                    <div className="text-sm text-gray-500">{student.phone}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {renderStudentBadges(student)}
-                    </div>
-                    {student.program && (
-                      <div className="text-sm text-gray-600 mt-1">{student.program}</div>
-                    )}
-                    {student.semester && (
-                      <div className="text-sm text-gray-600">Semester: {student.semester}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{student.ecoPoints || 0}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {student.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                    <button className="text-green-600 hover:text-green-900">View</button>
                   </td>
                 </tr>
-              ))}
+              ) : filteredStudents.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="text-center py-12">
+                    <GraduationCap className="mx-auto text-gray-300 mb-4" size={48} />
+                    <div className="text-gray-500">No students found</div>
+                  </td>
+                </tr>
+              ) : (
+                filteredStudents.map((student) => (
+                  <tr key={student._id || student.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                          {student.name ? student.name.split(' ').map(n => n[0]).join('') : '?'}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{student.name || 'Unknown'}</div>
+                          <div className="text-sm text-gray-500">{student.rollNumber || 'No roll number'}</div>
+                          {student.enrollmentNumber && (
+                            <div className="text-xs text-gray-400">{student.enrollmentNumber}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{student.email || 'No email'}</div>
+                      <div className="text-sm text-gray-500">{student.phone || 'No phone'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {renderStudentBadges(student)}
+                      </div>
+                      {student.program && (
+                        <div className="text-sm text-gray-600 mt-1">{student.program}</div>
+                      )}
+                      {student.semester && (
+                        <div className="text-sm text-gray-600">Semester: {student.semester}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{student.ecoPoints || 0}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {student.status || 'unknown'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                      <button className="text-green-600 hover:text-green-900">View</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-
-        {filteredStudents.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <GraduationCap className="mx-auto text-gray-300 mb-4" size={48} />
-            <div className="text-gray-500">No students found</div>
-          </div>
-        )}
       </div>
 
       {/* Add Student Modal */}

@@ -22,6 +22,13 @@ const facultySchema = new mongoose.Schema({
     type: String,
     trim: true 
   },
+
+  assignedStudents: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student"
+    }
+  ],
   // For University: faculty -> department -> teacher
   // For College: department -> teacher  
   // For School: teacher only

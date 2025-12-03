@@ -106,6 +106,8 @@ export const registerInstitute = async (req, res) => {
   }
 };
 
+
+
 // ===============================
 // 🔹 ADMIN REGISTER USER
 // ===============================

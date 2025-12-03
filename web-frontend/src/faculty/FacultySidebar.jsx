@@ -24,7 +24,7 @@ const FacultySidebar = ({
   const menuItems = [
     { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
     { id: "challenges", icon: Trophy, label: "Manage Challenges" },
-    { id: "students", icon: Users, label: "Students Progress" },
+    // { id: "students", icon: Users, label: "Students Progress" },
     { id: "submissions", icon: FileText, label: "Submissions" },
 
     // 🆕 Updated menu item for your new Library Upload section

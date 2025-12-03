@@ -12,6 +12,7 @@ import Home from "./pages/Home";
 import GovernmentDashboard from "./pages/GovernmentDashboard";
 import InstituteRegistration from "./pages/InstituteRegistration";
 import InstituteDashboard from "./pages/InstituteDashboard";
+import LoginDebug from "./components/LoginDebug";
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/setup-password" element={<StudentSetup />} />
+          <Route path="/login-debug" element={<LoginDebug/>} />
+
 
           <Route
             path="/StudentDashboard"

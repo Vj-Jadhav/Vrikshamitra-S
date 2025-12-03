@@ -25,8 +25,9 @@ const ChallengeManagement = ({ token, adminId }) => {
   const [editingChallenge, setEditingChallenge] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [viewingSubmissions, setViewingSubmissions] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Form state - Fixed field name to match backend
+  // Form state
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,7 +37,7 @@ const ChallengeManagement = ({ token, adminId }) => {
     requirements: '',
     resources: '',
     mandatory: false,
-    ecoPoints: 0 // Changed to match backend field name
+    ecoPoints: 10 // Default value instead of 0
   });
 
   useEffect(() => {
@@ -52,9 +53,7 @@ const ChallengeManagement = ({ token, adminId }) => {
       
       const res = await getChallenges();
       console.log("API Response:", res);
-      console.log("Response data:", res.data);
       
-      // Handle different possible response structures
       let challengesData = [];
       
       if (Array.isArray(res)) {
@@ -62,20 +61,15 @@ const ChallengeManagement = ({ token, adminId }) => {
       } else if (Array.isArray(res?.data)) {
         challengesData = res.data;
       } else if (res?.data && typeof res.data === 'object') {
-        // If it's an object, check for common properties
         if (Array.isArray(res.data.challenges)) {
           challengesData = res.data.challenges;
         } else if (Array.isArray(res.data.items)) {
           challengesData = res.data.items;
         } else {
-          // Convert object to array if needed
           challengesData = Object.values(res.data);
         }
       }
       
-      console.log("Processed challenges data:", challengesData);
-      
-      // Ensure each challenge has required fields with defaults - Fixed field names
       const processedChallenges = challengesData.map(challenge => ({
         _id: challenge._id || challenge.id,
         title: challenge.title || 'Untitled Challenge',
@@ -87,13 +81,12 @@ const ChallengeManagement = ({ token, adminId }) => {
         requirements: challenge.requirements || '',
         resources: challenge.resources || '',
         mandatory: challenge.mandatory || challenge.priority === 'mandatory',
-        ecoPoints: challenge.ecoPoints || challenge.ecopoints || 0, // Handle both cases
+        ecoPoints: challenge.ecoPoints || challenge.ecopoints || 10,
         createdAt: challenge.createdAt || challenge.createdDate || new Date().toISOString(),
         totalSubmissions: challenge.totalSubmissions || challenge.submissionCount || 0,
         approvedSubmissions: challenge.approvedSubmissions || challenge.approvedCount || 0
       }));
       
-      console.log("Final processed challenges:", processedChallenges);
       setChallenges(processedChallenges);
       
     } catch (error) {
@@ -105,7 +98,6 @@ const ChallengeManagement = ({ token, adminId }) => {
     }
   };
 
-  // Mock data for submissions
   const fetchSubmissions = async () => {
     try {
       const sampleSubmissions = [
@@ -129,13 +121,53 @@ const ChallengeManagement = ({ token, adminId }) => {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.title.trim()) {
+      errors.title = 'Title is required';
+    }
+    
+    if (!formData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    
+    if (!formData.deadline) {
+      errors.deadline = 'Deadline is required';
+    } else {
+      const selectedDate = new Date(formData.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        errors.deadline = 'Deadline cannot be in the past';
+      }
+    }
+    
+    if (!formData.ecoPoints || formData.ecoPoints < 1 || formData.ecoPoints > 1000) {
+      errors.ecoPoints = 'Ecopoints must be between 1 and 1000';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+    
     try {
       const payload = {
         ...formData,
         createdBy: adminId,
-        status: 'active'
+        status: 'active',
+        // Convert empty strings to null/undefined for optional fields
+        requirements: formData.requirements || undefined,
+        resources: formData.resources || undefined,
       };
 
       console.log("Submitting challenge:", payload);
@@ -159,14 +191,24 @@ const ChallengeManagement = ({ token, adminId }) => {
         requirements: "",
         resources: "",
         mandatory: false,
-        ecoPoints: 0 // Reset to match backend
+        ecoPoints: 10
       });
+      setFormErrors({});
 
       await fetchChallenges();
 
     } catch (error) {
       console.error("Error saving challenge:", error);
-      alert('Failed to save challenge. Please try again.');
+      let errorMessage = 'Failed to save challenge. Please try again.';
+      
+      // Parse error message from backend
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message?.includes('deadline')) {
+        errorMessage = 'Deadline is required. Please select a valid date.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
@@ -178,12 +220,13 @@ const ChallengeManagement = ({ token, adminId }) => {
       description: challenge.description || '',
       category: challenge.category || 'environmental',
       priority: challenge.priority || 'optional',
-      deadline: challenge.deadline || '',
+      deadline: challenge.deadline ? challenge.deadline.split('T')[0] : '',
       requirements: challenge.requirements || '',
       resources: challenge.resources || '',
       mandatory: challenge.mandatory || false,
-      ecoPoints: challenge.ecoPoints || 0 // Fixed field name
+      ecoPoints: challenge.ecoPoints || 10
     });
+    setFormErrors({});
     setIsModalOpen(true);
   };
 
@@ -203,20 +246,27 @@ const ChallengeManagement = ({ token, adminId }) => {
   const handleApproveSubmission = async (submissionId) => {
     try {
       console.log("Approving submission:", submissionId);
+      alert('Submission approved successfully!');
+      // Refresh submissions
+      fetchSubmissions();
     } catch (error) {
       console.error('Error approving submission:', error);
+      alert('Failed to approve submission.');
     }
   };
 
   const handleRejectSubmission = async (submissionId) => {
     try {
       console.log("Rejecting submission:", submissionId);
+      alert('Submission rejected!');
+      // Refresh submissions
+      fetchSubmissions();
     } catch (error) {
       console.error('Error rejecting submission:', error);
+      alert('Failed to reject submission.');
     }
   };
 
-  // Safe filtering with null checks
   const filteredChallenges = challenges.filter(challenge => {
     const matchesSearch = 
       challenge.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -231,14 +281,26 @@ const ChallengeManagement = ({ token, adminId }) => {
     return submissions.filter(sub => sub.challengeId === challengeId);
   };
 
-  // Safe date formatting helper
   const formatDate = (dateString) => {
     if (!dateString) return 'No date set';
     try {
-      return new Date(dateString).toLocaleDateString();
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
     } catch (error) {
       return 'Invalid date';
     }
+  };
+
+  // Calculate minimum date for deadline (tomorrow)
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
   };
 
   if (loading) {
@@ -280,30 +342,28 @@ const ChallengeManagement = ({ token, adminId }) => {
           </p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingChallenge(null);
+            setFormData({
+              title: "",
+              description: "",
+              category: "environmental",
+              priority: "optional",
+              deadline: "",
+              requirements: "",
+              resources: "",
+              mandatory: false,
+              ecoPoints: 10
+            });
+            setFormErrors({});
+            setIsModalOpen(true);
+          }}
           className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           <Plus size={20} />
           Add Challenge
         </button>
       </div>
-
-      {/* Debug Info - Uncomment to see what's being rendered
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4">
-          <h3 className="font-bold text-yellow-800">Debug Info</h3>
-          <p className="text-yellow-700 text-sm">
-            Challenges loaded: {challenges.length}<br />
-            First challenge data: {challenges[0] && JSON.stringify(challenges[0])}
-          </p>
-          <button 
-            onClick={() => console.log("All Challenges:", challenges)}
-            className="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm"
-          >
-            Log Challenges to Console
-          </button>
-        </div>
-      )} */}
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -332,7 +392,7 @@ const ChallengeManagement = ({ token, adminId }) => {
       {/* Challenges Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredChallenges.map((challenge) => (
-          <div key={challenge._id} className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6">
+          <div key={challenge._id} className="bg-white rounded-xl shadow-lg border-2 border-blue-100 p-6 hover:shadow-xl transition-shadow">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg ${
@@ -365,21 +425,21 @@ const ChallengeManagement = ({ token, adminId }) => {
               <div className="flex gap-1">
                 <button
                   onClick={() => setViewingSubmissions(challenge)}
-                  className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                  className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   title="View Submissions"
                 >
                   <FileText size={16} />
                 </button>
                 <button
                   onClick={() => handleEdit(challenge)}
-                  className="p-1 text-green-600 hover:bg-green-50 rounded"
+                  className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors"
                   title="Edit Challenge"
                 >
                   <Edit size={16} />
                 </button>
                 <button
                   onClick={() => handleDelete(challenge._id)}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                  className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
                   title="Delete Challenge"
                 >
                   <Trash2 size={16} />
@@ -387,7 +447,7 @@ const ChallengeManagement = ({ token, adminId }) => {
               </div>
             </div>
 
-            <p className="text-gray-600 text-sm mb-4">{challenge.description}</p>
+            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{challenge.description}</p>
 
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -398,10 +458,9 @@ const ChallengeManagement = ({ token, adminId }) => {
                 <Users size={14} />
                 <span>Submissions: {challenge.totalSubmissions} ({challenge.approvedSubmissions} approved)</span>
               </div>
-              {/* Ecopoints display - Fixed field name */}
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Award size={14} className="text-green-600" />
-                <span>Ecopoints: {challenge.ecoPoints || 0}</span>
+                <span>Ecopoints: {challenge.ecoPoints || 10}</span>
               </div>
             </div>
 
@@ -429,8 +488,23 @@ const ChallengeManagement = ({ token, adminId }) => {
           <Target size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-500">No challenges found</p>
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto"
+            onClick={() => {
+              setEditingChallenge(null);
+              setFormData({
+                title: "",
+                description: "",
+                category: "environmental",
+                priority: "optional",
+                deadline: "",
+                requirements: "",
+                resources: "",
+                mandatory: false,
+                ecoPoints: 10
+              });
+              setFormErrors({});
+              setIsModalOpen(true);
+            }}
+            className="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 mx-auto transition-colors"
           >
             <Plus size={20} />
             Create Your First Challenge
@@ -457,9 +531,16 @@ const ChallengeManagement = ({ token, adminId }) => {
                     required
                     value={formData.title}
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.title 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="Enter challenge title"
                   />
+                  {formErrors.title && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>
+                  )}
                 </div>
 
                 <div>
@@ -471,9 +552,16 @@ const ChallengeManagement = ({ token, adminId }) => {
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     rows="3"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      formErrors.description 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="Describe the challenge objectives and goals"
                   />
+                  {formErrors.description && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -516,17 +604,25 @@ const ChallengeManagement = ({ token, adminId }) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Deadline
+                      Deadline *
                     </label>
                     <input
                       type="date"
+                      required
                       value={formData.deadline}
                       onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      min={getMinDate()}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                        formErrors.deadline 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-blue-500'
+                      }`}
                     />
+                    {formErrors.deadline && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.deadline}</p>
+                    )}
                   </div>
 
-                  {/* Ecopoints input - Fixed field name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Ecopoints Reward *
@@ -534,24 +630,32 @@ const ChallengeManagement = ({ token, adminId }) => {
                     <input
                       type="number"
                       required
-                      min="0"
+                      min="1"
                       max="1000"
+                      step="1"
                       value={formData.ecoPoints}
-                      onChange={(e) => setFormData(prev => ({ ...prev, ecoPoints: parseInt(e.target.value) || 0 }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter ecopoints reward"
+                      onChange={(e) => setFormData(prev => ({ ...prev, ecoPoints: parseInt(e.target.value) || 10 }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                        formErrors.ecoPoints 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-blue-500'
+                      }`}
+                      placeholder="Enter ecopoints reward (1-1000)"
                     />
+                    {formErrors.ecoPoints && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.ecoPoints}</p>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Requirements
+                    Requirements (Optional)
                   </label>
                   <textarea
                     value={formData.requirements}
                     onChange={(e) => setFormData(prev => ({ ...prev, requirements: e.target.value }))}
-                    rows="3"
+                    rows="2"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="List the requirements for completing this challenge"
                   />
@@ -559,7 +663,7 @@ const ChallengeManagement = ({ token, adminId }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Resources
+                    Resources (Optional)
                   </label>
                   <textarea
                     value={formData.resources}
@@ -586,20 +690,21 @@ const ChallengeManagement = ({ token, adminId }) => {
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={() => {
                       setIsModalOpen(false);
                       setEditingChallenge(null);
+                      setFormErrors({});
                     }}
-                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     {editingChallenge ? 'Update Challenge' : 'Create Challenge'}
                   </button>
@@ -624,7 +729,7 @@ const ChallengeManagement = ({ token, adminId }) => {
                 </div>
                 <button
                   onClick={() => setViewingSubmissions(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <Trash2 size={24} />
                 </button>
@@ -632,7 +737,7 @@ const ChallengeManagement = ({ token, adminId }) => {
 
               <div className="space-y-4">
                 {getSubmissionsForChallenge(viewingSubmissions._id).map((submission) => (
-                  <div key={submission._id} className="border border-gray-200 rounded-lg p-4">
+                  <div key={submission._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-semibold text-gray-800">{submission.instituteName}</h4>
@@ -659,7 +764,8 @@ const ChallengeManagement = ({ token, adminId }) => {
                         {submission.documents.map((doc, index) => (
                           <button
                             key={index}
-                            className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
+                            className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+                            onClick={() => alert(`Would download: ${doc}`)}
                           >
                             <FileText size={12} />
                             {doc}
@@ -672,14 +778,14 @@ const ChallengeManagement = ({ token, adminId }) => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleApproveSubmission(submission._id)}
-                          className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 flex items-center gap-1"
+                          className="px-3 py-1 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 flex items-center gap-1 transition-colors"
                         >
                           <CheckCircle size={14} />
                           Approve
                         </button>
                         <button
                           onClick={() => handleRejectSubmission(submission._id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 flex items-center gap-1"
+                          className="px-3 py-1 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 flex items-center gap-1 transition-colors"
                         >
                           <Trash2 size={14} />
                           Reject
