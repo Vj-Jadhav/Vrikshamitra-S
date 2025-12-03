@@ -12,6 +12,7 @@ import instituteRoutes from "./routes/instituteRoutes.js";
 import challengeRoutes from "./routes/challengeRoutes.js";
 import learningModuleRoutes from "./routes/learningModule.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import scheduleRoutes from "./routes/scheduleRoutes.js";
 
 const app = express();
 
@@ -31,5 +32,6 @@ app.use("/api/challenges", challengeRoutes);
 app.use("/api/learningmodules", learningModuleRoutes);
 
 app.use("/api/reports", reportRoutes);
+app.use("/api/reports/schedule", scheduleRoutes);
 
 export default app;

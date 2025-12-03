@@ -284,11 +284,14 @@ export const getReports = async (req, res) => {
 
     // Execute query
     const reports = await Report.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limitNum)
-      .populate('user', 'name email')
-      .populate('assignedTo', 'name email');
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(limitNum)
+  .populate({
+    path: 'reportedBy.userId',
+    select: 'name email'  // works for Student, Faculty, User models
+  })
+  .populate('assignedTo', 'name email');
 
     const total = await Report.countDocuments(query);
 
