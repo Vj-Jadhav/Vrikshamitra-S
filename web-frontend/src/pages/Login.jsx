@@ -237,12 +237,15 @@ export default function Login() {
 
         {/* Role-specific info */}
         {roleInfo && (
-          <div className={`mt-4 p-3 ${roleInfo.bgColor} rounded-lg border ${roleInfo.borderColor}`}>
-            <p className={`text-xs ${roleInfo.textColor} text-center`}>
-              <strong>First time {form.role}?</strong> {roleInfo.message}
-            </p>
-          </div>
-        )}
+  <div
+    className={`mt-4 p-3 ${roleInfo.bgColor} rounded-lg border ${roleInfo.borderColor}`}
+  >
+    <p className={`text-xs ${roleInfo.textColor} text-center`}>
+      <strong>First time {form.role}?</strong> {roleInfo.message}
+    </p>
+  </div>
+)}
+
       </motion.div>
     </div>
   );
