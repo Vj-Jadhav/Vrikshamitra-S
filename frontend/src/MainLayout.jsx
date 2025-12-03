@@ -283,6 +283,7 @@ export default function MainLayout() {
       <Tab.Screen name="Games" component={GamesScreen} />
       <Tab.Screen name="Learn" component={LearningModuleScreen} />
       <Tab.Screen name="Challenges" component={ChallengesScreen} />
+      
     </Tab.Navigator>
   );
 }
