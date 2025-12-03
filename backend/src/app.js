@@ -11,6 +11,7 @@ import governmentRoutes from "./routes/governmentRoutes.js";
 import instituteRoutes from "./routes/instituteRoutes.js";
 import challengeRoutes from "./routes/challengeRoutes.js";
 import learningModuleRoutes from "./routes/learningModule.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 const app = express();
 
@@ -29,5 +30,6 @@ app.use("/api/institute", instituteRoutes);
 app.use("/api/challenges", challengeRoutes);
 app.use("/api/learningmodules", learningModuleRoutes);
 
+app.use("/api/reports", reportRoutes);
 
 export default app;
