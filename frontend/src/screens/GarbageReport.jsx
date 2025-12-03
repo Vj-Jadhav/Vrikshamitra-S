@@ -15,7 +15,7 @@ import {
   FlatList
 } from 'react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { API_ENDPOINTS } from '../config/config.js';
 import AsyncStorage from "@react-native-async-storage/async-storage";
