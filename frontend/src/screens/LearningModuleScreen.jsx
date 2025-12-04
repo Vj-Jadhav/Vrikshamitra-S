@@ -49,7 +49,8 @@ export default function LearningModuleScreen({ navigation }) {
   const [slideAnim] = useState(new Animated.Value(50));
 
   // 🚀 1. FETCH ALL MODULES FROM DATABASE
-  const BACKEND_URL = "http://BASE_URL:5000/api/learningmodules";
+const BACKEND_URL = "http://10.101.36.35:5000/api/learningmodules";
+
 
   useEffect(() => {
     // Animate on mount

@@ -12,7 +12,7 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://10.147.34.36:5000/api/challenges";
+const BASE_URL = "http://10.101.36.35:5000/api/challenges";
 
 const ChallengesScreen = ({ navigation }) => {
   const [challenges, setChallenges] = useState([]);
