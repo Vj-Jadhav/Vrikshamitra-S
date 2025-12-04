@@ -7,6 +7,8 @@ export const getStudentChallengesWithDetails = async (req, res) => {
   try {
     const { studentId } = req.params;
 
+    console.log(`Fetching challenges for studentId: ${studentId}`);
+
     if (!studentId) {
       return res.status(400).json({ message: "studentId is required" });
     }
@@ -17,7 +19,10 @@ export const getStudentChallengesWithDetails = async (req, res) => {
       { challengeId: 1, _id: 0 }
     ).lean();
 
+    console.log(`Found ${progressData.length} progress records for student`);
+
     if (progressData.length === 0) {
+      console.log("No challenges found for this student");
       return res.status(200).json({
         success: true,
         message: "No challenges found for this student",
@@ -27,11 +32,15 @@ export const getStudentChallengesWithDetails = async (req, res) => {
 
     // Extract only challengeIds from results
     const challengeIds = progressData.map((item) => item.challengeId);
+    console.log(`Challenge IDs: ${JSON.stringify(challengeIds)}`);
 
     // STEP 2: Fetch full challenge details using those IDs
     const fullChallenges = await Challenge.find({
       _id: { $in: challengeIds },
     }).lean();
+
+    console.log(`Found ${fullChallenges.length} full challenges`);
+    console.log(`First challenge sample: ${JSON.stringify(fullChallenges[0])}`);
 
     return res.status(200).json({
       success: true,

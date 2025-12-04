@@ -27,6 +27,8 @@ const uploadToCloudinary = (fileBuffer, options = {}) => {
   });
 };
 
+
+
 // Delete file from Cloudinary
 const deleteFromCloudinary = async (publicId) => {
   try {

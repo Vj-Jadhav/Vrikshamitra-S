@@ -14,6 +14,7 @@ import LeaderboardScreen from './screens/LeaderboardScreen';
 import LearningModuleScreen from './screens/LearningModuleScreen';
 import GamesScreen from './screens/GamesScreen';
 import ChallengesScreen from './screens/ChallengesScreen';
+import ChallengeDetailsScreen from './screens/ChallengeDetailsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 
@@ -55,8 +56,15 @@ export default function AppNavigator() {
         <Stack.Screen name="LearningModuleScreen" component={LearningModuleScreen} />
         <Stack.Screen name="GamesScreen" component={GamesScreen} />
         <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
+        <Stack.Screen 
+          name="ChallengeDetailsScreen"  // THIS NAME MUST MATCH EXACTLY
+          component={ChallengeDetailsScreen}
+        />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
+        
+        
+        
 
         {/* Bottom Navigation Layout */}
         <Stack.Screen name="Main" component={MainLayout} />

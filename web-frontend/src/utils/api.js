@@ -233,12 +233,7 @@ export const deleteChallenge = async (id) => {
 
 export const createChallenge = async (data) => {
   try {
-    const response = await API.post("/challenges", data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await API.post("/challenges", data);
     return response.data;
   } catch (error) {
     console.error("Error creating challenge:", error.response?.data || error);
@@ -248,12 +243,7 @@ export const createChallenge = async (data) => {
 
 export const updateChallenge = async (id, data) => {
   try {
-    const response = await API.put(`/challenges/${id}`, data, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await API.put(`/challenges/${id}`, data);
     return response.data;
   } catch (error) {
     console.error("Error updating challenge:", error.response?.data || error);
