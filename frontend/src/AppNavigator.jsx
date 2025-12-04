@@ -32,7 +32,7 @@ import RecycleScreen from './screens/RecycleScreen';
 import LearningScreen from './screens/LearningScreen';
 import OceanGameScreen from './screens/OceanGameScreen';
 import AQIGameScreen from './screens/AQIGameScreen';
-
+import SeedSaverGameScreen from './screens/SeedSaverGameScreen';
 
 
 import GarbageReport from './screens/GarbageReport';
@@ -82,7 +82,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Learning" component={LearningScreen} />
         <Stack.Screen name="OceanGame" component={OceanGameScreen}/>
         <Stack.Screen name="AQIGame" component={AQIGameScreen}/>
-
+        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen}/>
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />

@@ -1,3 +1,5 @@
+/** @format */
+
 // config.js
 export const BASE_URL = "http://10.101.36.133:5000";
 
@@ -8,9 +10,8 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD: `${BASE_URL}/api/auth/reset-password`,
 
   REPORTS: `${BASE_URL}/api/reports`,
-  TEST: `${BASE_URL}/`, 
+  TEST: `${BASE_URL}/`,
   COMPLAINTS: `${BASE_URL}/api/reports`,
   SCHEDULE_CLEANUP: `${BASE_URL}/api/reports/schedule`,
   SCHEDULE_COUNTS: `${BASE_URL}/api/reports/schedule/counts`,
-
 };

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Seed Saver</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Fredoka:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Loading screen styling - REMOVE or UPDATE this inline style -->
+    <style>
+      /* Remove or update this to match the CSS file */
+      /* The CSS file already has .loading-screen styles */
+    </style>
+  </head>
+
+  <body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="backdrop" id="backdrop"></div>
+
+    <div class="ui-overlay">
+      <div class="score-display">
+        <img src="assets/ui_leaf_icon.webp" alt="Leaf Icon" class="score-icon" />
+        <span id="scoreText">0</span>
+      </div>
+
+      <!-- Option 1: Update CSS to match this class -->
+      <!-- Option 2: Change this to match CSS -->
+      <div class="seed-inventory" id="seedInventory"></div>
+
+      <div class="green-score-map">
+        <div class="map-title">Green Score</div>
+        <div class="map-path" id="mapPath">
+          <div class="map-player" id="mapPlayer"></div>
+        </div>
+      </div>
+
+      <button
+        class="ui-button"
+        id="plantStationBtn"
+        aria-label="Open Plant Station"
+      >
+        <img src="assets/ui_plant_station_icon.webp" alt="Plant Station" />
+      </button>
+
+      <button class="ui-button" id="pauseBtn" aria-label="Pause Game"></button>
+    </div>
+
+    <!-- Loading Screen - Remove inline styles that conflict with CSS -->
+    <div class="loading-screen" id="loadingScreen">
+      <div>Loading Seed Saver...</div>
+      <div class="loading-bar">
+        <div class="loading-fill" id="loadingFill"></div>
+      </div>
+    </div>
+
+    <!-- Load main JS file -->
+    <script src="main.js"></script>
+  </body>
+</html>
