@@ -149,7 +149,7 @@ export const loginUser = async (req, res) => {
         user = await Student.findOne({ email: email.toLowerCase().trim() });
         console.log("Student found:", user ? "Yes" : "No");
         if (!user) return res.status(404).json({ message: "Student not found" });
-        
+
         if (user.status !== "active") {
           return res.status(403).json({ message: "Student account is not active" });
         }
@@ -161,7 +161,18 @@ export const loginUser = async (req, res) => {
             requiresPasswordSetup: true,
             message: "Password setup required",
             email: user.email,
-            role: role
+            role: role,
+            student: {
+              id: user._id,
+              name: user.name,
+              email: user.email,
+              instituteId: user.instituteId,
+              grade: user.grade,
+              rollNumber: user.rollNumber,
+              batch: user.batch,
+              section: user.section,
+              status: user.status,
+            }
           });
         }
 
@@ -304,17 +315,17 @@ export const addFaculty = async (req, res) => {
     if (!inst) return res.status(404).json({ message: "Institute not found" });
 
     // ✅ Create faculty with requiresPasswordSetup: false by default
-    const faculty = await Faculty.create({ 
-      name, 
-      email, 
-      phone, 
-      department, 
-      subjects, 
+    const faculty = await Faculty.create({
+      name,
+      email,
+      phone,
+      department,
+      subjects,
       instituteId,
       requiresPasswordSetup: false, // ✅ Explicitly set to false
       isVerified: true // ✅ Set to true
     });
-    
+
     res.status(201).json({
       message: "Faculty added successfully",
       faculty: {
@@ -390,14 +401,14 @@ export const addStudentsBulk = async (req, res) => {
 // 🔥 WEBSITE BRANCH REQUIRED EXPORTS
 // ===============================
 export const getAllInstitutes = async (req, res) => {
-  try { 
+  try {
     const institutes = await Institute.find();
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       data: institutes,
       count: institutes.length
     });
-  } catch (err) { 
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
@@ -405,17 +416,17 @@ export const getAllInstitutes = async (req, res) => {
 export const approveInstitute = async (req, res) => {
   try {
     const institute = await Institute.findByIdAndUpdate(
-      req.params.id, 
-      { approvalStatus: true }, 
+      req.params.id,
+      { approvalStatus: true },
       { new: true }
     );
     if (!institute) return res.status(404).json({ message: "Institute not found" });
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      message: "Institute approved", 
-      data: institute 
+      message: "Institute approved",
+      data: institute
     });
-  } catch (err) { 
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
@@ -425,7 +436,7 @@ export const rejectInstitute = async (req, res) => {
     const institute = await Institute.findByIdAndDelete(req.params.id);
     if (!institute) return res.status(404).json({ message: "Institute not found" });
     res.status(200).json({ message: "Institute removed" });
-  } catch (err) { 
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
@@ -434,11 +445,11 @@ export const getInstituteById = async (req, res) => {
   try {
     const institute = await Institute.findById(req.params.id);
     if (!institute) return res.status(404).json({ message: "Institute not found" });
-    res.status(200).json({ 
-      success: true, 
-      data: institute 
+    res.status(200).json({
+      success: true,
+      data: institute
     });
-  } catch (err) { 
+  } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
@@ -453,14 +464,14 @@ export const forgotPassword = async (req, res) => {
     console.log("Forgot password request:", { email, role });
 
     if (!email || !role) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email and role are required" 
+        message: "Email and role are required"
       });
     }
 
     let user;
-    
+
     // Find user based on role
     switch (role) {
       case "student":
@@ -473,17 +484,17 @@ export const forgotPassword = async (req, res) => {
         user = await Institute.findOne({ email: email.toLowerCase().trim() });
         break;
       default:
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Invalid role. Must be 'student', 'faculty', or 'institute'" 
+          message: "Invalid role. Must be 'student', 'faculty', or 'institute'"
         });
     }
 
     if (!user) {
       console.log("User not found for email:", email);
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: `${role} not found with this email` 
+        message: `${role} not found with this email`
       });
     }
 
@@ -518,7 +529,7 @@ export const forgotPassword = async (req, res) => {
     try {
       await sendOTPEmail(email, otp, role);
       console.log(`OTP email sent successfully to ${email}`);
-      
+
       return res.status(200).json({
         success: true,
         message: "Password reset OTP has been sent to your email",
@@ -527,7 +538,7 @@ export const forgotPassword = async (req, res) => {
       });
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
-      
+
       // For testing purposes, return OTP in response
       return res.status(200).json({
         success: true,
@@ -541,9 +552,9 @@ export const forgotPassword = async (req, res) => {
 
   } catch (error) {
     console.error("Forgot password error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error during password reset process: " + error.message 
+      message: "Server error during password reset process: " + error.message
     });
   }
 };
@@ -554,18 +565,18 @@ export const forgotPassword = async (req, res) => {
 export const verifyOTP = async (req, res) => {
   try {
     const { email, otp, role } = req.body;
-    
+
     console.log("OTP verification request:", { email, otp, role });
-    
+
     if (!email || !otp || !role) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email, OTP and role are required" 
+        message: "Email, OTP and role are required"
       });
     }
 
     let user;
-    
+
     switch (role) {
       case "student":
         user = await Student.findOne({ email: email.toLowerCase().trim() });
@@ -577,29 +588,29 @@ export const verifyOTP = async (req, res) => {
         user = await Institute.findOne({ email: email.toLowerCase().trim() });
         break;
       default:
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          message: "Invalid role" 
+          message: "Invalid role"
         });
     }
 
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found"
       });
     }
 
     // Check OTP based on user type
     let isOTPValid = false;
     let resetToken;
-    
+
     if (role === "student") {
       // Use Student model's OTP structure
       if (user.otp && user.otp.code === otp && user.otp.expiresAt > new Date()) {
         isOTPValid = true;
         resetToken = crypto.randomBytes(32).toString('hex');
-        
+
         user.otp.verified = true;
         user.otp.tempToken = resetToken;
         user.otp.tokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
@@ -609,7 +620,7 @@ export const verifyOTP = async (req, res) => {
       if (user.resetOTP === otp && user.resetOTPExpiry > new Date()) {
         isOTPValid = true;
         resetToken = crypto.randomBytes(32).toString('hex');
-        
+
         user.resetToken = resetToken;
         user.resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000);
         user.resetOTP = null;
@@ -623,7 +634,7 @@ export const verifyOTP = async (req, res) => {
         user.otp.attempts += 1;
         await user.save();
       }
-      
+
       return res.status(400).json({
         success: false,
         message: "Invalid or expired OTP"
@@ -641,9 +652,9 @@ export const verifyOTP = async (req, res) => {
 
   } catch (error) {
     console.error("OTP verification error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error during OTP verification: " + error.message 
+      message: "Server error during OTP verification: " + error.message
     });
   }
 };
@@ -654,19 +665,19 @@ export const verifyOTP = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { resetToken, newPassword, role, email } = req.body;
-    
+
     console.log("Reset password request:", { resetToken, role, email });
-    
+
     if (!resetToken || !newPassword || !role) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Reset token, new password and role are required" 
+        message: "Reset token, new password and role are required"
       });
     }
 
     let user;
     let query = {};
-    
+
     // Build query based on user type
     if (role === "student") {
       query = {
@@ -685,7 +696,7 @@ export const resetPassword = async (req, res) => {
       if (email) {
         query.email = email.toLowerCase().trim();
       }
-      
+
       switch (role) {
         case "faculty":
           user = await Faculty.findOne(query);
@@ -708,7 +719,7 @@ export const resetPassword = async (req, res) => {
 
     // Update password and clear reset fields based on user type
     user.password = hashedPassword;
-    
+
     if (role === "student") {
       // Clear OTP data using the model's method
       if (user.clearResetData) {
@@ -747,9 +758,9 @@ export const resetPassword = async (req, res) => {
 
   } catch (error) {
     console.error("Reset password error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error during password reset: " + error.message 
+      message: "Server error during password reset: " + error.message
     });
   }
 };
@@ -765,20 +776,20 @@ export const getUserDetails = (req, res) => res.json({ user: req.user });
 export const studentLoginAttempt = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email is required" 
+        message: "Email is required"
       });
     }
 
     const student = await Student.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!student) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Student not found" 
+        message: "Student not found"
       });
     }
 
@@ -803,7 +814,7 @@ export const studentLoginAttempt = async (req, res) => {
     // Send OTP via email
     try {
       await sendOTPEmail(email, otp, "student");
-      
+
       return res.status(200).json({
         success: true,
         requiresPasswordSetup: student.requiresPasswordSetup,
@@ -813,7 +824,7 @@ export const studentLoginAttempt = async (req, res) => {
       });
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
-      
+
       return res.status(200).json({
         success: true,
         requiresPasswordSetup: student.requiresPasswordSetup,
@@ -827,9 +838,9 @@ export const studentLoginAttempt = async (req, res) => {
 
   } catch (error) {
     console.error("Student login attempt error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -837,20 +848,20 @@ export const studentLoginAttempt = async (req, res) => {
 export const facultyLoginAttempt = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email is required" 
+        message: "Email is required"
       });
     }
 
     const faculty = await Faculty.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!faculty) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Faculty not found" 
+        message: "Faculty not found"
       });
     }
 
@@ -877,7 +888,7 @@ export const facultyLoginAttempt = async (req, res) => {
       // Send OTP via email
       try {
         await sendOTPEmail(email, otp, "faculty");
-        
+
         return res.status(200).json({
           success: true,
           requiresPasswordSetup: true,
@@ -887,7 +898,7 @@ export const facultyLoginAttempt = async (req, res) => {
         });
       } catch (emailError) {
         console.error("Email sending failed:", emailError);
-        
+
         return res.status(200).json({
           success: true,
           requiresPasswordSetup: true,
@@ -911,9 +922,9 @@ export const facultyLoginAttempt = async (req, res) => {
 
   } catch (error) {
     console.error("Faculty login attempt error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -921,20 +932,20 @@ export const facultyLoginAttempt = async (req, res) => {
 export const verifyStudentOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    
+
     if (!email || !otp) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email and OTP are required" 
+        message: "Email and OTP are required"
       });
     }
 
     const student = await Student.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!student) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Student not found" 
+        message: "Student not found"
       });
     }
 
@@ -945,7 +956,7 @@ export const verifyStudentOTP = async (req, res) => {
         student.otp.attempts += 1;
         await student.save();
       }
-      
+
       return res.status(400).json({
         success: false,
         message: "Invalid or expired OTP"
@@ -954,11 +965,11 @@ export const verifyStudentOTP = async (req, res) => {
 
     // Generate temp token
     const tempToken = crypto.randomBytes(32).toString('hex');
-    
+
     student.otp.verified = true;
     student.otp.tempToken = tempToken;
     student.otp.tokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-    
+
     await student.save();
 
     return res.status(200).json({
@@ -970,9 +981,9 @@ export const verifyStudentOTP = async (req, res) => {
 
   } catch (error) {
     console.error("Verify student OTP error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -980,20 +991,20 @@ export const verifyStudentOTP = async (req, res) => {
 export const verifyFacultyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    
+
     if (!email || !otp) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email and OTP are required" 
+        message: "Email and OTP are required"
       });
     }
 
     const faculty = await Faculty.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!faculty) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Faculty not found" 
+        message: "Faculty not found"
       });
     }
 
@@ -1004,7 +1015,7 @@ export const verifyFacultyOTP = async (req, res) => {
         faculty.otp.attempts += 1;
         await faculty.save();
       }
-      
+
       return res.status(400).json({
         success: false,
         message: "Invalid or expired OTP"
@@ -1013,11 +1024,11 @@ export const verifyFacultyOTP = async (req, res) => {
 
     // Generate temp token
     const tempToken = crypto.randomBytes(32).toString('hex');
-    
+
     faculty.otp.verified = true;
     faculty.otp.tempToken = tempToken;
     faculty.otp.tokenExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-    
+
     await faculty.save();
 
     return res.status(200).json({
@@ -1029,9 +1040,9 @@ export const verifyFacultyOTP = async (req, res) => {
 
   } catch (error) {
     console.error("Verify faculty OTP error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -1039,20 +1050,20 @@ export const verifyFacultyOTP = async (req, res) => {
 export const setStudentPassword = async (req, res) => {
   try {
     const { email, tempToken, password } = req.body;
-    
+
     if (!email || !tempToken || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email, temp token and password are required" 
+        message: "Email, temp token and password are required"
       });
     }
 
-    const student = await Student.findOne({ 
+    const student = await Student.findOne({
       email: email.toLowerCase().trim(),
       "otp.tempToken": tempToken,
       "otp.tokenExpires": { $gt: new Date() }
     });
-    
+
     if (!student) {
       return res.status(400).json({
         success: false,
@@ -1065,7 +1076,7 @@ export const setStudentPassword = async (req, res) => {
     student.password = hashedPassword;
     student.requiresPasswordSetup = false;
     student.isVerified = true;
-    
+
     // Clear OTP data
     student.otp = {
       code: null,
@@ -1077,7 +1088,7 @@ export const setStudentPassword = async (req, res) => {
       lastSentAt: null,
       resendCount: 0
     };
-    
+
     await student.save();
 
     // Generate JWT token for auto-login
@@ -1107,9 +1118,9 @@ export const setStudentPassword = async (req, res) => {
 
   } catch (error) {
     console.error("Set student password error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -1117,20 +1128,20 @@ export const setStudentPassword = async (req, res) => {
 export const setFacultyPassword = async (req, res) => {
   try {
     const { email, tempToken, password } = req.body;
-    
+
     if (!email || !tempToken || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email, temp token and password are required" 
+        message: "Email, temp token and password are required"
       });
     }
 
-    const faculty = await Faculty.findOne({ 
+    const faculty = await Faculty.findOne({
       email: email.toLowerCase().trim(),
       "otp.tempToken": tempToken,
       "otp.tokenExpires": { $gt: new Date() }
     });
-    
+
     if (!faculty) {
       return res.status(400).json({
         success: false,
@@ -1143,7 +1154,7 @@ export const setFacultyPassword = async (req, res) => {
     faculty.password = hashedPassword;
     faculty.requiresPasswordSetup = false;
     faculty.isVerified = true;
-    
+
     // Clear OTP data
     faculty.otp = {
       code: null,
@@ -1155,7 +1166,7 @@ export const setFacultyPassword = async (req, res) => {
       lastSentAt: null,
       resendCount: 0
     };
-    
+
     await faculty.save();
 
     // Generate JWT token for auto-login
@@ -1183,9 +1194,9 @@ export const setFacultyPassword = async (req, res) => {
 
   } catch (error) {
     console.error("Set faculty password error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -1193,20 +1204,20 @@ export const setFacultyPassword = async (req, res) => {
 export const resendStudentOTP = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email is required" 
+        message: "Email is required"
       });
     }
 
     const student = await Student.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!student) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Student not found" 
+        message: "Student not found"
       });
     }
 
@@ -1239,14 +1250,14 @@ export const resendStudentOTP = async (req, res) => {
     // Send OTP via email
     try {
       await sendOTPEmail(email, otp, "student");
-      
+
       return res.status(200).json({
         success: true,
         message: "New OTP sent to your email"
       });
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
-      
+
       return res.status(200).json({
         success: true,
         message: "New OTP generated but email failed",
@@ -1257,9 +1268,9 @@ export const resendStudentOTP = async (req, res) => {
 
   } catch (error) {
     console.error("Resend student OTP error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };
@@ -1267,20 +1278,20 @@ export const resendStudentOTP = async (req, res) => {
 export const resendFacultyOTP = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     if (!email) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "Email is required" 
+        message: "Email is required"
       });
     }
 
     const faculty = await Faculty.findOne({ email: email.toLowerCase().trim() });
-    
+
     if (!faculty) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Faculty not found" 
+        message: "Faculty not found"
       });
     }
 
@@ -1313,14 +1324,14 @@ export const resendFacultyOTP = async (req, res) => {
     // Send OTP via email
     try {
       await sendOTPEmail(email, otp, "faculty");
-      
+
       return res.status(200).json({
         success: true,
         message: "New OTP sent to your email"
       });
     } catch (emailError) {
       console.error("Email sending failed:", emailError);
-      
+
       return res.status(200).json({
         success: true,
         message: "New OTP generated but email failed",
@@ -1331,9 +1342,9 @@ export const resendFacultyOTP = async (req, res) => {
 
   } catch (error) {
     console.error("Resend faculty OTP error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: "Server error: " + error.message 
+      message: "Server error: " + error.message
     });
   }
 };

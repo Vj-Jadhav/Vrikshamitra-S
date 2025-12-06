@@ -15,7 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Icon } from '../components/CustomIcon'; // Changed from Ionicons to custom Icon
 
 
-const BASE_URL = "http://10.101.36.133:5000/api/challenges";
+const BASE_URL = "http://172.16.106.21:5000/api/challenges";
 
 const ChallengesScreen = ({ navigation }) => {
   const [challenges, setChallenges] = useState([]);

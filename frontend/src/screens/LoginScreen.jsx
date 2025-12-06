@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, 
+import {
+  View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, Modal,
   KeyboardAvoidingView,
   Platform,
@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
-  
+
   // New states for OTP verification and password reset
   const [resetStep, setResetStep] = useState(1); // 1: email, 2: OTP, 3: new password
   const [otp, setOtp] = useState("");
@@ -48,7 +48,7 @@ export default function LoginScreen({ navigation }) {
       const studentGrade = await AsyncStorage.getItem("studentGrade");
       const studentRollNumber = await AsyncStorage.getItem("studentRollNumber");
       const studentData = await AsyncStorage.getItem("studentData");
-      
+
       console.log("=== STORAGE CHECK ===");
       console.log("Student ID:", studentId);
       console.log("Student Name:", studentName);
@@ -76,7 +76,7 @@ export default function LoginScreen({ navigation }) {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: email.toLowerCase().trim(),
           password,
           role: "student"
@@ -96,9 +96,10 @@ export default function LoginScreen({ navigation }) {
           await AsyncStorage.setItem("instituteId", data.student.instituteId);
           console.log("✅ Saved InstituteID:", data.student.instituteId);
         }
-        if (data?.student?.name) {
-          await AsyncStorage.setItem("studentName", data.student.name);
-          console.log("✅ Saved Student Name:", data.student.name);
+        const nameToSave = data?.student?.name || data?.user?.name;
+        if (nameToSave) {
+          await AsyncStorage.setItem("studentName", nameToSave);
+          console.log("✅ Saved Student Name:", nameToSave);
         }
         // ✅ CRITICAL: Store student email
         if (data?.student?.email) {
@@ -121,7 +122,7 @@ export default function LoginScreen({ navigation }) {
           await AsyncStorage.setItem("authToken", data.token);
           console.log("✅ Saved Auth Token");
         }
-        
+
         // ✅ Store complete student data object for easy access
         if (data.student) {
           const completeStudentData = {
@@ -132,7 +133,7 @@ export default function LoginScreen({ navigation }) {
           await AsyncStorage.setItem("studentData", JSON.stringify(completeStudentData));
           console.log("✅ Complete student data saved:", completeStudentData);
         }
-        
+
         // Fallback to user data if student data not available
         if (data?.user?.id && !data.student) {
           await AsyncStorage.setItem("studentId", data.user.id);
@@ -141,15 +142,16 @@ export default function LoginScreen({ navigation }) {
           }
           console.log("⚠️ Using user data as fallback");
         }
-        
+
         // Verify storage
         await checkStorage();
-        
-        setMessage("Login Successful! 🌿");
+
+        const studentName = data?.student?.name || data?.user?.name || "Student";
+        setMessage(`Login Successful! Welcome, ${studentName} 🌿`);
         setTimeout(() => navigation.navigate("Home"), 1200);
       } else {
         setMessage(data.message || "Invalid credentials!");
-        
+
         // Show specific guidance for "Student not found"
         if (data.message === "Student not found") {
           Alert.alert(
@@ -184,21 +186,21 @@ export default function LoginScreen({ navigation }) {
 
     try {
       console.log("Sending forgot password request for:", resetEmail);
-      
+
       const response = await fetch(FORGOT_PASSWORD_URL, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: resetEmail.toLowerCase().trim(),
           role: "student"
         })
       });
 
       console.log("Response status:", response.status);
-      
+
       let data;
       try {
         data = await response.json();
@@ -215,20 +217,20 @@ export default function LoginScreen({ navigation }) {
           setReceivedOtp(data.otp);
           console.log("OTP received from backend:", data.otp);
         }
-        
+
         // Move to OTP verification step
         setResetStep(2);
-        
+
         // Show appropriate message based on whether OTP is included
         if (data.otp) {
           Alert.alert(
-            "OTP Generated ✅", 
+            "OTP Generated ✅",
             `OTP has been generated: ${data.otp}\n\nUse this OTP to verify.`,
             [{ text: "OK" }]
           );
         } else {
           Alert.alert(
-            "OTP Sent ✅", 
+            "OTP Sent ✅",
             data.message || "OTP has been sent to your email. Please check your inbox and spam folder.",
             [{ text: "OK" }]
           );
@@ -254,14 +256,14 @@ export default function LoginScreen({ navigation }) {
 
     try {
       console.log("Verifying OTP for:", resetEmail);
-      
+
       const response = await fetch(VERIFY_OTP_URL, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: resetEmail.toLowerCase().trim(),
           otp: otp,
           role: "student"
@@ -312,14 +314,14 @@ export default function LoginScreen({ navigation }) {
 
     try {
       console.log("Resetting password for:", resetEmail);
-      
+
       const response = await fetch(RESET_PASSWORD_URL, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           resetToken: resetToken,
           newPassword: newPassword,
           role: "student",
@@ -338,7 +340,7 @@ export default function LoginScreen({ navigation }) {
 
       if (data.success) {
         Alert.alert(
-          "Success ✅", 
+          "Success ✅",
           "Password has been reset successfully! You can now login with your new password.",
           [
             {
@@ -394,7 +396,7 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setShowResetModal(false);
@@ -406,9 +408,9 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.modalButton, 
+                  styles.modalButton,
                   styles.resetButton,
                   (!resetEmail || resetLoading) && styles.disabledButton
                 ]}
@@ -428,7 +430,7 @@ export default function LoginScreen({ navigation }) {
           <>
             <Text style={styles.modalTitle}>Enter OTP</Text>
             <Text style={styles.modalSubtitle}>
-              {receivedOtp 
+              {receivedOtp
                 ? `Development Mode: OTP is ${receivedOtp}\n\nEnter the OTP below:`
                 : `We've sent a 6-digit OTP to ${resetEmail}. Please enter it below.`
               }
@@ -458,7 +460,7 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setResetStep(1)}
                 disabled={resetLoading}
@@ -466,9 +468,9 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.cancelButtonText}>Back</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.modalButton, 
+                  styles.modalButton,
                   styles.resetButton,
                   (!otp || otp.length !== 6 || resetLoading) && styles.disabledButton
                 ]}
@@ -518,7 +520,7 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setResetStep(2)}
                 disabled={resetLoading}
@@ -526,9 +528,9 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.cancelButtonText}>Back</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.modalButton, 
+                  styles.modalButton,
                   styles.resetButton,
                   (!newPassword || !confirmPassword || resetLoading) && styles.disabledButton
                 ]}
@@ -549,7 +551,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
@@ -585,7 +587,7 @@ export default function LoginScreen({ navigation }) {
             />
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.forgotPasswordButton}
             onPress={() => {
               setShowResetModal(true);
@@ -598,14 +600,14 @@ export default function LoginScreen({ navigation }) {
 
           {message ? (
             <Text style={[
-              styles.message, 
+              styles.message,
               message.includes("Successful") ? styles.successMessage : styles.errorMessage
             ]}>
               {message}
             </Text>
           ) : null}
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.loginButton,
               (!email || !password || loading) && styles.disabledButton
@@ -651,19 +653,19 @@ export default function LoginScreen({ navigation }) {
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#1b5e20" />
                   <Text style={styles.loadingText}>
-                    {resetStep === 1 ? "Sending OTP..." : 
-                     resetStep === 2 ? "Verifying OTP..." : 
-                     "Resetting password..."}
+                    {resetStep === 1 ? "Sending OTP..." :
+                      resetStep === 2 ? "Verifying OTP..." :
+                        "Resetting password..."}
                   </Text>
                 </View>
               )}
-              
+
               {renderResetModalContent()}
 
               <View style={styles.modalNote}>
                 <Text style={styles.modalNoteText}>
-                  💡 {receivedOtp 
-                    ? "Development mode - OTP shown above" 
+                  💡 {receivedOtp
+                    ? "Development mode - OTP shown above"
                     : "Don't forget to check your spam folder if you don't see the email."
                   }
                 </Text>
