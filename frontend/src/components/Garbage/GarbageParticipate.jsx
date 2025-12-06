@@ -1,5 +1,5 @@
 // screens/ComplaintsListScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,11 @@ import {
   Alert,
   RefreshControl,
   TextInput,
+  Linking,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_ENDPOINTS } from '../config/config';
+import { API_ENDPOINTS } from '../../config/config';
 import {
   AccessTimeIcon,
   LocationOnIcon,
@@ -29,10 +31,14 @@ import {
   RemoveIcon,
   WarningIcon,
   ReportProblemIcon,
-} from '../components/CustomIcon';
+  ShareIcon,
+  WhatsAppIcon,
+} from '../CustomIcon';
+import Share from 'react-native-share';
 
 
 const ComplaintsListScreen = ({ navigation }) => {
+  // ALL HOOKS AT TOP LEVEL - NEVER INSIDE CONDITIONALS
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,11 +60,8 @@ const ComplaintsListScreen = ({ navigation }) => {
   });
   const [loadingMore, setLoadingMore] = useState(false);
   const [token, setToken] = useState(null);
-
-  useEffect(() => {
-    loadToken();
-    fetchReports();
-  }, []);
+  const [userScheduledEvents, setUserScheduledEvents] = useState({});
+  const [sharing, setSharing] = useState(false);
 
   // Load token from AsyncStorage
   const loadToken = async () => {
@@ -66,11 +69,57 @@ const ComplaintsListScreen = ({ navigation }) => {
       const userToken = await AsyncStorage.getItem('authToken');
       if (userToken) {
         setToken(userToken);
+        fetchUserScheduledEvents(userToken);
       }
     } catch (error) {
       console.error('Error loading token:', error);
     }
   };
+
+  // Fetch user's scheduled events
+  const fetchUserScheduledEvents = async (tokenOverride = null) => {
+    const tokenToUse = tokenOverride || token;
+
+    if (!tokenToUse) return;
+
+    try {
+      const response = await fetch(API_ENDPOINTS.USER_SCHEDULES, {
+        headers: {
+          'Authorization': `Bearer ${tokenToUse}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          const scheduleMap = {};
+          result.data.forEach(schedule => {
+            if (schedule.report) {
+              scheduleMap[schedule.report._id] = schedule;
+            }
+          });
+          setUserScheduledEvents(scheduleMap);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user schedules:', error);
+    }
+  };
+
+  // Check if user has scheduled for a specific report
+  const hasUserScheduled = (reportId) => {
+    return userScheduledEvents[reportId] !== undefined;
+  };
+
+  // Get user's schedule data for a report
+  const getUserScheduleData = (reportId) => {
+    return userScheduledEvents[reportId] || null;
+  };
+
+  useEffect(() => {
+    loadToken();
+    fetchReports();
+  }, []);
 
   // Fetch schedule counts when schedule modal opens
   useEffect(() => {
@@ -93,19 +142,19 @@ const ComplaintsListScreen = ({ navigation }) => {
       });
 
       const response = await fetch(`${API_ENDPOINTS.REPORTS}?${params.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch reports');
       }
 
       const newReports = result.data || [];
-      
+
       if (isLoadMore) {
         setReports(prev => [...prev, ...newReports]);
       } else {
@@ -118,7 +167,7 @@ const ComplaintsListScreen = ({ navigation }) => {
         total: newReports.length,
         pages: 1,
       });
-      
+
     } catch (error) {
       console.error('Error fetching reports:', error);
       Alert.alert('Error', 'Failed to fetch reports. Please check your connection.');
@@ -133,13 +182,13 @@ const ComplaintsListScreen = ({ navigation }) => {
     try {
       setLoadingScheduleCounts(true);
       const response = await fetch(`${API_ENDPOINTS.SCHEDULE_COUNTS}`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         setScheduleCounts(result.data);
       }
@@ -172,9 +221,107 @@ const ComplaintsListScreen = ({ navigation }) => {
     setModalVisible(true);
   };
 
+  // Track share event (optional analytics)
+  const trackShareEvent = async (reportId, platform) => {
+
+    console.log("canOpenURL?", await Linking.canOpenURL("whatsapp://send?text=hi"));
+
+    try {
+      await fetch(`${API_ENDPOINTS.TRACK_SHARE}/${reportId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ platform }),
+      });
+    } catch (error) {
+      console.error('Error tracking share:', error);
+    }
+  };
+
+  // Share to WhatsApp function
+  const shareToWhatsApp = useCallback(async (report, scheduleData, scheduleResult) => {
+    try {
+      setSharing(true);
+
+      const shareMessage = `🌟 JOIN THE CLEANUP MOVEMENT! 🌟
+
+🗓️ *I just signed up to clean up:*
+📍 ${report.address}
+📅 Date: ${new Date(scheduleData.scheduledDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })}
+⏰ Time: ${scheduleData.scheduledTime}
+👥 I'm bringing: ${scheduleData.participantCount}
+
+... (rest of your message)
+`;
+
+      // --------------------------------------------
+      // 1. CHECK BOTH WHATSAPP & WHATSAPP BUSINESS
+      // --------------------------------------------
+      const normal = await Share.isPackageInstalled('com.whatsapp');
+      const business = await Share.isPackageInstalled('com.whatsapp.w4b');
+
+      const isInstalled = normal.isInstalled || business.isInstalled;
+
+      if (!isInstalled) {
+        Alert.alert(
+          'WhatsApp Not Installed',
+          'Please install WhatsApp or WhatsApp Business to share this content.'
+        );
+        return;
+      }
+
+      // force correct package
+      const packageToUse = normal.isInstalled
+        ? 'com.whatsapp'
+        : 'com.whatsapp.w4b';
+
+      // --------------------------------------------
+      // 2. SHARE USING shareSingle
+      // --------------------------------------------
+      const options = {
+        social: Share.Social.WHATSAPP,
+        message: shareMessage,
+        appId: packageToUse,
+      };
+
+      if (report.imageUrl) {
+        options.url = report.imageUrl;
+        options.type = 'image/jpeg';
+      }
+
+      await Share.shareSingle(options);
+
+      await trackShareEvent(report._id, 'whatsapp');
+
+    } catch (error) {
+      console.error('WhatsApp share error:', error);
+
+      try {
+        await Share.open({
+          title: 'Share Cleanup Event',
+          message: shareMessage,
+        });
+      } catch (e) {
+        console.error('Fallback share error:', e);
+      }
+
+    } finally {
+      setSharing(false);
+    }
+  }, []);
+
+
+
   const scheduleCleanup = async () => {
     if (!selectedReport) return;
-    
+
     if (!token) {
       Alert.alert(
         'Authentication Required',
@@ -186,14 +333,14 @@ const ComplaintsListScreen = ({ navigation }) => {
       );
       return;
     }
-    
+
     try {
       setScheduling(true);
-      
+
       const scheduleData = {
         reportId: selectedReport._id,
-        scheduledDate: selectedDate.toISOString().split('T')[0], // YYYY-MM-DD format
-        scheduledTime: selectedTime.toISOString().split('T')[1].slice(0, 5), // HH:MM format
+        scheduledDate: selectedDate.toISOString().split('T')[0],
+        scheduledTime: selectedTime.toISOString().split('T')[1].slice(0, 5),
         participantCount: parseInt(participantCount),
         notes: notes.trim(),
       };
@@ -213,8 +360,13 @@ const ComplaintsListScreen = ({ navigation }) => {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
+        setUserScheduledEvents(prev => ({
+          ...prev,
+          [selectedReport._id]: result.data
+        }));
+
         Alert.alert(
           'Success',
           'Cleanup scheduled successfully!',
@@ -226,9 +378,13 @@ const ComplaintsListScreen = ({ navigation }) => {
                 setShowScheduleModal(false);
                 setNotes('');
                 setParticipantCount(1);
-                fetchReports(); // Refresh the list
-                fetchScheduleCounts(); // Refresh counts
+                fetchReports();
+                fetchScheduleCounts();
               }
+            },
+            {
+              text: 'Share on WhatsApp',
+              onPress: () => shareToWhatsApp(selectedReport, scheduleData, result.data)
             }
           ]
         );
@@ -237,7 +393,7 @@ const ComplaintsListScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error scheduling cleanup:', error);
-      
+
       if (error.message.includes('Unauthorized') || error.message.includes('token')) {
         Alert.alert(
           'Session Expired',
@@ -248,6 +404,7 @@ const ComplaintsListScreen = ({ navigation }) => {
         );
         await AsyncStorage.removeItem('userToken');
         setToken(null);
+        setUserScheduledEvents({});
       } else {
         Alert.alert('Error', error.message || 'Failed to schedule cleanup. Please try again.');
       }
@@ -303,7 +460,6 @@ const ComplaintsListScreen = ({ navigation }) => {
   };
 
   const renderReportCard = ({ item }) => (
-    
     <TouchableOpacity
       style={styles.reportCard}
       onPress={() => openReportDetails(item)}
@@ -339,9 +495,25 @@ const ComplaintsListScreen = ({ navigation }) => {
             {item.status?.replace('_', ' ').charAt(0).toUpperCase() + item.status?.slice(1) || 'Pending'}
           </Text>
         </View>
-        
+
+        {hasUserScheduled(item._id) && (
+          <TouchableOpacity
+            style={styles.smallShareButton}
+            onPress={() => {
+              const scheduleData = getUserScheduleData(item._id);
+              shareToWhatsApp(item, {
+                scheduledDate: scheduleData.scheduledDate,
+                scheduledTime: scheduleData.scheduledTime,
+                participantCount: scheduleData.participantCount,
+              }, scheduleData);
+            }}
+          >
+            <ShareIcon size={16} color="#25D366" />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.timeInfo}>
-              <AccessTimeIcon size={14} color="#666" />
+          <AccessTimeIcon size={14} color="#666" />
           <Text style={styles.timeText}>
             {item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
           </Text>
@@ -350,14 +522,14 @@ const ComplaintsListScreen = ({ navigation }) => {
 
       <View style={styles.cardFooter}>
         <View style={styles.locationInfo}>
-           <LocationOnIcon size={14} color="#666" />
+          <LocationOnIcon size={14} color="#666" />
           <Text style={styles.locationText} numberOfLines={1}>
             {item.address || 'Location not available'}
           </Text>
         </View>
-        
+
         <View style={styles.participantInfo}>
-            <PersonIcon size={14} color="#666" />
+          <PersonIcon size={14} color="#666" />
           <Text style={styles.participantText}>
             {item.reportedBy?.userType || 'Guest'}
           </Text>
@@ -379,7 +551,6 @@ const ComplaintsListScreen = ({ navigation }) => {
       { label: dayAfterTomorrow.toLocaleDateString('en-US', { weekday: 'short' }), date: dayAfterTomorrow },
     ];
 
-    // Add next 4 days
     for (let i = 3; i < 7; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() + i);
@@ -392,8 +563,8 @@ const ComplaintsListScreen = ({ navigation }) => {
     return (
       <View style={styles.dateSelector}>
         <Text style={styles.formLabel}>Select Date</Text>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dateScrollView}
         >
@@ -401,7 +572,7 @@ const ComplaintsListScreen = ({ navigation }) => {
             const dateStr = dateItem.date.toISOString().split('T')[0];
             const isSelected = selectedDate.toDateString() === dateItem.date.toDateString();
             const count = scheduleCounts[dateStr] || 0;
-            
+
             return (
               <TouchableOpacity
                 key={index}
@@ -431,7 +602,7 @@ const ComplaintsListScreen = ({ navigation }) => {
             );
           })}
         </ScrollView>
-        
+
         <View style={styles.selectedDateInfo}>
           <View style={styles.dateInfoRow}>
             <CalendarTodayIcon size={20} color="#0000" />
@@ -502,8 +673,8 @@ const ComplaintsListScreen = ({ navigation }) => {
                       styles.detailValue,
                       { color: getSeverityColor(selectedReport.severity) }
                     ]}>
-                      {selectedReport.severity?.charAt(0).toUpperCase() + 
-                       selectedReport.severity?.slice(1) || 'Medium'}
+                      {selectedReport.severity?.charAt(0).toUpperCase() +
+                        selectedReport.severity?.slice(1) || 'Medium'}
                     </Text>
                   </View>
                 </View>
@@ -515,8 +686,8 @@ const ComplaintsListScreen = ({ navigation }) => {
                       styles.detailValue,
                       { color: getStatusColor(selectedReport.status) }
                     ]}>
-                      {selectedReport.status?.replace('_', ' ').charAt(0).toUpperCase() + 
-                       selectedReport.status?.slice(1) || 'Pending'}
+                      {selectedReport.status?.replace('_', ' ').charAt(0).toUpperCase() +
+                        selectedReport.status?.slice(1) || 'Pending'}
                     </Text>
                   </View>
                   <View style={styles.detailItem}>
@@ -543,7 +714,7 @@ const ComplaintsListScreen = ({ navigation }) => {
                   <Text style={styles.detailLabel}>Reported By</Text>
                   <Text style={styles.detailValue}>
                     {selectedReport.reportedBy?.userType || 'Guest'}
-                    {selectedReport.reportedBy?.userId?.name && 
+                    {selectedReport.reportedBy?.userId?.name &&
                       ` - ${selectedReport.reportedBy.userId.name}`}
                   </Text>
                 </View>
@@ -570,7 +741,38 @@ const ComplaintsListScreen = ({ navigation }) => {
                   </View>
                 )}
 
-                {/* Add Schedule Section */}
+                {hasUserScheduled(selectedReport._id) && (
+                  <View style={styles.shareSection}>
+                    <Text style={styles.detailLabel}>Share Your Participation</Text>
+                    <TouchableOpacity
+                      style={styles.whatsappShareButton}
+                      onPress={() => {
+                        const scheduleData = getUserScheduleData(selectedReport._id);
+                        shareToWhatsApp(selectedReport, {
+                          scheduledDate: scheduleData.scheduledDate,
+                          scheduledTime: scheduleData.scheduledTime,
+                          participantCount: scheduleData.participantCount,
+                        }, scheduleData);
+                      }}
+                      disabled={sharing}
+                    >
+                      {sharing ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <WhatsAppIcon size={20} color="#fff" />
+                          <Text style={styles.whatsappShareButtonText}>
+                            Share on WhatsApp
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                    <Text style={styles.shareHelpText}>
+                      Share with friends and invite them to join the cleanup!
+                    </Text>
+                  </View>
+                )}
+
                 {selectedReport.status !== 'resolved' && selectedReport.status !== 'rejected' && (
                   <View style={styles.scheduleSection}>
                     <Text style={styles.detailLabel}>Schedule Cleanup</Text>
@@ -580,7 +782,7 @@ const ComplaintsListScreen = ({ navigation }) => {
                     >
                       <CalendarTodayIcon size={20} color="#2196F3" />
                       <Text style={styles.scheduleButtonText}>
-                        Schedule Cleanup
+                        {hasUserScheduled(selectedReport._id) ? 'Reschedule' : 'Schedule Cleanup'}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -619,23 +821,20 @@ const ComplaintsListScreen = ({ navigation }) => {
           </View>
 
           <ScrollView style={styles.scheduleForm}>
-            {/* Date Selector */}
             {renderDateSelector()}
 
-            {/* Time Selector */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Select Time</Text>
               <View style={styles.timePickerContainer}>
                 <TouchableOpacity
                   style={styles.timePicker}
                   onPress={() => {
-                    // For iOS/Android, use DateTimePicker
                     const currentTime = new Date();
-                    currentTime.setHours(10, 0, 0, 0); // Default to 10:00 AM
+                    currentTime.setHours(10, 0, 0, 0);
                     setSelectedTime(currentTime);
                   }}
                 >
-                    <AccessTimeIcon size={14} color="#666" />
+                  <AccessTimeIcon size={14} color="#666" />
                   <Text style={styles.timeText}>
                     {selectedTime.toLocaleTimeString('en-US', {
                       hour: '2-digit',
@@ -646,7 +845,6 @@ const ComplaintsListScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Participant Count */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>How many people?</Text>
               <View style={styles.participantContainer}>
@@ -656,12 +854,12 @@ const ComplaintsListScreen = ({ navigation }) => {
                 >
                   <RemoveIcon size={20} color="#dc3545" />
                 </TouchableOpacity>
-                
+
                 <View style={styles.participantDisplay}>
                   <PeopleIcon size={12} color="#666" />
                   <Text style={styles.participantText}>{participantCount} person{participantCount !== 1 ? 's' : ''}</Text>
                 </View>
-                
+
                 <TouchableOpacity
                   style={styles.participantButton}
                   onPress={() => setParticipantCount(Math.min(10, participantCount + 1))}
@@ -671,7 +869,6 @@ const ComplaintsListScreen = ({ navigation }) => {
               </View>
             </View>
 
-            {/* Notes */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Notes (Optional)</Text>
               <TextInput
@@ -684,7 +881,6 @@ const ComplaintsListScreen = ({ navigation }) => {
               />
             </View>
 
-            {/* Authentication Status */}
             {!token && (
               <View style={styles.authWarning}>
                 <WarningIcon size={20} color="#ffc107" />
@@ -694,7 +890,6 @@ const ComplaintsListScreen = ({ navigation }) => {
               </View>
             )}
 
-            {/* Schedule Summary */}
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>Schedule Summary</Text>
               <View style={styles.summaryRow}>
@@ -731,6 +926,17 @@ const ComplaintsListScreen = ({ navigation }) => {
               </View>
             </View>
 
+            {token && (
+              <View style={styles.sharePreview}>
+                <Text style={styles.sharePreviewTitle}>Share Preview</Text>
+                <Text style={styles.sharePreviewText} numberOfLines={3}>
+                  "I'm joining a cleanup at {selectedReport?.address} on {selectedDate.toLocaleDateString()}!
+                  Join me and help make our community cleaner!
+                  Register: {API_ENDPOINTS.REGISTER_LINK || 'https://cleanup-app.com/register'}"
+                </Text>
+              </View>
+            )}
+
             <View style={styles.scheduleModalActions}>
               <TouchableOpacity
                 style={[styles.actionButton, styles.cancelButton]}
@@ -743,7 +949,7 @@ const ComplaintsListScreen = ({ navigation }) => {
               >
                 <Text style={styles.actionButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.actionButton, styles.confirmButton, !token && styles.disabledButton]}
                 onPress={scheduleCleanup}
@@ -785,7 +991,7 @@ const ComplaintsListScreen = ({ navigation }) => {
             style={styles.reportButton}
             onPress={() => navigation.navigate('GarbageReport')}
           >
-           <AddIcon size={24} color="#fff" />
+            <AddIcon size={24} color="#fff" />
             <Text style={styles.reportButtonText}>Report</Text>
           </TouchableOpacity>
         </View>
@@ -798,14 +1004,14 @@ const ComplaintsListScreen = ({ navigation }) => {
         </View>
       ) : reports.length === 0 ? (
         <View style={styles.emptyContainer}>
-            <ReportProblemIcon size={80} color="#ccc" />
+          <ReportProblemIcon size={80} color="#ccc" />
           <Text style={styles.emptyText}>No reports found</Text>
           <Text style={styles.emptySubtext}>
             Be the first to report garbage in your area
           </Text>
           <TouchableOpacity
             style={styles.reportButton}
-            onPress={() => navigation.navigate('Report')}
+            onPress={() => navigation.navigate('GarbageReport')}
           >
             <Text style={styles.reportButtonText}>Report Now</Text>
           </TouchableOpacity>
@@ -820,7 +1026,7 @@ const ComplaintsListScreen = ({ navigation }) => {
           }
           onEndReached={loadMoreReports}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={() => 
+          ListFooterComponent={() =>
             loadingMore ? (
               <View style={styles.loadingMoreContainer}>
                 <ActivityIndicator size="small" color="#2196F3" />
@@ -936,6 +1142,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  smallShareButton: {
+    padding: 6,
+    backgroundColor: '#f0f9f0',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#25D366',
   },
   reportImage: {
     width: '100%',
@@ -1061,6 +1274,34 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 14,
     color: '#495057',
+  },
+  shareSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    backgroundColor: '#f9fff9',
+  },
+  whatsappShareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    padding: 12,
+    borderRadius: 10,
+    gap: 10,
+    marginTop: 8,
+  },
+  whatsappShareButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  shareHelpText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 8,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   scheduleSection: {
     padding: 20,
@@ -1303,6 +1544,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#495057',
     fontWeight: '500',
+  },
+  sharePreview: {
+    backgroundColor: '#f0f9f0',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#25D366',
+  },
+  sharePreviewTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#25D366',
+    marginBottom: 8,
+  },
+  sharePreviewText: {
+    fontSize: 12,
+    color: '#495057',
+    lineHeight: 18,
   },
   scheduleModalActions: {
     flexDirection: 'row',

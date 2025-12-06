@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>AQI Guide - Clean Air Champions</title>
+    <link rel="stylesheet" href="style.css" />
+    <script>
+        // Game state from localStorage
+        let gameState = {
+            aqi: 50,
+            buildings: [],
+            money: 0,
+            happiness: 100
+        };
+
+        // AQI building effects (same as game.html)
+        const buildingEffects = {
+            'house': { aqi: 2, money: 0, happiness: 5 },
+            'factory': { aqi: 15, money: 50, happiness: -10 },
+            'coal-plant': { aqi: 25, money: 100, happiness: -20 },
+            'park': { aqi: -5, money: -20, happiness: 15 },
+            'wind-turbine': { aqi: -12, money: -30, happiness: 10 },
+            'solar-farm': { aqi: -10, money: -25, happiness: 12 },
+            'bike-lane': { aqi: -7, money: -15, happiness: 8 }
+        };
+
+        // AQI categories with colors and rotation angles
+        const aqiCategories = [
+            { name: 'Good', range: [0, 50], color: '#00e400', emoji: '✅', rotation: 0 },
+            { name: 'Moderate', range: [51, 100], color: '#ffff00', emoji: '⚠️', rotation: 45 },
+            { name: 'Unhealthy for Sensitive Groups', range: [101, 150], color: '#ff7e00', emoji: '🟠', rotation: 90 },
+            { name: 'Unhealthy', range: [151, 200], color: '#ff0000', emoji: '🔴', rotation: 135 },
+            { name: 'Very Unhealthy', range: [201, 300], color: '#8f3f97', emoji: '🔴🔴', rotation: 180 },
+            { name: 'Hazardous', range: [301, 500], color: '#7e0023', emoji: '🚨', rotation: 225 }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load game state
+            const savedState = localStorage.getItem('cleanAirGameState');
+            if (savedState) {
+                gameState = JSON.parse(savedState);
+            }
+
+            // Update AQI meter
+            updateAQIMeter();
+            
+            // Update current AQI display
+            updateCurrentAQIDisplay();
+            
+            // Update building effects list
+            updateBuildingEffects();
+            
+            // Update game status
+            updateGameStatus();
+            
+            // Add simulation button event
+            document.getElementById('simulateButton')?.addEventListener('click', simulateAQI);
+        });
+
+        function updateAQIMeter() {
+            const needle = document.querySelector('.aqi-needle');
+            if (!needle) return;
+
+            // Calculate needle rotation based on current AQI
+            // Scale: 0-500 AQI maps to 0-270 degrees rotation
+            const maxAQI = 500;
+            const maxRotation = 270; // 270 degrees for visual clarity
+            const rotation = Math.min((gameState.aqi / maxAQI) * maxRotation, maxRotation);
+            
+            needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+            
+            // Update needle color based on AQI category
+            const category = getAQICategory(gameState.aqi);
+            needle.style.backgroundColor = category.color;
+        }
+
+        function getAQICategory(aqi) {
+            return aqiCategories.find(cat => aqi >= cat.range[0] && aqi <= cat.range[1]) || 
+                   aqiCategories[aqiCategories.length - 1];
+        }
+
+        function updateCurrentAQIDisplay() {
+            const display = document.getElementById('currentAQI');
+            if (!display) return;
+            
+            const category = getAQICategory(gameState.aqi);
+            display.innerHTML = `
+                <div class="current-aqi-display">
+                    <div class="aqi-value">${gameState.aqi}</div>
+                    <div class="aqi-category" style="color: ${category.color}">
+                        ${category.emoji} ${category.name}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateBuildingEffects() {
+            const container = document.getElementById('dynamicEffects');
+            if (!container) return;
+
+            let html = '<h3>📊 Building AQI Effects</h3><div class="effects-grid">';
+            
+            Object.entries(buildingEffects).forEach(([building, effect]) => {
+                const name = building.replace('-', ' ').split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ');
+                
+                const emoji = getBuildingEmoji(building);
+                const aqiClass = effect.aqi > 0 ? 'negative-effect' : 'positive-effect';
+                const aqiSign = effect.aqi > 0 ? '+' : '';
+                
+                html += `
+                    <div class="effect-card">
+                        <div class="effect-emoji">${emoji}</div>
+                        <div class="effect-name">${name}</div>
+                        <div class="effect-stats">
+                            <div class="effect-stat ${aqiClass}">
+                                AQI: ${aqiSign}${effect.aqi}
+                            </div>
+                            <div class="effect-stat ${effect.money > 0 ? 'positive-money' : 'negative-money'}">
+                                Money: ${effect.money > 0 ? '+' : ''}${effect.money}
+                            </div>
+                            <div class="effect-stat ${effect.happiness > 0 ? 'positive-happiness' : 'negative-happiness'}">
+                                Happiness: ${effect.happiness > 0 ? '+' : ''}${effect.happiness}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function getBuildingEmoji(building) {
+            const emojis = {
+                'house': '🏠',
+                'factory': '🏭',
+                'coal-plant': '⚫',
+                'park': '🌳',
+                'wind-turbine': '💨',
+                'solar-farm': '☀️',
+                'bike-lane': '🚲'
+            };
+            return emojis[building] || '🏗️';
+        }
+
+        function updateGameStatus() {
+            const container = document.getElementById('gameStatus');
+            if (!container) return;
+
+            const totalBuildings = gameState.buildings.length;
+            const pollutingBuildings = gameState.buildings.filter(b => 
+                buildingEffects[b.type]?.aqi > 0
+            ).length;
+            const cleanBuildings = gameState.buildings.filter(b => 
+                buildingEffects[b.type]?.aqi < 0
+            ).length;
+
+            container.innerHTML = `
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Total Buildings</div>
+                        <div class="status-value">${totalBuildings}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Polluting</div>
+                        <div class="status-value negative-effect">${pollutingBuildings}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Clean</div>
+                        <div class="status-value positive-effect">${cleanBuildings}</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Current AQI</div>
+                        <div class="status-value" style="color: ${getAQICategory(gameState.aqi).color}">
+                            ${gameState.aqi}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function simulateAQI() {
+            const scenario = document.getElementById('scenarioSelect').value;
+            let simulatedAQI = 50;
+            let buildings = [];
+            
+            switch(scenario) {
+                case 'polluted':
+                    buildings = ['factory', 'factory', 'coal-plant', 'house', 'house'];
+                    break;
+                case 'balanced':
+                    buildings = ['factory', 'wind-turbine', 'solar-farm', 'park', 'house'];
+                    break;
+                case 'clean':
+                    buildings = ['wind-turbine', 'solar-farm', 'park', 'bike-lane', 'house', 'house'];
+                    break;
+            }
+            
+            buildings.forEach(building => {
+                simulatedAQI += buildingEffects[building]?.aqi || 0;
+            });
+            
+            const resultDiv = document.getElementById('simulationResult');
+            const category = getAQICategory(simulatedAQI);
+            
+            resultDiv.innerHTML = `
+                <h4>Simulation Result:</h4>
+                <p>Scenario: <strong>${scenario.charAt(0).toUpperCase() + scenario.slice(1)}</strong></p>
+                <p>Buildings: ${buildings.map(b => getBuildingEmoji(b)).join(' ')}</p>
+                <p>Final AQI: <strong style="color: ${category.color}">${simulatedAQI}</strong></p>
+                <p>Category: ${category.emoji} <strong>${category.name}</strong></p>
+            `;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+    <style>
+        .current-aqi-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f5f5, #e8f5e9);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .aqi-value {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .aqi-category {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .effects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .effect-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 4px solid #2d5016;
+        }
+        
+        .effect-emoji {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+        
+        .effect-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2d5016;
+        }
+        
+        .effect-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .effect-stat {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .positive-effect { background: #d4edda; color: #155724; }
+        .negative-effect { background: #f8d7da; color: #721c24; }
+        .positive-money { background: #d1ecf1; color: #0c5460; }
+        .negative-money { background: #fff3cd; color: #856404; }
+        .positive-happiness { background: #e2f0cb; color: #3c763d; }
+        .negative-happiness { background: #f5c6cb; color: #a94442; }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .status-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d5016;
+        }
+        
+        .simulation-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .simulation-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        select, button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        
+        select {
+            flex: 1;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        #simulationResult {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .effects-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="aqi-guide-container">
+        <h1 style="text-align: center; color: #2d5016; margin-bottom: 30px;">🌍 Air Quality Index Guide</h1>
+        
+        <div class="current-aqi-section">
+            <h3>Your Current AQI</h3>
+            <div id="currentAQI"></div>
+        </div>
+        
+        <div class="aqi-meter" style="margin: 0 auto 40px; width: 150px; height: 150px; position: relative;">
+            <div class="aqi-needle" style="position: absolute; left: 50%; bottom: 50%; width: 4px; height: 70px; background: #ff0000; transform-origin: bottom center; border-radius: 2px; transition: transform 0.5s ease;"></div>
+            <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 8px solid; border-image: conic-gradient(#00e400, #ffff00, #ff7e00, #ff0000, #8f3f97, #7e0023) 1;"></div>
+        </div>
+
+        <div id="gameStatus"></div>
+
+        <div id="dynamicEffects"></div>
+
+        <div class="simulation-section">
+            <h3>🎮 AQI Simulation</h3>
+            <p>Try different building combinations to see how they affect AQI:</p>
+            
+            <div class="simulation-controls">
+                <select id="scenarioSelect">
+                    <option value="polluted">🏭 Polluted City</option>
+                    <option value="balanced">⚖️ Balanced City</option>
+                    <option value="clean">🌿 Clean City</option>
+                </select>
+                <button id="simulateButton">Simulate</button>
+            </div>
+            
+            <div id="simulationResult"></div>
+        </div>
+
+        <h2>AQI Categories</h2>
+        
+        <div class="aqi-category good">
+            <span>✅ Good</span>
+            <span class="aqi-range">0-50</span>
+        </div>
+        
+        <div class="aqi-category moderate">
+            <span>⚠️ Moderate</span>
+            <span class="aqi-range">51-100</span>
+        </div>
+        
+        <div class="aqi-category unhealthy-sg">
+            <span>🟠 Unhealthy for Sensitive Groups</span>
+            <span class="aqi-range">101-150</span>
+        </div>
+        
+        <div class="aqi-category unhealthy">
+            <span>🔴 Unhealthy</span>
+            <span class="aqi-range">151-200</span>
+        </div>
+        
+        <div class="aqi-category very-unhealthy">
+            <span>🔴🔴 Very Unhealthy</span>
+            <span class="aqi-range">201-300</span>
+        </div>
+        
+        <div class="aqi-category hazardous">
+            <span>🚨 Hazardous</span>
+            <span class="aqi-range">301+</span>
+        </div>
+
+        <div class="aqi-tips">
+            <h3>💡 Game Tips:</h3>
+            <ul>
+                <li>Keep AQI below 100 for happy citizens</li>
+                <li>Green buildings improve AQI</li>
+                <li>Polluting buildings give more money but harm AQI</li>
+                <li>Balance is key to success!</li>
+            </ul>
+        </div>
+
+        <h2>How AQI is Calculated</h2>
+        <p style="line-height: 1.6;">
+            In the game, AQI changes based on the buildings you place:
+            <br><br>
+            • 🏠 Houses: +2 AQI<br>
+            • 🏭 Factories: +15 AQI<br>
+            • ⚫ Coal Plants: +25 AQI<br>
+            • 🌳 Parks: -5 AQI<br>
+            • 💨 Wind Turbines: -12 AQI<br>
+            • ☀️ Solar Farms: -10 AQI<br>
+            • 🚲 Bike Lanes: -7 AQI
+        </p>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="page-navigation">
+        <button class="nav-btn" onclick="window.location.href='home.html'">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='game.html'">
+            <span class="nav-icon">🎮</span>
+            <span>Game</span>
+        </button>
+        <button class="nav-btn active" onclick="window.location.href='aqi.html'">
+            <span class="nav-icon">📊</span>
+            <span>AQI Guide</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='buildings.html'">
+            <span class="nav-icon">🏗️</span>
+            <span>Buildings</span>
+        </button>
+    </div>
+</body>
+</html>

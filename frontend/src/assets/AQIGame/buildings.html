@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Building Cards - Clean Air Champions</title>
+    <link rel="stylesheet" href="style.css" />
+  
+</head>
+<body>
+    <div class="cards-container">
+        <h1 style="text-align: center; color: #2d5016; margin-bottom: 30px;">🏗️ Building Cards Reference</h1>
+        <p style="text-align: center; margin-bottom: 30px;">Study all available buildings before playing!</p>
+
+        <div class="cards-grid">
+            <!-- House -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">🏠 House</h3>
+                    <div class="card-price">$100</div>
+                </div>
+                <p class="card-description">Homes for citizens</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-positive">+2</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Population:</span>
+                        <span class="effect-neutral">+10</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Income:</span>
+                        <span class="effect-neutral">$0/min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Factory -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">🏭 Factory</h3>
+                    <div class="card-price">$200</div>
+                </div>
+                <p class="card-description">Produces goods and income</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-positive">+15</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Income:</span>
+                        <span class="effect-neutral">+$50/min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coal Plant -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">⚫ Coal Plant</h3>
+                    <div class="card-price">$300</div>
+                </div>
+                <p class="card-description">Energy (very polluting)</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-positive">+25</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Income:</span>
+                        <span class="effect-neutral">+$100/min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Park -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">🌳 Park</h3>
+                    <div class="card-price">$150</div>
+                </div>
+                <p class="card-description">Improves air and happiness</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-negative">-5</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Happiness:</span>
+                        <span class="effect-positive">+5%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wind Turbine -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">💨 Wind Turbine</h3>
+                    <div class="card-price">$300</div>
+                </div>
+                <p class="card-description">Clean energy - highly effective</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-negative">-12</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Income:</span>
+                        <span class="effect-neutral">+$40/min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solar Farm -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">☀️ Solar Farm</h3>
+                    <div class="card-price">$400</div>
+                </div>
+                <p class="card-description">Clean solar energy</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-negative">-10</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Income:</span>
+                        <span class="effect-neutral">+$50/min</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bike Lane -->
+            <div class="building-card-full">
+                <div class="card-header">
+                    <h3 class="card-title">🚲 Bike Lane</h3>
+                    <div class="card-price">$200</div>
+                </div>
+                <p class="card-description">Reduces traffic emissions</p>
+                <div class="card-effects">
+                    <div class="effect-row">
+                        <span>Air Quality:</span>
+                        <span class="effect-negative">-7</span>
+                    </div>
+                    <div class="effect-row">
+                        <span>Happiness:</span>
+                        <span class="effect-positive">+3%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: #fff9c4; border-radius: 15px;">
+            <h3>🎯 Game Strategy Tips:</h3>
+            <ul>
+                <li>Start with green buildings to establish good AQI</li>
+                <li>Use polluting buildings for quick money, but balance with green buildings</li>
+                <li>Monitor your AQI - don't let it get above 150!</li>
+                <li>Different levels have different AQI targets</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="page-navigation">
+        <button class="nav-btn" onclick="window.location.href='home.html'">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='aqi.html'">
+            <span class="nav-icon">📊</span>
+            <span>AQI Guide</span>
+        </button>
+        <button class="nav-btn active" onclick="window.location.href='buildings.html'">
+            <span class="nav-icon">🏗️</span>
+            <span>Buildings</span>
+        </button>
+    </div>
+</body>
+</html>

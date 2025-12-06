@@ -1,5 +1,5 @@
 // config.js
-export const BASE_URL = "http://10.39.251.155:5000";
+export const BASE_URL = "http://172.16.106.22:5000";
 
 export const API_ENDPOINTS = {
   LOGIN: `${BASE_URL}/api/auth/login`,
@@ -8,9 +8,9 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD: `${BASE_URL}/api/auth/reset-password`,
 
   REPORTS: `${BASE_URL}/api/reports`,
-  TEST: `${BASE_URL}/`, 
+  TEST: `${BASE_URL}/`,
   COMPLAINTS: `${BASE_URL}/api/reports`,
   SCHEDULE_CLEANUP: `${BASE_URL}/api/reports/schedule`,
   SCHEDULE_COUNTS: `${BASE_URL}/api/reports/schedule/counts`,
-
+  USER_SCHEDULES: `${BASE_URL}/api/reports/schedule/user-schedules`,
 };

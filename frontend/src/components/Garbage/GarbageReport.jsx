@@ -17,7 +17,7 @@ import {
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import Geolocation from '@react-native-community/geolocation';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { API_ENDPOINTS } from '../config/config.js';
+import { API_ENDPOINTS } from '../../config/config.js';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
@@ -34,12 +34,12 @@ const GarbageReport = () => {
   const [userToken, setUserToken] = useState(null);
   const [userName, setUserName] = useState('Anonymous User');
 
-  
+
   // New states for category, severity, and tags
   const [category, setCategory] = useState('plastic');
   const [severity, setSeverity] = useState('medium');
   const [tags, setTags] = useState([]);
-  
+
   // Modal states
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSeverityModal, setShowSeverityModal] = useState(false);
@@ -52,31 +52,31 @@ const GarbageReport = () => {
   }, []);
 
 
-const loadUserData = async () => {
-  try {
-    const token = await AsyncStorage.getItem('authToken');
-    const id = await AsyncStorage.getItem('studentId');      // Changed
-    const name = await AsyncStorage.getItem('studentName');  // Changed
-    
-    if (token && id) {
-      setUserToken(token);
-      setUserId(id);
-      setUserName(name || 'Anonymous User');
-    } else {
-      // If no token, show login prompt or use guest mode
-      Alert.alert(
-        'Authentication Required',
-        'Please login to submit reports',
-        [
-          { text: 'Login', onPress: () => navigation.navigate('Login') },
-          { text: 'Continue as Guest', onPress: () => setUserId('guest') }
-        ]
-      );
+  const loadUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const id = await AsyncStorage.getItem('studentId');      // Changed
+      const name = await AsyncStorage.getItem('studentName');  // Changed
+
+      if (token && id) {
+        setUserToken(token);
+        setUserId(id);
+        setUserName(name || 'Anonymous User');
+      } else {
+        // If no token, show login prompt or use guest mode
+        Alert.alert(
+          'Authentication Required',
+          'Please login to submit reports',
+          [
+            { text: 'Login', onPress: () => navigation.navigate('Login') },
+            { text: 'Continue as Guest', onPress: () => setUserId('guest') }
+          ]
+        );
+      }
+    } catch (error) {
+      console.log('Error loading user data:', error);
     }
-  } catch (error) {
-    console.log('Error loading user data:', error);
-  }
-};
+  };
 
   // Permissions Utility Functions (same as before)
   const getAndroidPermissions = () => {
@@ -99,23 +99,23 @@ const loadUserData = async () => {
 
   const requestAllPermissions = async () => {
     try {
-      const permissions = Platform.OS === 'ios' 
+      const permissions = Platform.OS === 'ios'
         ? [
-            PERMISSIONS.IOS.CAMERA,
-            PERMISSIONS.IOS.PHOTO_LIBRARY,
-            PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
-          ]
+          PERMISSIONS.IOS.CAMERA,
+          PERMISSIONS.IOS.PHOTO_LIBRARY,
+          PERMISSIONS.IOS.LOCATION_WHEN_IN_USE,
+        ]
         : getAndroidPermissions();
 
       const results = {};
-      
+
       for (const permission of permissions) {
         let result = await check(permission);
-        
+
         if (result === RESULTS.DENIED) {
           result = await request(permission);
         }
-        
+
         results[permission] = result;
       }
 
@@ -124,7 +124,7 @@ const loadUserData = async () => {
         : [PERMISSIONS.ANDROID.CAMERA, PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION];
 
       const allGranted = essentialPermissions.every(perm => results[perm] === RESULTS.GRANTED);
-      
+
       return allGranted;
     } catch (error) {
       console.log('Permission error:', error);
@@ -135,7 +135,7 @@ const loadUserData = async () => {
   // Location Utility Functions (same as before)
   const checkLocationPermission = async () => {
     try {
-      const locationPermission = Platform.OS === 'ios' 
+      const locationPermission = Platform.OS === 'ios'
         ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
         : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 
@@ -149,7 +149,7 @@ const loadUserData = async () => {
 
   const requestLocationPermission = async () => {
     try {
-      const locationPermission = Platform.OS === 'ios' 
+      const locationPermission = Platform.OS === 'ios'
         ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
         : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 
@@ -165,7 +165,7 @@ const loadUserData = async () => {
     return new Promise(async (resolve, reject) => {
       try {
         const hasPermission = await checkLocationPermission();
-        
+
         if (!hasPermission) {
           const permissionGranted = await requestLocationPermission();
           if (!permissionGranted) {
@@ -174,52 +174,66 @@ const loadUserData = async () => {
           }
         }
 
-        const locationOptions = {
+        // Helper to get position with promise
+        const getPosition = (options) => {
+          return new Promise((res, rej) => {
+            Geolocation.getCurrentPosition(res, rej, options);
+          });
+        };
+
+        const highAccuracyOptions = {
           enableHighAccuracy: true,
+          timeout: 6000,
+          maximumAge: 10000,
+        };
+
+        const lowAccuracyOptions = {
+          enableHighAccuracy: false,
           timeout: 15000,
           maximumAge: 1000 * 60 * 5,
         };
 
-        console.log('Requesting location...');
+        console.log('Requesting location (High Accuracy)...');
 
-        Geolocation.getCurrentPosition(
-          (position) => {
+        try {
+          const position = await getPosition(highAccuracyOptions);
+          const { latitude, longitude, accuracy } = position.coords;
+          console.log('Location obtained (High Accuracy):', { latitude, longitude, accuracy });
+
+          resolve({
+            latitude,
+            longitude,
+            accuracy,
+            timestamp: position.timestamp,
+          });
+        } catch (error) {
+          console.log('High accuracy failed/timed out. Trying low accuracy...', error.code, error.message);
+
+          try {
+            const position = await getPosition(lowAccuracyOptions);
             const { latitude, longitude, accuracy } = position.coords;
-            console.log('Location obtained:', { latitude, longitude, accuracy });
-            
+            console.log('Location obtained (Low Accuracy):', { latitude, longitude, accuracy });
+
             resolve({
               latitude,
               longitude,
               accuracy,
               timestamp: position.timestamp,
             });
-          },
-          (error) => {
-            console.log('Location error details:', {
-              code: error.code,
-              message: error.message,
-            });
+          } catch (finalError) {
+            console.log('Low accuracy also failed:', finalError);
 
             let errorMessage = 'Failed to get location';
-            
-            switch (error.code) {
-              case 1: // PERMISSION_DENIED
-                errorMessage = 'Location permission denied. Please enable location services in app settings.';
-                break;
-              case 2: // POSITION_UNAVAILABLE
-                errorMessage = 'Location information unavailable. Please check your GPS and network connection.';
-                break;
-              case 3: // TIMEOUT
-                errorMessage = 'Location request timed out. Please try again.';
-                break;
-              default:
-                errorMessage = error.message || 'Unknown location error';
+            switch (finalError.code) {
+              case 1: errorMessage = 'Location permission denied.'; break;
+              case 2: errorMessage = 'Location unavailable. Check GPS/Network.'; break;
+              case 3: errorMessage = 'Location request timed out. Please check signal.'; break;
+              default: errorMessage = finalError.message || 'Unknown location error';
             }
-            
             reject(new Error(errorMessage));
-          },
-          locationOptions
-        );
+          }
+        }
+
       } catch (error) {
         console.log('Error in getCurrentLocation:', error);
         reject(error);
@@ -230,7 +244,7 @@ const loadUserData = async () => {
   const getAddressFromCoords = async (latitude, longitude) => {
     try {
       console.log('Reverse geocoding for:', latitude, longitude);
-      
+
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18`,
         {
@@ -240,7 +254,7 @@ const loadUserData = async () => {
           }
         }
       );
-      
+
       if (!response.ok) {
         if (response.status === 403) {
           console.log('OSM rate limited, using fallback');
@@ -248,19 +262,19 @@ const loadUserData = async () => {
         }
         throw new Error(`Geocoding API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.error) {
         throw new Error(data.error);
       }
-      
+
       const address = data.address;
       let formattedAddress = '';
-      
+
       if (address) {
         const addressParts = [];
-        
+
         if (address.road) addressParts.push(address.road);
         if (address.suburb) addressParts.push(address.suburb);
         if (address.city) addressParts.push(address.city);
@@ -269,12 +283,12 @@ const loadUserData = async () => {
         if (address.county) addressParts.push(address.county);
         if (address.state) addressParts.push(address.state);
         if (address.country) addressParts.push(address.country);
-        
+
         formattedAddress = addressParts.join(', ');
       }
-      
+
       return formattedAddress || data.display_name || 'Address not available';
-      
+
     } catch (error) {
       console.log('Geocoding error:', error.message);
       return await getAddressFallback(latitude, longitude);
@@ -284,13 +298,13 @@ const loadUserData = async () => {
   const getAddressFallback = async (latitude, longitude) => {
     try {
       console.log('Trying fallback geocoding...');
-      
+
       const apiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
       if (apiKey && apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY') {
         const response = await fetch(
           `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
         );
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.results && data.results.length > 0) {
@@ -298,9 +312,9 @@ const loadUserData = async () => {
           }
         }
       }
-      
+
       return `Near ${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`;
-      
+
     } catch (error) {
       console.log('Fallback geocoding failed:', error);
       return `Location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
@@ -309,7 +323,7 @@ const loadUserData = async () => {
 
   // Image Picker Utility Functions (same as before)
   const checkCameraPermission = async () => {
-    const cameraPermission = Platform.OS === 'ios' 
+    const cameraPermission = Platform.OS === 'ios'
       ? PERMISSIONS.IOS.CAMERA
       : PERMISSIONS.ANDROID.CAMERA;
 
@@ -437,7 +451,7 @@ const loadUserData = async () => {
     try {
       const permissionsGranted = await requestAllPermissions();
       setHasPermissions(permissionsGranted);
-      
+
       if (!permissionsGranted) {
         Alert.alert(
           'Permissions Required',
@@ -467,7 +481,7 @@ const loadUserData = async () => {
       console.log('Getting location for photo...');
       const currentLocation = await getCurrentLocation();
       setLocation(currentLocation);
-      
+
       getAddressFromCoords(currentLocation.latitude, currentLocation.longitude)
         .then(setAddress)
         .catch(error => console.log('Address fetch failed:', error.message));
@@ -475,7 +489,7 @@ const loadUserData = async () => {
       console.log('Taking photo...');
       const photo = await takePhotoWithPermissions();
       setImage(photo.uri);
-      
+
       Alert.alert('Success', 'Photo captured successfully!');
     } catch (error) {
       console.log('Error in takePhoto:', error);
@@ -503,7 +517,7 @@ const loadUserData = async () => {
       console.log('Selecting photo from gallery...');
       const photo = await selectPhotoWithPermissions();
       setImage(photo.uri);
-      
+
       Alert.alert('Success', 'Photo selected successfully!');
     } catch (error) {
       console.log('Error selecting photo:', error);
@@ -547,20 +561,20 @@ const loadUserData = async () => {
 
     try {
       const formData = new FormData();
-      
+
       // Append image file
       formData.append('image', {
         uri: image,
         type: 'image/jpeg',
         name: `report_${Date.now()}.jpg`,
       });
-      
+
       // Append other data
       formData.append('description', description || 'No description provided');
       formData.append('category', category);
       formData.append('severity', severity);
       formData.append('tags', JSON.stringify(tags));
-      
+
       if (location) {
         formData.append('latitude', location.latitude.toString());
         formData.append('longitude', location.longitude.toString());
@@ -568,16 +582,16 @@ const loadUserData = async () => {
           formData.append('accuracy', location.accuracy.toString());
         }
       }
-      
+
       formData.append('address', address || 'Address not available');
       formData.append('timestamp', new Date().toISOString());
       formData.append('platform', Platform.OS);
-      
+
       // Append user data if available
       if (userId && userId !== 'guest') {
         formData.append('userId', userId);
       }
-      
+
       console.log('Submitting report with:', {
         category,
         severity,
@@ -586,13 +600,13 @@ const loadUserData = async () => {
         hasLocation: !!location,
         hasImage: !!image
       });
-      
+
       // Prepare headers with authorization token
-      const headers = {'Content-Type': 'multipart/form-data'};
+      const headers = {};
       // if (userToken) {
       //   headers['Authorization'] = `Bearer ${userToken}`;
       // }
-      
+
       const response = await fetch(API_ENDPOINTS.REPORTS, {
         method: 'POST',
         headers,
@@ -600,9 +614,9 @@ const loadUserData = async () => {
       });
 
       const contentType = response.headers.get('content-type');
-      
+
       let data;
-      
+
       if (contentType && contentType.includes('application/json')) {
         data = await response.json();
       } else {
@@ -634,10 +648,10 @@ const loadUserData = async () => {
       Alert.alert('Success', 'Report submitted successfully!', [
         { text: 'OK', onPress: resetForm }
       ]);
-      
+
     } catch (error) {
       console.log('Submission error:', error.message);
-      
+
       if (error.message.includes('Network request failed')) {
         Alert.alert(
           'Network Error',
@@ -842,11 +856,11 @@ const loadUserData = async () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Report Garbage</Text>
-      
+
       {/* Image Section */}
       <View style={styles.imageSection}>
         <Text style={styles.sectionTitle}>Photo Evidence</Text>
-        
+
         {image ? (
           <Image source={{ uri: image }} style={styles.imagePreview} />
         ) : (
@@ -854,10 +868,10 @@ const loadUserData = async () => {
             <Text style={styles.placeholderText}>No image selected</Text>
           </View>
         )}
-        
+
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.button, (isLoading || submitting) && styles.disabledButton]} 
+          <TouchableOpacity
+            style={[styles.button, (isLoading || submitting) && styles.disabledButton]}
             onPress={takePhoto}
             disabled={isLoading || submitting}
           >
@@ -867,9 +881,9 @@ const loadUserData = async () => {
               <Text style={styles.buttonText}>Take Photo</Text>
             )}
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.button, styles.secondaryButton, (isLoading || submitting) && styles.disabledButton]} 
+
+          <TouchableOpacity
+            style={[styles.button, styles.secondaryButton, (isLoading || submitting) && styles.disabledButton]}
             onPress={selectPhoto}
             disabled={isLoading || submitting}
           >
@@ -881,9 +895,9 @@ const loadUserData = async () => {
       {/* Category, Severity, Tags Section */}
       <View style={styles.classificationSection}>
         <Text style={styles.sectionTitle}>Classification</Text>
-        
+
         {/* Category Selector */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.selectorButton}
           onPress={() => setShowCategoryModal(true)}
           disabled={submitting}
@@ -891,9 +905,9 @@ const loadUserData = async () => {
           <Text style={styles.selectorLabel}>Waste Category</Text>
           <Text style={styles.selectorValue}>{getCategoryLabel(category)}</Text>
         </TouchableOpacity>
-        
+
         {/* Severity Selector */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.selectorButton,
             { borderLeftColor: getSeverityColor(severity), borderLeftWidth: 4 }
@@ -904,9 +918,9 @@ const loadUserData = async () => {
           <Text style={styles.selectorLabel}>Severity Level</Text>
           <Text style={styles.selectorValue}>{getSeverityLabel(severity)}</Text>
         </TouchableOpacity>
-        
+
         {/* Tags Selector */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.selectorButton}
           onPress={() => {
             setSelectedTags(tags);
@@ -984,8 +998,8 @@ const loadUserData = async () => {
       </View>
 
       {/* Submit Button */}
-      <TouchableOpacity 
-        style={[styles.submitButton, (!image || submitting) && styles.disabledButton]} 
+      <TouchableOpacity
+        style={[styles.submitButton, (!image || submitting) && styles.disabledButton]}
         onPress={submitReport}
         disabled={submitting || !image}
       >
@@ -999,8 +1013,8 @@ const loadUserData = async () => {
       </TouchableOpacity>
 
       {/* Server Connection Test */}
-      <TouchableOpacity 
-        style={[styles.testButton, submitting && styles.disabledButton]} 
+      <TouchableOpacity
+        style={[styles.testButton, submitting && styles.disabledButton]}
         onPress={testServerConnection}
         disabled={submitting}
       >
@@ -1035,11 +1049,11 @@ const testServerConnection = async () => {
     'Testing Server',
     'Testing connection to server',
     [
-      { 
-        text: 'Test', 
+      {
+        text: 'Test',
         onPress: async () => {
           try {
-            const response = await fetch('http://192.168.1.9:5000/');
+            const response = await fetch(API_ENDPOINTS.TEST);
             Alert.alert(
               'Server Test Result',
               `Status: ${response.status}`,

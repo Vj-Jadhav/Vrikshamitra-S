@@ -9,10 +9,10 @@ import jwt from 'jsonwebtoken';
 export const scheduleCleanup = async (req, res) => {
   try {
     const { reportId, scheduledDate, scheduledTime, notes, participantCount = 1 } = req.body;
-    
+
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -32,9 +32,13 @@ export const scheduleCleanup = async (req, res) => {
     }
 
     // Get user info from token
-    const userId = decoded.id;
-    const userType = decoded.role || 'User';
+    // Get user info from token
 
+    const userId = decoded.id;
+    let userType = decoded.role || 'Guest';
+
+// Format role to match Schema enum exactly
+userType = userType.charAt(0).toUpperCase() + userType.slice(1).toLowerCase();
     // Validate required fields
     if (!reportId || !scheduledDate || !scheduledTime) {
       return res.status(400).json({
@@ -52,7 +56,7 @@ export const scheduleCleanup = async (req, res) => {
       });
     }
 
-    // Check if report is already resolved
+    // // Check if report is already resolved
     if (report.status === 'resolved') {
       return res.status(400).json({
         success: false,
@@ -60,24 +64,11 @@ export const scheduleCleanup = async (req, res) => {
       });
     }
 
-    // Check if report already has an active schedule
-    const existingSchedule = await CleanupSchedule.findOne({ 
-      report: reportId,
-      status: { $in: ['scheduled', 'in_progress'] }
-    });
-    
-    if (existingSchedule) {
-      return res.status(400).json({
-        success: false,
-        message: 'This report already has an active cleanup schedule'
-      });
-    }
-
     // Validate date
     const scheduleDate = new Date(scheduledDate);
     const now = new Date();
     now.setHours(0, 0, 0, 0); // Set to start of today
-    
+
     // Check if date is in the past
     if (scheduleDate < now) {
       return res.status(400).json({
@@ -132,7 +123,7 @@ export const scheduleCleanup = async (req, res) => {
     });
   } catch (error) {
     console.error('Error scheduling cleanup:', error);
-    
+
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -140,7 +131,7 @@ export const scheduleCleanup = async (req, res) => {
         error: error.message
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Error scheduling cleanup',
@@ -155,17 +146,17 @@ export const scheduleCleanup = async (req, res) => {
 export const getScheduleCounts = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     // Set default date range (next 7 days)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const defaultEndDate = new Date(today);
     defaultEndDate.setDate(defaultEndDate.getDate() + 7);
-    
+
     const start = startDate ? new Date(startDate) : today;
     start.setHours(0, 0, 0, 0);
-    
+
     const end = endDate ? new Date(endDate) : defaultEndDate;
     end.setHours(23, 59, 59, 999);
 
@@ -183,9 +174,9 @@ export const getScheduleCounts = async (req, res) => {
       {
         $group: {
           _id: {
-            $dateToString: { 
-              format: "%Y-%m-%d", 
-              date: "$scheduledDate" 
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$scheduledDate"
             }
           },
           totalParticipants: { $sum: "$participantCount" },
@@ -234,7 +225,7 @@ export const getMySchedules = async (req, res) => {
   try {
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -253,7 +244,7 @@ export const getMySchedules = async (req, res) => {
     }
 
     const userId = decoded.id;
-    
+
     const schedules = await CleanupSchedule.find({
       'scheduledBy.userId': userId
     })
@@ -281,7 +272,7 @@ export const getAllSchedules = async (req, res) => {
   try {
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -307,13 +298,13 @@ export const getAllSchedules = async (req, res) => {
       });
     }
 
-    const { 
-      date, 
-      status, 
-      page = 1, 
+    const {
+      date,
+      status,
+      page = 1,
       limit = 20
     } = req.query;
-    
+
     const query = {};
 
     if (date) {
@@ -321,13 +312,13 @@ export const getAllSchedules = async (req, res) => {
       searchDate.setHours(0, 0, 0, 0);
       const nextDay = new Date(searchDate);
       nextDay.setDate(nextDay.getDate() + 1);
-      
+
       query.scheduledDate = {
         $gte: searchDate,
         $lt: nextDay
       };
     }
-    
+
     if (status) {
       query.status = status;
     }
@@ -369,10 +360,10 @@ export const getAllSchedules = async (req, res) => {
 export const cancelSchedule = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Get token from header
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -391,9 +382,9 @@ export const cancelSchedule = async (req, res) => {
     }
 
     const userId = decoded.id;
-    
+
     const schedule = await CleanupSchedule.findById(id);
-    
+
     if (!schedule) {
       return res.status(404).json({
         success: false,

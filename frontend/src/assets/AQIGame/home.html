@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Clean Air Champions</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <!-- Welcome Screen -->
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-icon">🌍</div>
+        <h1 class="welcome-title">Clean Air Champions</h1>
+        <p class="welcome-subtitle">Air Quality Index Game</p>
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px">
+            Build cities, manage pollution, and learn about air quality!
+        </p>
+        <div class="button-container">
+            <button class="btn btn-start" id="startButton">Start Game</button>
+            <button class="btn btn-aqi" onclick="window.location.href='aqi.html'">View AQI Guide</button>
+            <button class="btn btn-buildings" onclick="window.location.href='buildings.html'">Building Cards</button>
+        </div>
+    </div>
+
+    <!-- Levels Screen -->
+    <div class="levels-screen" id="levelsScreen" style="display: none;">
+        <button class="back-button" id="backButton">← Back</button>
+        <h2 style="text-align: center; margin: 20px 0; font-size: 28px; color: #2d5016;">
+            Select Level
+        </h2>
+        <div class="levels-grid" id="levelsGrid"></div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="page-navigation">
+        <button class="nav-btn active" onclick="window.location.href='home.html'">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='aqi.html'">
+            <span class="nav-icon">📊</span>
+            <span>AQI Guide</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='buildings.html'">
+            <span class="nav-icon">🏗️</span>
+            <span>Buildings</span>
+        </button>
+    </div>
+
+    <script>
+        // Load levels
+        const levelsGrid = document.getElementById('levelsGrid');
+        for (let i = 0; i < 8; i++) {
+            const levelCard = document.createElement('div');
+            levelCard.className = 'level-card';
+            levelCard.innerHTML = `
+                <div class="level-number">${i + 1}</div>
+                <div class="level-name">Level ${i + 1}</div>
+                <div class="level-description">Start playing</div>
+            `;
+            levelCard.addEventListener('click', function() {
+                window.location.href = `game.html?level=${i}`;
+            });
+            levelsGrid.appendChild(levelCard);
+        }
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('levelsScreen').style.display = 'block';
+        });
+
+        document.getElementById('backButton').addEventListener('click', function() {
+            document.getElementById('levelsScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

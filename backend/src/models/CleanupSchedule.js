@@ -8,16 +8,16 @@ const cleanupScheduleSchema = new mongoose.Schema({
     required: true
   },
   scheduledBy: {
-userType: {
-  type: String,
-  enum: ['student', 'faculty', 'user', 'guest'],
-  default: 'guest'
-},
+    userType: {
+      type: String,
+       enum: ['Student', 'Faculty', 'User', 'Guest', 'Admin', 'Institute'],
+      default: 'guest'
+    },
 
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       required: false,
-      refPath: 'reportedBy.userType'
+      refPath: 'scheduledBy.userType'
     }
   },
   scheduledDate: {
@@ -74,19 +74,19 @@ cleanupScheduleSchema.index({ status: 1 });
 cleanupScheduleSchema.index({ report: 1 });
 
 // Virtual property for combined date and time
-cleanupScheduleSchema.virtual('scheduledDateTime').get(function() {
+cleanupScheduleSchema.virtual('scheduledDateTime').get(function () {
   const datePart = this.scheduledDate.toISOString().split('T')[0];
   return new Date(`${datePart}T${this.scheduledTime}`);
 });
 
 // Pre-save middleware to update report status
-cleanupScheduleSchema.pre('save', async function(next) {
+cleanupScheduleSchema.pre('save', async function (next) {
   if (this.isNew) {
     try {
       // Update the associated report status
       await mongoose.model('Report').findByIdAndUpdate(
         this.report,
-        { 
+        {
           status: 'in_progress',
           updatedAt: new Date()
         }
@@ -99,7 +99,7 @@ cleanupScheduleSchema.pre('save', async function(next) {
 });
 
 // Instance method to check if schedule is upcoming
-cleanupScheduleSchema.methods.isUpcoming = function() {
+cleanupScheduleSchema.methods.isUpcoming = function () {
   const now = new Date();
   const scheduleDateTime = new Date(`${this.scheduledDate.toISOString().split('T')[0]}T${this.scheduledTime}`);
   return scheduleDateTime > now;

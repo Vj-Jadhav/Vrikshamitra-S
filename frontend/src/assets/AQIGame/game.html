@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clean Air Champions - Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Warning System -->
+    <div class="warning-overlay" id="warningOverlay"></div>
+    <div class="critical-indicator" id="criticalIndicator">
+        🚨 CRITICAL LEVELS! 🚨<br>
+        <span id="criticalMessage"></span>
+    </div>
+    <div class="emergency-notification" id="emergencyNotification">
+        ⚠️ EMERGENCY! Check conditions! ⚠️
+    </div>
+
+    <!-- Game Screen -->
+    <div class="game-screen active" id="gameScreen">
+        <!-- AQI Indicator -->
+        <div class="gameplay-aqi-indicator" id="gameplayAqiIndicator">
+            <div class="gameplay-aqi-info">
+                <div>
+                    <span class="gameplay-aqi-value" id="gameplayAqiValue">50</span>
+                    <span class="gameplay-aqi-status good" id="gameplayAqiStatus">Good</span>
+                </div>
+                <div class="gameplay-aqi-description" id="gameplayAqiDescription">
+                    Perfect air quality! Citizens are happy and healthy.
+                </div>
+                <div class="aqi-progress-container">
+                    <div class="aqi-progress-bar" id="aqiProgressBar" style="width: 10%;"></div>
+                </div>
+                <button class="toggle-aqi-btn" id="toggleAqiBtn">
+                    <span class="hide-text">📊 Hide AQI Panel</span>
+                    <span class="show-text" style="display: none;">📊 Show AQI Panel</span>
+                </button>
+            </div>
+            <div class="gameplay-stats">
+                <div class="gameplay-stat">
+                    <div class="gameplay-stat-value" id="gameplayMoney">$1000</div>
+                    <div class="gameplay-stat-label">Money</div>
+                </div>
+                <div class="gameplay-stat">
+                    <div class="gameplay-stat-value" id="gameplayPopulation">50</div>
+                    <div class="gameplay-stat-label">Population</div>
+                </div>
+                <div class="gameplay-stat">
+                    <div class="gameplay-stat-value" id="gameplayHappiness">80%</div>
+                    <div class="gameplay-stat-label">Happiness</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Container -->
+        <div class="game-container">
+            <!-- Game Header -->
+            <div class="game-header">
+                <button class="back-button" onclick="window.location.href='home.html'">← Home</button>
+                <h1 class="game-title">Clean Air Champions</h1>
+                <p class="game-subtitle">Balance development with clean air</p>
+                
+                <!-- Level Progress -->
+                <div class="level-progress">
+                    <div class="level-badge">
+                        <span>🎯 Level</span>
+                        <span id="levelNumber">1</span>
+                        <span id="levelDifficulty">Easy</span>
+                    </div>
+                    <div class="level-target" id="levelTarget">
+                        Target AQI: <span id="targetAQI">100</span>
+                    </div>
+                </div>
+
+                <!-- Level Progress Bar -->
+                <div class="level-progress-bar">
+                    <div class="level-progress-fill" id="levelProgressFill"></div>
+                </div>
+            </div>
+
+            <!-- Building Limits -->
+            <div class="building-limits" id="buildingLimits">
+                <h3 class="building-limits-title">🏗️ Building Limits</h3>
+                <div class="limits-grid" id="limitsGrid"></div>
+            </div>
+
+            <!-- Selected Building Indicator -->
+            <div class="selected-building-indicator" id="selectedBuildingIndicator">
+                No building selected. Click "SHOW BUILDING CARDS" to choose!
+            </div>
+
+            <!-- Show Cards Button -->
+            <button class="show-cards-btn" id="showCardsBtn">
+                🏗️ SHOW BUILDING CARDS
+            </button>
+
+            <!-- Game Layout -->
+            <div class="game-layout">
+                <!-- City Grid -->
+                <section class="city-container">
+                    <h2 class="city-title">🏙️ Fresh Air Ville</h2>
+                    <div class="city-instructions">
+                        Click on an empty grid cell to place your selected building.<br>
+                        <strong>⚠️ Grid Limit: <span id="gridLimit">6</span> cells • Placed: <span id="buildingsPlaced">0</span></strong>
+                        <div style="margin-top: 10px;">
+                            AQI Target: <span id="currentTargetAQI">100</span> • Current AQI: <span id="currentAQI">50</span>
+                        </div>
+                    </div>
+                    <div class="city-grid" id="cityGrid"></div>
+                    <div class="grid-limit-indicator" id="gridLimitIndicator">
+                        🏗️ <span id="gridLimitText">0/6</span>
+                    </div>
+                </section>
+
+                <!-- Challenge Section -->
+                <section class="request-container">
+                    <h2 class="request-title">🗣️ Citizen Challenge</h2>
+                    <div class="request-content">
+                        <div class="request-character">
+                            <div class="character-avatar">👧</div>
+                            <div class="character-text" id="characterText">
+                                Welcome! I'm Maya. Select a building from the cards, then place it on the grid to grow our city while keeping the air clean!
+                            </div>
+                        </div>
+                        <div class="request-options" id="requestOptions"></div>
+                        <div class="teaching-moment" id="teachingMoment"></div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Building Cards Modal -->
+    <div class="cards-modal" id="cardsModal">
+        <div class="cards-modal-content">
+            <button class="close-modal-btn" id="closeModalBtn">×</button>
+            <h2 class="cards-modal-title">🏗️ Building Cards</h2>
+            
+            <p class="selection-instruction">
+                Click on a card to select it, then click on the grid to place it
+                <span id="levelRestrictions"></span>
+            </p>
+
+            <!-- Selected Building Info -->
+            <div class="selected-in-game" id="selectedInGame">
+                ✅ Currently selected for building
+            </div>
+
+            <div class="cards-grid-modal" id="cardsGridModal"></div>
+
+            <!-- Strategy Tips -->
+            <div class="modal-strategy-tips">
+                <h4>💡 Building Strategy Tips</h4>
+                <ul>
+                    <li>Green buildings (🌿) improve AQI, red buildings (⚠️) worsen it</li>
+                    <li>Balance polluting buildings with green ones</li>
+                    <li>Some buildings generate income over time</li>
+                    <li>Keep AQI below target for happy citizens</li>
+                </ul>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <div class="keyboard-hint">
+                    Press <strong>ESC</strong> to close • Press <strong>1-7</strong> for quick selection
+                </div>
+                <button class="done-selecting-btn" onclick="hideBuildingCardsModal()">
+                    ✅ Done Selecting
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Completion Modal -->
+    <div class="completion-modal" id="completionModal">
+        <div class="completion-content">
+            <div class="completion-icon" id="completionIcon">🎉</div>
+            <h2 class="completion-title" id="completionTitle">LEVEL COMPLETE!</h2>
+            <div class="completion-stats" id="completionStats"></div>
+            <div class="completion-buttons">
+                <button class="completion-btn next" id="nextLevelBtn">Next Level →</button>
+                <button class="completion-btn restart" id="restartLevelBtn">Play Again</button>
+                <button class="completion-btn home" id="homeBtn">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="game-over-modal" id="gameOverModal">
+        <div class="game-over-content">
+            <div class="game-over-icon" id="gameOverIcon">💀</div>
+            <h2 class="game-over-title" id="gameOverTitle">GAME OVER</h2>
+            <div class="game-over-reason" id="gameOverReason"></div>
+            <div class="game-over-stats" id="gameOverStats"></div>
+            <div class="game-over-buttons">
+                <button class="game-over-btn restart" id="gameOverRestartBtn">Try Again</button>
+                <button class="game-over-btn home" id="gameOverHomeBtn">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="page-navigation">
+        <button class="nav-btn" onclick="window.location.href='home.html'">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </button>
+        <button class="nav-btn" onclick="showBuildingCardsModal()">
+            <span class="nav-icon">🏗️</span>
+            <span>Buildings</span>
+        </button>
+        <button class="nav-btn" onclick="window.location.href='aqi.html'">
+            <span class="nav-icon">📊</span>
+            <span>AQI Guide</span>
+        </button>
+        <button class="nav-btn game active">
+            <span class="nav-icon">🎮</span>
+            <span>Playing</span>
+        </button>
+    </div>
+
+    <!-- JavaScript remains exactly the same as in the previous complete game.html -->
+    <script>
+        // ============================================
+        // GAME TERMINATION / LOSE CONDITIONS
+        // ============================================
+        const gameTermination = {
+            // Lose conditions configuration
+            loseConditions: {
+                // AQI-based conditions
+                aqiHazardous: 300,        // Immediate game over
+                aqiVeryUnhealthy: 250,    // Warning and countdown
+                aqiUnhealthy: 200,        // First warning
+                
+                // Happiness-based conditions
+                happinessCritical: 10,     // Citizens revolt
+                happinessVeryLow: 20,      // Warning
+                happinessLow: 30,          // First warning
+                
+                // Money-based conditions
+                moneyBankrupt: 0,          // No money and no income
+                moneyCritical: 50,         // Warning
+                
+                // Time-based conditions (for advanced levels)
+                timeLimit: null,           // Can be set per level
+                
+                // Pollution buildup
+                consecutivePolluters: 3,    // Too many polluting buildings in a row
+                
+                // Grid-related conditions
+                gridPollutionDensity: 0.7,  // Too many polluting buildings in grid
+                
+                // Warning system
+                warnings: {
+                    maxWarnings: 3,        // Max warnings before game over
+                    currentWarnings: 0,
+                    warningTypes: new Set() // Track types of warnings given
+                }
+            },
+            
+            // Game state tracking
+            gameState: {
+                consecutivePollutingBuildings: 0,
+                lastBuildingType: null,
+                pollutionBuildingsCount: 0,
+                lastWarningTime: 0,
+                emergencyMode: false,
+                gameOverTriggered: false
+            },
+            
+            // Critical thresholds for warnings
+            criticalThresholds: {
+                aqi: 180,
+                happiness: 25,
+                money: 100
+            },
+            
+            // Initialize termination system
+            init: function() {
+                this.resetWarnings();
+                this.gameState.gameOverTriggered = false;
+            },
+            
+            // Check all lose conditions
+            checkLoseConditions: function() {
+                if (this.gameState.gameOverTriggered) return true;
+                
+                const conditions = [];
+                
+                // Immediate game over conditions
+                if (gameState.aqi >= this.loseConditions.aqiHazardous) {
+                    conditions.push({
+                        type: 'aqi_hazardous',
+                        message: '🚨 AIR QUALITY EMERGENCY! 🚨<br>AQI reached HAZARDOUS levels!',
+                        immediate: true
+                    });
+                }
+                
+                if (gameState.happiness <= this.loseConditions.happinessCritical) {
+                    conditions.push({
+                        type: 'happiness_critical',
+                        message: '😡 CITIZEN REVOLT!<br>Happiness dropped too low!',
+                        immediate: true
+                    });
+                }
+                
+                // Check if bankrupt with no income
+                if (gameState.money <= this.loseConditions.moneyBankrupt) {
+                    const hasIncome = gameState.buildings.some(b => b.building.incomePerMinute > 0);
+                    if (!hasIncome && gameState.buildings.length > 0) {
+                        conditions.push({
+                            type: 'bankrupt_no_income',
+                            message: '💸 BANKRUPT!<br>No money and no income sources!',
+                            immediate: true
+                        });
+                    }
+                }
+                
+                // Check warning-based conditions (after multiple warnings)
+                if (this.loseConditions.warnings.currentWarnings >= this.loseConditions.warnings.maxWarnings) {
+                    conditions.push({
+                        type: 'too_many_warnings',
+                        message: '⚠️ TOO MANY WARNINGS!<br>Failed to address critical issues!',
+                        immediate: true
+                    });
+                }
+                
+                // Check pollution density
+                const totalBuildings = gameState.buildings.length;
+                if (totalBuildings > 0) {
+                    const pollutionRatio = this.gameState.pollutionBuildingsCount / totalBuildings;
+                    if (pollutionRatio > this.loseConditions.gridPollutionDensity) {
+                        conditions.push({
+                            type: 'pollution_density',
+                            message: '🏭 INDUSTRIAL COLLAPSE!<br>Too many polluting buildings!',
+                            immediate: true
+                        });
+                    }
+                }
+                
+                // Handle immediate game over conditions
+                const immediateCondition = conditions.find(c => c.immediate);
+                if (immediateCondition) {
+                    this.triggerGameOver(immediateCondition.message, immediateCondition.type);
+                    return true;
+                }
+                
+                // Check for warnings
+                this.checkWarnings();
+                
+                return false;
+            },
+            
+            // Check and issue warnings
+            checkWarnings: function() {
+                const now = Date.now();
+                const warningCooldown = 10000; // 10 seconds between warnings
+                
+                // Check if we should show warnings (not in cooldown)
+                if (now - this.gameState.lastWarningTime < warningCooldown) return;
+                
+                const warnings = [];
+                
+                // AQI warnings
+                if (gameState.aqi >= this.loseConditions.aqiUnhealthy && 
+                    gameState.aqi < this.loseConditions.aqiVeryUnhealthy) {
+                    if (!this.loseConditions.warnings.warningTypes.has('aqi_unhealthy')) {
+                        warnings.push({
+                            type: 'aqi_unhealthy',
+                            message: `⚠️ AQI WARNING: ${Math.round(gameState.aqi)} (Unhealthy)<br>Citizens are getting sick!`,
+                            level: 'high'
+                        });
+                    }
+                } else if (gameState.aqi >= this.loseConditions.aqiVeryUnhealthy) {
+                    if (!this.loseConditions.warnings.warningTypes.has('aqi_very_unhealthy')) {
+                        warnings.push({
+                            type: 'aqi_very_unhealthy',
+                            message: `🚨 AQI CRITICAL: ${Math.round(gameState.aqi)} (Very Unhealthy)<br>Immediate action required!`,
+                            level: 'critical'
+                        });
+                        this.showEmergencyNotification();
+                    }
+                }
+                
+                // Happiness warnings
+                if (gameState.happiness <= this.loseConditions.happinessLow && 
+                    gameState.happiness > this.loseConditions.happinessVeryLow) {
+                    if (!this.loseConditions.warnings.warningTypes.has('happiness_low')) {
+                        warnings.push({
+                            type: 'happiness_low',
+                            message: `😟 Happiness Low: ${gameState.happiness}%<br>Citizens are unhappy!`,
+                            level: 'medium'
+                        });
+                    }
+                } else if (gameState.happiness <= this.loseConditions.happinessVeryLow) {
+                    if (!this.loseConditions.warnings.warningTypes.has('happiness_very_low')) {
+                        warnings.push({
+                            type: 'happiness_very_low',
+                            message: `😡 Happiness Critical: ${gameState.happiness}%<br>Citizens may revolt!`,
+                            level: 'critical'
+                        });
+                        this.showEmergencyNotification();
+                    }
+                }
+                
+                // Money warnings
+                if (gameState.money <= this.loseConditions.moneyCritical && 
+                    gameState.money > this.loseConditions.moneyBankrupt) {
+                    if (!this.loseConditions.warnings.warningTypes.has('money_critical')) {
+                        warnings.push({
+                            type: 'money_critical',
+                            message: `💰 Low Funds: $${Math.round(gameState.money)}<br>Running out of money!`,
+                            level: 'high'
+                        });
+                        // Add money warning class to money display
+                        document.getElementById('gameplayMoney').parentElement.classList.add('money-warning');
+                    }
+                }
+                
+                // Process warnings
+                warnings.forEach(warning => {
+                    this.issueWarning(warning);
+                });
+                
+                // Show critical indicator if any critical warnings
+                const hasCriticalWarning = warnings.some(w => w.level === 'critical');
+                if (hasCriticalWarning) {
+                    this.showCriticalIndicator();
+                } else {
+                    this.hideCriticalIndicator();
+                }
+            },
+            
+            // Issue a warning to player
+            issueWarning: function(warning) {
+                this.loseConditions.warnings.currentWarnings++;
+                this.loseConditions.warnings.warningTypes.add(warning.type);
+                this.gameState.lastWarningTime = Date.now();
+                
+                // Show warning notification
+                showNotification(warning.message, 'error', 5000);
+                
+                // Show warning overlay for critical warnings
+                if (warning.level === 'critical') {
+                    this.showWarningOverlay();
+                    
+                    // Schedule overlay removal
+                    setTimeout(() => {
+                        this.hideWarningOverlay();
+                    }, 3000);
+                }
+                
+                // Update warning display
+                this.updateWarningDisplay();
+                
+                // Log warning
+                console.log(`Warning issued: ${warning.type} (${this.loseConditions.warnings.currentWarnings}/${this.loseConditions.warnings.maxWarnings})`);
+            },
+            
+            // Reset warnings
+            resetWarnings: function() {
+                this.loseConditions.warnings.currentWarnings = 0;
+                this.loseConditions.warnings.warningTypes.clear();
+                this.gameState.lastWarningTime = 0;
+                this.hideWarningOverlay();
+                this.hideCriticalIndicator();
+                document.getElementById('emergencyNotification').classList.remove('active');
+                document.getElementById('gameplayMoney').parentElement.classList.remove('money-warning');
+            },
+            
+            // Track building placement for pollution patterns
+            trackBuildingPlacement: function(building) {
+                if (building.aqiImpact > 0) {
+                    this.gameState.consecutivePollutingBuildings++;
+                    this.gameState.pollutionBuildingsCount++;
+                    
+                    // Check for too many consecutive polluting buildings
+                    if (this.gameState.consecutivePollutingBuildings >= this.loseConditions.consecutivePolluters) {
+                        if (!this.loseConditions.warnings.warningTypes.has('consecutive_polluters')) {
+                            this.issueWarning({
+                                type: 'consecutive_polluters',
+                                message: '🏭 TOO MANY POLLUTERS IN A ROW!<br>Balance with green buildings!',
+                                level: 'high'
+                            });
+                        }
+                    }
+                } else {
+                    this.gameState.consecutivePollutingBuildings = 0;
+                }
+                
+                this.gameState.lastBuildingType = building.id;
+            },
+            
+            // Show warning overlay
+            showWarningOverlay: function() {
+                document.getElementById('warningOverlay').classList.add('active');
+            },
+            
+            // Hide warning overlay
+            hideWarningOverlay: function() {
+                document.getElementById('warningOverlay').classList.remove('active');
+            },
+            
+            // Show critical indicator
+            showCriticalIndicator: function() {
+                const indicator = document.getElementById('criticalIndicator');
+                const message = document.getElementById('criticalMessage');
+                
+                let criticalMessage = '';
+                if (gameState.aqi >= this.loseConditions.aqiVeryUnhealthy) {
+                    criticalMessage += `AQI: ${Math.round(gameState.aqi)} (Critical!)<br>`;
+                }
+                if (gameState.happiness <= this.loseConditions.happinessVeryLow) {
+                    criticalMessage += `Happiness: ${gameState.happiness}% (Very Low!)<br>`;
+                }
+                if (gameState.money <= this.loseConditions.moneyCritical) {
+                    criticalMessage += `Money: $${Math.round(gameState.money)} (Critical!)<br>`;
+                }
+                
+                message.innerHTML = criticalMessage;
+                indicator.classList.add('active');
+            },
+            
+            // Hide critical indicator
+            hideCriticalIndicator: function() {
+                document.getElementById('criticalIndicator').classList.remove('active');
+            },
+            
+            // Show emergency notification
+            showEmergencyNotification: function() {
+                const notification = document.getElementById('emergencyNotification');
+                notification.classList.add('active');
+                
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    notification.classList.remove('active');
+                }, 5000);
+            },
+            
+            // Update warning display in UI
+            updateWarningDisplay: function() {
+                const warningCount = this.loseConditions.warnings.currentWarnings;
+                const maxWarnings = this.loseConditions.warnings.maxWarnings;
+                
+                // Update AQI indicator with warning info
+                const aqiIndicator = document.getElementById('gameplayAqiIndicator');
+                if (warningCount > 0) {
+                    aqiIndicator.style.border = '3px solid #ff5555';
+                    aqiIndicator.style.animation = 'pixelPulse 1s infinite';
+                } else {
+                    aqiIndicator.style.border = '';
+                    aqiIndicator.style.animation = '';
+                }
+            },
+            
+            // Trigger game over
+            triggerGameOver: function(reason, conditionType) {
+                if (this.gameState.gameOverTriggered) return;
+                
+                this.gameState.gameOverTriggered = true;
+                gameState.gameActive = false;
+                
+                console.log(`Game Over: ${reason} (${conditionType})`);
+                
+                // Show game over modal
+                this.showGameOverModal(reason, conditionType);
+                
+                // Disable further interactions
+                this.disableGameInteractions();
+            },
+            
+            // Show game over modal
+            showGameOverModal: function(reason, conditionType) {
+                const modal = document.getElementById('gameOverModal');
+                const reasonElement = document.getElementById('gameOverReason');
+                const statsElement = document.getElementById('gameOverStats');
+                const iconElement = document.getElementById('gameOverIcon');
+                const titleElement = document.getElementById('gameOverTitle');
+                
+                // Set icon and title based on condition type
+                if (conditionType.includes('aqi')) {
+                    iconElement.textContent = '🌫️';
+                    titleElement.textContent = 'AIR QUALITY DISASTER';
+                } else if (conditionType.includes('happiness')) {
+                    iconElement.textContent = '😡';
+                    titleElement.textContent = 'CITIZEN REVOLT';
+                } else if (conditionType.includes('money')) {
+                    iconElement.textContent = '💸';
+                    titleElement.textContent = 'BANKRUPTCY';
+                } else {
+                    iconElement.textContent = '💀';
+                    titleElement.textContent = 'GAME OVER';
+                }
+                
+                // Set reason
+                reasonElement.innerHTML = reason;
+                
+                // Create stats
+                const levelData = gameState.levelData[gameState.currentLevel];
+                const statsHTML = `
+                    <div class="game-over-stat">
+                        <span>Level:</span>
+                        <span><strong>${gameState.currentLevel + 1}</strong> (${levelData.name})</span>
+                    </div>
+                    <div class="game-over-stat">
+                        <span>Final AQI:</span>
+                        <span><strong>${Math.round(gameState.aqi)}</strong> / ${levelData.targetAQI} target</span>
+                    </div>
+                    <div class="game-over-stat">
+                        <span>Happiness:</span>
+                        <span><strong>${gameState.happiness}%</strong></span>
+                    </div>
+                    <div class="game-over-stat">
+                        <span>Money:</span>
+                        <span><strong>$${Math.round(gameState.money)}</strong></span>
+                    </div>
+                    <div class="game-over-stat">
+                        <span>Buildings:</span>
+                        <span><strong>${gameState.buildings.length}</strong> placed</span>
+                    </div>
+                    <div class="game-over-stat">
+                        <span>Warnings:</span>
+                        <span><strong>${this.loseConditions.warnings.currentWarnings}</strong> received</span>
+                    </div>
+                `;
+                
+                statsElement.innerHTML = statsHTML;
+                
+                // Show modal
+                modal.classList.add('active');
+                
+                // Add event listeners to buttons
+                document.getElementById('gameOverRestartBtn').onclick = restartLevel;
+                document.getElementById('gameOverHomeBtn').onclick = goToHome;
+            },
+            
+            // Disable game interactions
+            disableGameInteractions: function() {
+                // Disable grid clicks
+                document.querySelectorAll('.grid-cell.empty').forEach(cell => {
+                    cell.style.pointerEvents = 'none';
+                    cell.style.opacity = '0.5';
+                    cell.style.cursor = 'not-allowed';
+                });
+                
+                // Disable building card modal
+                document.getElementById('showCardsBtn').disabled = true;
+                document.getElementById('showCardsBtn').style.opacity = '0.5';
+                document.getElementById('showCardsBtn').style.cursor = 'not-allowed';
+                
+                // Hide any open modals
+                hideBuildingCardsModal();
+                hideCompletionModal();
+            },
+            
+            // Reset termination system for new level
+            resetForNewLevel: function() {
+                this.init();
+                this.gameState.consecutivePollutingBuildings = 0;
+                this.gameState.pollutionBuildingsCount = 0;
+                this.gameState.lastBuildingType = null;
+                this.gameState.emergencyMode = false;
+                this.gameState.gameOverTriggered = false;
+            }
+        };
+
+        // ============================================
+        // ENHANCED GAME STATE WITH GRID LIMITS
+        // ============================================
+        const gameState = {
+            currentLevel: 0,
+            aqi: 50,
+            money: 1000,
+            population: 50,
+            happiness: 80,
+            selectedBuilding: null,
+            buildings: [],
+            gameActive: true,
+            buildingLimits: {},
+            gridLimit: 6, // Default grid limit for level 1
+            
+            // Enhanced Level Data with Grid Limits
+            levelData: [
+                { // Level 1 - Beginner
+                    name: "Beginner's Valley",
+                    difficulty: "Easy",
+                    targetAQI: 100,
+                    description: "Learn the basics",
+                    availableBuildings: ['house', 'factory', 'park'],
+                    buildingLimits: {},
+                    startingMoney: 1000,
+                    gridLimit: 6, // Only 6 cells available
+                    requiredBuildings: 3, // Need at least 3 buildings to complete
+                    completionBonus: 200
+                },
+                { // Level 2
+                    name: "Greenfield Town",
+                    difficulty: "Easy",
+                    targetAQI: 90,
+                    description: "Balance green and industry",
+                    availableBuildings: ['house', 'factory', 'park', 'wind-turbine'],
+                    buildingLimits: { factory: 2 },
+                    startingMoney: 1200,
+                    gridLimit: 8,
+                    requiredBuildings: 4,
+                    completionBonus: 300
+                },
+                { // Level 3
+                    name: "Smogville",
+                    difficulty: "Medium",
+                    targetAQI: 120,
+                    description: "Clean up existing pollution",
+                    availableBuildings: ['house', 'factory', 'coal-plant', 'park', 'wind-turbine'],
+                    buildingLimits: { factory: 3, 'coal-plant': 1 },
+                    startingMoney: 1500,
+                    gridLimit: 10,
+                    requiredBuildings: 5,
+                    completionBonus: 400
+                },
+                { // Level 4
+                    name: "Eco-City",
+                    difficulty: "Medium",
+                    targetAQI: 80,
+                    description: "Focus on sustainability",
+                    availableBuildings: ['house', 'factory', 'park', 'wind-turbine', 'solar-farm'],
+                    buildingLimits: { factory: 2, 'coal-plant': 0 },
+                    startingMoney: 1800,
+                    gridLimit: 12,
+                    requiredBuildings: 6,
+                    completionBonus: 500
+                },
+                { // Level 5
+                    name: "Industrial Zone",
+                    difficulty: "Hard",
+                    targetAQI: 150,
+                    description: "Manage heavy industry",
+                    availableBuildings: ['house', 'factory', 'coal-plant', 'park', 'wind-turbine', 'solar-farm'],
+                    buildingLimits: { factory: 4, 'coal-plant': 2 },
+                    startingMoney: 2000,
+                    gridLimit: 15,
+                    requiredBuildings: 8,
+                    completionBonus: 600
+                },
+                { // Level 6
+                    name: "Mega City",
+                    difficulty: "Hard",
+                    targetAQI: 130,
+                    description: "Large scale management",
+                    availableBuildings: ['house', 'factory', 'coal-plant', 'park', 'wind-turbine', 'solar-farm', 'bike-lane'],
+                    buildingLimits: { factory: 5, 'coal-plant': 3 },
+                    startingMoney: 2500,
+                    gridLimit: 18,
+                    requiredBuildings: 10,
+                    completionBonus: 700
+                },
+                { // Level 7
+                    name: "Future City",
+                    difficulty: "Expert",
+                    targetAQI: 70,
+                    description: "Maximum green tech",
+                    availableBuildings: ['house', 'factory', 'coal-plant', 'park', 'wind-turbine', 'solar-farm', 'bike-lane'],
+                    buildingLimits: { factory: 2, 'coal-plant': 1, 'wind-turbine': 4, 'solar-farm': 3 },
+                    startingMoney: 3000,
+                    gridLimit: 20,
+                    requiredBuildings: 12,
+                    completionBonus: 800
+                },
+                { // Level 8 - Final
+                    name: "Master Level",
+                    difficulty: "Expert",
+                    targetAQI: 50,
+                    description: "Perfect balance",
+                    availableBuildings: ['house', 'factory', 'coal-plant', 'park', 'wind-turbine', 'solar-farm', 'bike-lane'],
+                    buildingLimits: { factory: 3, 'coal-plant': 2, 'house': 8 },
+                    startingMoney: 3500,
+                    gridLimit: 25, // Full grid
+                    requiredBuildings: 15,
+                    completionBonus: 1000,
+                    isFinalLevel: true
+                }
+            ],
+            
+            // Complete Building Data
+            buildingTypes: [
+                {
+                    id: 'house',
+                    name: 'House',
+                    icon: '🏠',
+                    price: 100,
+                    description: 'Homes for citizens - provides population growth',
+                    aqiImpact: 2,
+                    populationImpact: 10,
+                    incomePerMinute: 0,
+                    category: 'residential',
+                    effects: [
+                        { label: 'AQI Impact', value: '+2', type: 'negative' },
+                        { label: 'Population', value: '+10', type: 'positive' },
+                        { label: 'Income', value: '$0/min', type: 'neutral' }
+                    ]
+                },
+                {
+                    id: 'factory',
+                    name: 'Factory',
+                    icon: '🏭',
+                    price: 200,
+                    description: 'Produces goods and income, but pollutes air',
+                    aqiImpact: 15,
+                    populationImpact: 0,
+                    incomePerMinute: 50,
+                    category: 'industrial',
+                    effects: [
+                        { label: 'AQI Impact', value: '+15', type: 'negative' },
+                        { label: 'Income', value: '+$50/min', type: 'positive' }
+                    ]
+                },
+                {
+                    id: 'coal-plant',
+                    name: 'Coal Plant',
+                    icon: '⚫',
+                    price: 300,
+                    description: 'High energy production, very polluting',
+                    aqiImpact: 25,
+                    populationImpact: 0,
+                    incomePerMinute: 100,
+                    category: 'industrial',
+                    effects: [
+                        { label: 'AQI Impact', value: '+25', type: 'negative' },
+                        { label: 'Income', value: '+$100/min', type: 'positive' }
+                    ]
+                },
+                {
+                    id: 'park',
+                    name: 'Park',
+                    icon: '🌳',
+                    price: 150,
+                    description: 'Improves air quality and citizen happiness',
+                    aqiImpact: -5,
+                    populationImpact: 0,
+                    incomePerMinute: 0,
+                    category: 'green',
+                    effects: [
+                        { label: 'AQI Impact', value: '-5', type: 'positive' },
+                        { label: 'Happiness', value: '+5%', type: 'positive' }
+                    ]
+                },
+                {
+                    id: 'wind-turbine',
+                    name: 'Wind Turbine',
+                    icon: '💨',
+                    price: 300,
+                    description: 'Clean energy production - reduces pollution',
+                    aqiImpact: -12,
+                    populationImpact: 0,
+                    incomePerMinute: 40,
+                    category: 'green',
+                    effects: [
+                        { label: 'AQI Impact', value: '-12', type: 'positive' },
+                        { label: 'Income', value: '+$40/min', type: 'positive' }
+                    ]
+                },
+                {
+                    id: 'solar-farm',
+                    name: 'Solar Farm',
+                    icon: '☀️',
+                    price: 400,
+                    description: 'Clean solar energy - sustainable and effective',
+                    aqiImpact: -10,
+                    populationImpact: 0,
+                    incomePerMinute: 50,
+                    category: 'green',
+                    effects: [
+                        { label: 'AQI Impact', value: '-10', type: 'positive' },
+                        { label: 'Income', value: '+$50/min', type: 'positive' }
+                    ]
+                },
+                {
+                    id: 'bike-lane',
+                    name: 'Bike Lane',
+                    icon: '🚲',
+                    price: 200,
+                    description: 'Reduces traffic emissions, encourages healthy lifestyle',
+                    aqiImpact: -7,
+                    populationImpact: 0,
+                    incomePerMinute: 0,
+                    category: 'green',
+                    effects: [
+                        { label: 'AQI Impact', value: '-7', type: 'positive' },
+                        { label: 'Happiness', value: '+3%', type: 'positive' }
+                    ]
+                }
+            ]
+        };
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load level from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const level = parseInt(urlParams.get('level')) || 0;
+            gameState.currentLevel = Math.min(level, gameState.levelData.length - 1);
+            
+            // Initialize termination system
+            gameTermination.init();
+            
+            // Initialize level
+            initializeLevel();
+            
+            // Initialize game
+            initializeGame();
+            
+            // Set up event listeners
+            document.getElementById('showCardsBtn').addEventListener('click', showBuildingCardsModal);
+            document.getElementById('closeModalBtn').addEventListener('click', hideBuildingCardsModal);
+            
+            // Completion modal buttons
+            document.getElementById('nextLevelBtn').addEventListener('click', goToNextLevel);
+            document.getElementById('restartLevelBtn').addEventListener('click', restartLevel);
+            document.getElementById('homeBtn').addEventListener('click', goToHome);
+            
+            // Toggle AQI button
+            const toggleBtn = document.getElementById('toggleAqiBtn');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', toggleAqiIndicator);
+            }
+            
+            // Modal close events
+            document.getElementById('cardsModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideBuildingCardsModal();
+                }
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    hideBuildingCardsModal();
+                    hideCompletionModal();
+                    hideGameOverModal();
+                }
+                // Number keys 1-7 for quick selection
+                if (document.getElementById('cardsModal').classList.contains('active')) {
+                    if (e.key >= '1' && e.key <= '7') {
+                        const index = parseInt(e.key) - 1;
+                        if (index < gameState.buildingTypes.length) {
+                            const building = gameState.buildingTypes[index];
+                            const card = document.querySelector(`.building-card-modal[data-index="${index}"]`);
+                            if (card && !card.classList.contains('disabled') && !card.classList.contains('locked')) {
+                                selectBuildingForGame(building, card);
+                                setTimeout(hideBuildingCardsModal, 300);
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Start game loop
+            startGameLoop();
+            
+            // Initial UI update
+            updateAvailableCells();
+            updateBuildingsPlaced();
+            updateGridLimitDisplay();
+        });
+
+        // ============================================
+        // LEVEL INITIALIZATION
+        // ============================================
+        function initializeLevel() {
+            const levelData = gameState.levelData[gameState.currentLevel];
+            
+            // Update UI
+            document.getElementById('levelNumber').textContent = gameState.currentLevel + 1;
+            document.getElementById('levelDifficulty').textContent = levelData.difficulty;
+            document.getElementById('targetAQI').textContent = levelData.targetAQI;
+            document.getElementById('currentTargetAQI').textContent = levelData.targetAQI;
+            document.getElementById('gridLimit').textContent = levelData.gridLimit;
+            gameState.gridLimit = levelData.gridLimit;
+            
+            // Update difficulty color
+            const difficultyBadge = document.querySelector('.level-badge');
+            const difficultyColor = levelData.difficulty === 'Easy' ? '#55ff55' :
+                                  levelData.difficulty === 'Medium' ? '#ffff55' : '#ff5555';
+            difficultyBadge.style.background = `linear-gradient(135deg, ${difficultyColor} 0%, ${darkenColor(difficultyColor, 20)} 100%)`;
+            
+            // Set initial values based on level
+            gameState.aqi = levelData.startingMoney <= 1000 ? 50 : 
+                           levelData.difficulty === 'Medium' ? 75 : 100;
+            gameState.money = levelData.startingMoney;
+            gameState.buildingLimits = { ...levelData.buildingLimits };
+            
+            // Show/hide building limits based on level
+            const limitsPanel = document.getElementById('buildingLimits');
+            if (Object.keys(levelData.buildingLimits).length > 0) {
+                limitsPanel.style.display = 'block';
+                updateBuildingLimitsDisplay();
+            } else {
+                limitsPanel.style.display = 'none';
+            }
+            
+            // Update progress bar
+            updateLevelProgressBar();
+            
+            // Reset termination system for new level
+            gameTermination.resetForNewLevel();
+        }
+
+        function darkenColor(color, percent) {
+            const num = parseInt(color.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) - amt;
+            const G = (num >> 8 & 0x00FF) - amt;
+            const B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                         (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                         (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+
+        // ============================================
+        // GAME INITIALIZATION WITH GRID LIMITS
+        // ============================================
+        function initializeGame() {
+            createLimitedCityGrid();
+            loadBuildingCardsInModal();
+            updateGameUI();
+            
+            // Set initial challenge
+            showRandomChallenge();
+        }
+
+        function createLimitedCityGrid() {
+            const cityGrid = document.getElementById('cityGrid');
+            cityGrid.innerHTML = '';
+            
+            const levelData = gameState.levelData[gameState.currentLevel];
+            const totalCells = 25; // 5x5 grid
+            const availableCells = levelData.gridLimit;
+            
+            // Create all 25 cells
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div');
+                
+                // First X cells are available, rest are blocked
+                if (i < availableCells) {
+                    cell.className = 'grid-cell empty';
+                    cell.dataset.index = i;
+                    cell.addEventListener('click', () => placeBuildingOnGrid(i, cell));
+                } else {
+                    cell.className = 'grid-cell blocked';
+                    cell.style.backgroundColor = '#2a5c39';
+                    cell.style.borderColor = '#444';
+                    cell.style.cursor = 'not-allowed';
+                    cell.style.opacity = '0.5';
+                    cell.innerHTML = '🚫';
+                    cell.title = 'Grid cell not available in this level';
+                }
+                
+                cityGrid.appendChild(cell);
+            }
+        }
+
+        function updateGridLimitDisplay() {
+            const indicator = document.getElementById('gridLimitIndicator');
+            const placed = gameState.buildings.length;
+            const limit = gameState.gridLimit;
+            
+            if (placed >= limit) {
+                indicator.style.display = 'block';
+                indicator.style.background = 'linear-gradient(135deg, #ff5555 0%, #cc0000 100%)';
+            } else if (placed >= limit * 0.8) {
+                indicator.style.display = 'block';
+                indicator.style.background = 'linear-gradient(135deg, #ffaa55 0%, #cc8800 100%)';
+            } else {
+                indicator.style.display = 'block';
+                indicator.style.background = 'linear-gradient(135deg, #55aa55 0%, #338833 100%)';
+            }
+            
+            document.getElementById('gridLimitText').textContent = `${placed}/${limit}`;
+        }
+
+        // ============================================
+        // BUILDING PLACEMENT WITH GRID LIMIT CHECK
+        // ============================================
+        function placeBuildingOnGrid(index, cell) {
+            if (!gameState.selectedBuilding) {
+                showNotification('⚠️ Please select a building first!', 'warning');
+                showBuildingCardsModal();
+                return;
+            }
+            
+            // Check if game over triggered
+            if (gameTermination.gameState.gameOverTriggered) {
+                showNotification('🚫 Game over! Please restart.', 'error');
+                return;
+            }
+            
+            // Check if grid limit reached
+            if (gameState.buildings.length >= gameState.gridLimit) {
+                showNotification(
+                    `❌ GRID LIMIT REACHED!\nYou can only place ${gameState.gridLimit} buildings in this level.\nConsider removing buildings or complete the level.`, 
+                    'error', 
+                    4000
+                );
+                return;
+            }
+            
+            const building = gameState.selectedBuilding;
+            
+            if (gameState.money < building.price) {
+                showNotification(
+                    `❌ INSUFFICIENT FUNDS!\nYou need $${building.price} for ${building.name}.\nYou only have $${gameState.money}.\n\nNeed $${building.price - gameState.money} more.`, 
+                    'error', 
+                    4000
+                );
+                
+                const indicator = document.getElementById('selectedBuildingIndicator');
+                indicator.style.animation = 'shake 0.5s ease';
+                setTimeout(() => {
+                    indicator.style.animation = 'pulse 1.5s infinite';
+                }, 500);
+                
+                setTimeout(() => {
+                    showBuildingCardsModal();
+                }, 1000);
+                return;
+            }
+            
+            // Check building limit
+            if (checkBuildingLimit(building.id)) {
+                showNotification(
+                    `❌ You've reached the limit for ${building.name} in this level!`, 
+                    'error', 
+                    3000
+                );
+                return;
+            }
+            
+            if (!cell.classList.contains('empty')) {
+                showNotification('🚫 This space is already occupied or blocked!', 'warning');
+                return;
+            }
+            
+            placeBuilding(index, cell, building);
+        }
+
+        function placeBuilding(index, cell, building) {
+            cell.classList.remove('empty');
+            cell.classList.add('occupied');
+            
+            const buildingElement = document.createElement('div');
+            buildingElement.className = `building ${building.id}`;
+            buildingElement.innerHTML = building.icon;
+            buildingElement.title = `${building.name}\nAQI Impact: ${building.aqiImpact > 0 ? '+' : ''}${building.aqiImpact}\nIncome: $${building.incomePerMinute}/min`;
+            buildingElement.style.animation = 'blockBounce 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            cell.appendChild(buildingElement);
+            
+            const oldAQI = gameState.aqi;
+            const oldMoney = gameState.money;
+            
+            gameState.money -= building.price;
+            gameState.aqi = Math.max(0, Math.min(500, gameState.aqi + building.aqiImpact));
+            gameState.population += building.populationImpact;
+            gameState.happiness = Math.max(0, Math.min(100, gameState.happiness + (building.aqiImpact < 0 ? 5 : -3)));
+            
+            gameState.buildings.push({
+                type: building.id,
+                index: index,
+                building: building,
+                placedAt: Date.now()
+            });
+            
+            // Track building for termination system
+            gameTermination.trackBuildingPlacement(building);
+            
+            updateGameUI();
+            updateSelectedBuildingIndicator();
+            updateBuildingsPlaced();
+            updateBuildingLimitsDisplay();
+            updateGridLimitDisplay();
+            updateLevelProgressBar();
+            updateCriticalThresholdsDisplay();
+            
+            const aqiChange = building.aqiImpact;
+            const aqiEmoji = aqiChange < 0 ? '✅' : '⚠️';
+            
+            showNotification(`
+                ${building.icon} <strong>${building.name}</strong> placed!
+                💰 Money: $${oldMoney} → $${gameState.money}
+                ${aqiEmoji} AQI: ${oldAQI} ${aqiChange > 0 ? '+' : ''}${aqiChange} = ${gameState.aqi}
+                🏗️ Buildings: ${gameState.buildings.length}/${gameState.gridLimit}
+            `, 'success');
+            
+            checkLowFunds();
+            checkLevelCompletion();
+            updateCardAffordability();
+            showRandomChallenge();
+            
+            // Check if grid is full
+            if (gameState.buildings.length >= gameState.gridLimit) {
+                showNotification(
+                    `🏁 GRID FULL!\nYou've used all ${gameState.gridLimit} available cells.\nCheck if you've met the level requirements!`, 
+                    'warning', 
+                    4000
+                );
+            }
+            
+            // Check lose conditions after placement
+            setTimeout(() => {
+                gameTermination.checkLoseConditions();
+            }, 100);
+        }
+
+        // ============================================
+        // ENHANCED LEVEL COMPLETION LOGIC
+        // ============================================
+        function checkLevelCompletion() {
+            // Don't check completion if game over is triggered
+            if (gameTermination.gameState.gameOverTriggered) {
+                return false;
+            }
+            
+            const levelData = gameState.levelData[gameState.currentLevel];
+            const buildingsCount = gameState.buildings.length;
+            const targetMet = gameState.aqi <= levelData.targetAQI;
+            const requiredBuildings = levelData.requiredBuildings;
+            
+            // Check for level completion
+            const buildingsMet = buildingsCount >= requiredBuildings;
+            const gridFull = buildingsCount >= gameState.gridLimit;
+            
+            let levelComplete = false;
+            let completionType = '';
+            
+            // Early levels: Complete when requirements met OR grid full
+            if (gameState.currentLevel <= 2) {
+                levelComplete = (buildingsMet && targetMet) || (gridFull && targetMet);
+                completionType = buildingsMet ? 'requirements' : 'grid';
+            }
+            // Mid levels: Need requirements AND good AQI
+            else if (gameState.currentLevel <= 5) {
+                levelComplete = buildingsMet && targetMet;
+                completionType = 'requirements';
+            }
+            // Expert levels: Strict requirements
+            else {
+                levelComplete = buildingsMet && targetMet && gameState.happiness >= 70;
+                completionType = 'expert';
+            }
+            
+            // Check for failure conditions using termination system
+            if (gameTermination.checkLoseConditions()) {
+                return false;
+            }
+            
+            // Show level complete if conditions met
+            if (levelComplete) {
+                setTimeout(() => showLevelComplete(completionType), 500);
+                return true;
+            }
+            
+            // Check if player should be warned about grid being full but not meeting requirements
+            if (gridFull && !levelComplete) {
+                showNotification(
+                    `⚠️ GRID FULL BUT REQUIREMENTS NOT MET!\nYou need ${requiredBuildings} buildings and AQI ≤ ${levelData.targetAQI}.\nCurrent: ${buildingsCount} buildings, AQI: ${Math.round(gameState.aqi)}`, 
+                    'warning', 
+                    5000
+                );
+            }
+            
+            return false;
+        }
+
+        function updateLevelProgressBar() {
+            const levelData = gameState.levelData[gameState.currentLevel];
+            const progressBar = document.getElementById('levelProgressFill');
+            
+            // Calculate progress based on buildings placed vs required
+            const buildingProgress = Math.min(100, (gameState.buildings.length / levelData.requiredBuildings) * 100);
+            
+            // Calculate AQI progress (inverse - lower AQI is better)
+            const aqiProgress = Math.max(0, Math.min(100, ((levelData.targetAQI * 2 - gameState.aqi) / (levelData.targetAQI * 2)) * 100));
+            
+            // Combined progress (weighted 70% buildings, 30% AQI)
+            const totalProgress = (buildingProgress * 0.7) + (aqiProgress * 0.3);
+            
+            progressBar.style.width = `${totalProgress}%`;
+            
+            // Color based on progress
+            if (totalProgress >= 100) {
+                progressBar.style.background = 'linear-gradient(90deg, #55ff55, #00aa00)';
+            } else if (totalProgress >= 70) {
+                progressBar.style.background = 'linear-gradient(90deg, #ffff55, #aaaa00)';
+            } else if (totalProgress >= 40) {
+                progressBar.style.background = 'linear-gradient(90deg, #ffaa55, #cc8800)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #ff5555, #cc0000)';
+            }
+        }
+
+        function updateCriticalThresholdsDisplay() {
+            const thresholds = gameTermination.criticalThresholds;
+            
+            // Update AQI color based on critical threshold
+            const aqiValue = document.getElementById('gameplayAqiValue');
+            if (gameState.aqi >= thresholds.aqi) {
+                aqiValue.style.color = '#ff5555';
+                aqiValue.style.animation = 'pulseRed 1s infinite';
+            } else {
+                aqiValue.style.color = '';
+                aqiValue.style.animation = '';
+            }
+            
+            // Update happiness color
+            const happinessValue = document.getElementById('gameplayHappiness');
+            if (gameState.happiness <= thresholds.happiness) {
+                happinessValue.style.color = '#ff5555';
+                happinessValue.style.animation = 'pulseRed 1s infinite';
+            } else {
+                happinessValue.style.color = '';
+                happinessValue.style.animation = '';
+            }
+            
+            // Update money color
+            const moneyValue = document.getElementById('gameplayMoney');
+            if (gameState.money <= thresholds.money) {
+                moneyValue.style.color = '#ff5555';
+                moneyValue.style.animation = 'pulseRed 1s infinite';
+            } else {
+                moneyValue.style.color = '';
+                moneyValue.style.animation = '';
+            }
+        }
+
+        function showLevelComplete(completionType) {
+            gameState.gameActive = false;
+            const levelData = gameState.levelData[gameState.currentLevel];
+            
+            // Calculate score
+            const aqiScore = Math.max(0, 100 - Math.max(0, gameState.aqi - levelData.targetAQI));
+            const buildingScore = Math.min(100, (gameState.buildings.length / levelData.requiredBuildings) * 100);
+            const happinessScore = gameState.happiness;
+            const moneyBonus = Math.floor(gameState.money / 100);
+            
+            const totalScore = Math.floor((aqiScore + buildingScore + happinessScore) / 3) + moneyBonus;
+            
+            // Set completion icon and title
+            const completionIcon = document.getElementById('completionIcon');
+            const completionTitle = document.getElementById('completionTitle');
+            
+            if (completionType === 'expert') {
+                completionIcon.textContent = '🏆';
+                completionTitle.textContent = 'EXPERT COMPLETION!';
+            } else if (completionType === 'grid') {
+                completionIcon.textContent = '🏁';
+                completionTitle.textContent = 'GRID COMPLETE!';
+            } else {
+                completionIcon.textContent = '🎉';
+                completionTitle.textContent = 'LEVEL COMPLETE!';
+            }
+            
+            // Update stats
+            const statsHTML = `
+                <div class="completion-stat">
+                    <span>Level:</span>
+                    <span><strong>${gameState.currentLevel + 1}</strong> (${levelData.name})</span>
+                </div>
+                <div class="completion-stat">
+                    <span>Buildings Placed:</span>
+                    <span><strong>${gameState.buildings.length}</strong> / ${levelData.requiredBuildings} required</span>
+                </div>
+                <div class="completion-stat">
+                    <span>Final AQI:</span>
+                    <span><strong>${Math.round(gameState.aqi)}</strong> / ${levelData.targetAQI} target</span>
+                </div>
+                <div class="completion-stat">
+                    <span>Happiness:</span>
+                    <span><strong>${gameState.happiness}%</strong></span>
+                </div>
+                <div class="completion-stat">
+                    <span>Money:</span>
+                    <span><strong>$${Math.round(gameState.money)}</strong></span>
+                </div>
+                <div class="completion-stat" style="border-top: 2px solid #000; padding-top: 10px; margin-top: 10px;">
+                    <span>Completion Bonus:</span>
+                    <span><strong>+$${levelData.completionBonus}</strong></span>
+                </div>
+                <div class="completion-stat" style="font-size: 18px; color: #ffff55;">
+                    <span>Total Score:</span>
+                    <span><strong>${totalScore}</strong> points</span>
+                </div>
+            `;
+            
+            document.getElementById('completionStats').innerHTML = statsHTML;
+            
+            // Show/hide next level button for final level
+            const nextBtn = document.getElementById('nextLevelBtn');
+            if (levelData.isFinalLevel) {
+                nextBtn.style.display = 'none';
+                completionTitle.textContent = '🎊 GAME COMPLETE! 🎊';
+                completionIcon.textContent = '🏆';
+            }
+            
+            // Show modal
+            document.getElementById('completionModal').classList.add('active');
+        }
+
+        function hideCompletionModal() {
+            document.getElementById('completionModal').classList.remove('active');
+        }
+
+        function goToNextLevel() {
+            const nextLevel = gameState.currentLevel + 1;
+            if (nextLevel < gameState.levelData.length) {
+                window.location.href = `game.html?level=${nextLevel}`;
+            } else {
+                goToHome();
+            }
+        }
+
+        function restartLevel() {
+            // Reset termination system
+            gameTermination.resetForNewLevel();
+            window.location.href = `game.html?level=${gameState.currentLevel}`;
+        }
+
+        function goToHome() {
+            window.location.href = 'home.html';
+        }
+
+        function hideGameOverModal() {
+            document.getElementById('gameOverModal').classList.remove('active');
+        }
+
+        // ============================================
+        // UI UPDATE FUNCTIONS
+        // ============================================
+        function updateGameUI() {
+            // Update AQI
+            const aqi = Math.round(gameState.aqi);
+            document.getElementById('gameplayAqiValue').textContent = aqi;
+            document.getElementById('currentAQI').textContent = aqi;
+            
+            // Update AQI progress bar
+            const progressPercent = Math.min(100, (aqi / 500) * 100);
+            document.getElementById('aqiProgressBar').style.width = `${progressPercent}%`;
+            
+            // Update AQI status
+            let status = 'Good';
+            let statusClass = 'good';
+            let description = '✅ Perfect air quality!';
+            
+            if (aqi > 50 && aqi <= 100) {
+                status = 'Moderate';
+                statusClass = 'moderate';
+                description = '⚠️ Some pollution present';
+            } else if (aqi > 100 && aqi <= 150) {
+                status = 'Unhealthy for Groups';
+                statusClass = 'unhealthy-groups';
+                description = '🟠 Sensitive groups affected';
+            } else if (aqi > 150 && aqi <= 200) {
+                status = 'Unhealthy';
+                statusClass = 'unhealthy';
+                description = '🔴 Everyone affected';
+            } else if (aqi > 200 && aqi <= 300) {
+                status = 'Very Unhealthy';
+                statusClass = 'very-unhealthy';
+                description = '🔴🔴 Very Serious!';
+            } else if (aqi > 300) {
+                status = 'HAZARDOUS';
+                statusClass = 'hazardous';
+                description = '🔴🔴🔴 EMERGENCY!';
+            }
+            
+            document.getElementById('gameplayAqiStatus').textContent = status;
+            document.getElementById('gameplayAqiStatus').className = `gameplay-aqi-status ${statusClass}`;
+            document.getElementById('gameplayAqiDescription').textContent = description;
+            
+            // Update money
+            const money = Math.round(gameState.money);
+            document.getElementById('gameplayMoney').textContent = `$${money}`;
+            
+            // Update population
+            document.getElementById('gameplayPopulation').textContent = gameState.population;
+            
+            // Update happiness
+            document.getElementById('gameplayHappiness').textContent = `${gameState.happiness}%`;
+        }
+
+        function updateBuildingsPlaced() {
+            document.getElementById('buildingsPlaced').textContent = gameState.buildings.length;
+        }
+
+        // ============================================
+        // BUILDING LIMITS FUNCTIONS
+        // ============================================
+        function checkBuildingLimit(buildingId) {
+            if (!gameState.buildingLimits[buildingId]) return false;
+            const currentCount = countBuildingsOfType(buildingId);
+            return currentCount >= gameState.buildingLimits[buildingId];
+        }
+
+        function countBuildingsOfType(buildingId) {
+            return gameState.buildings.filter(b => b.type === buildingId).length;
+        }
+
+        function updateBuildingLimitsDisplay() {
+            const limitsGrid = document.getElementById('limitsGrid');
+            limitsGrid.innerHTML = '';
+            
+            Object.keys(gameState.buildingLimits).forEach(buildingId => {
+                const building = gameState.buildingTypes.find(b => b.id === buildingId);
+                if (!building) return;
+                
+                const currentCount = countBuildingsOfType(buildingId);
+                const limit = gameState.buildingLimits[buildingId];
+                const atLimit = currentCount >= limit;
+                
+                const limitItem = document.createElement('div');
+                limitItem.className = `limit-item ${atLimit ? 'at-limit' : ''}`;
+                limitItem.innerHTML = `
+                    <div class="limit-icon">${building.icon}</div>
+                    <div class="limit-count">${currentCount}</div>
+                    <div class="limit-total">of ${limit}</div>
+                    <div style="font-size: 12px; color: #cccccc; margin-top: 5px; text-shadow: 1px 1px 0 #000;">${building.name}</div>
+                `;
+                limitsGrid.appendChild(limitItem);
+            });
+        }
+
+        // ============================================
+        // BUILDING SELECTION
+        // ============================================
+        function selectBuildingForGame(building, cardElement) {
+            if (gameState.money < building.price) {
+                showNotification(
+                    `❌ You need $${building.price} to select ${building.name}. You only have $${gameState.money}.`, 
+                    'error', 
+                    3000
+                );
+                cardElement.style.animation = 'shake 0.5s ease';
+                setTimeout(() => {
+                    cardElement.style.animation = '';
+                }, 500);
+                return;
+            }
+            
+            // Check building limit
+            if (checkBuildingLimit(building.id)) {
+                showNotification(
+                    `❌ You've reached the limit for ${building.name} in this level!`, 
+                    'error', 
+                    3000
+                );
+                return;
+            }
+            
+            gameState.selectedBuilding = building;
+            
+            updateSelectedBuildingIndicator();
+            
+            document.querySelectorAll('.building-card-modal').forEach(c => {
+                c.classList.remove('selected');
+            });
+            cardElement.classList.add('selected');
+            
+            const selectedInGame = document.getElementById('selectedInGame');
+            selectedInGame.innerHTML = `✅ Selected: <strong>${building.icon} ${building.name}</strong> ($${building.price})`;
+            selectedInGame.classList.add('show');
+            
+            showNotification(`✅ Selected: ${building.icon} ${building.name} (Cost: $${building.price})`, 'success');
+        }
+
+        function updateSelectedBuildingIndicator() {
+            const indicator = document.getElementById('selectedBuildingIndicator');
+            
+            if (!gameState.selectedBuilding) {
+                indicator.innerHTML = 'No building selected. Click "Show Building Cards" to choose!';
+                indicator.style.display = 'block';
+                indicator.style.background = 'linear-gradient(135deg, #ffaa55 0%, #cc8800 100%)';
+                return;
+            }
+            
+            const building = gameState.selectedBuilding;
+            const canAfford = gameState.money >= building.price;
+            const atLimit = checkBuildingLimit(building.id);
+            
+            indicator.innerHTML = `
+                ${canAfford && !atLimit ? '✅' : '⚠️'} Selected: <strong>${building.icon} ${building.name}</strong> ($${building.price})<br>
+                <small style="font-size: 12px;">You have $${gameState.money} ${canAfford ? '• Click on an empty grid cell to place' : '• Need $' + (building.price - gameState.money) + ' more'}</small>
+                ${atLimit ? '<div style="margin-top: 5px; color: #ff4757; font-weight: bold;">⚠️ Building limit reached for this level!</div>' : ''}
+                ${canAfford && !atLimit ? `
+                <div style="margin-top: 5px; font-size: 11px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 0;">
+                    After purchase: $${gameState.money - building.price}
+                </div>
+                ` : ''}
+            `;
+            indicator.style.display = 'block';
+            indicator.style.background = canAfford && !atLimit ? 
+                'linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%)' : 
+                'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)';
+        }
+
+        // ============================================
+        // GAME LOOP & UI UPDATES
+        // ============================================
+        function startGameLoop() {
+            setInterval(() => {
+                if (gameState.gameActive) {
+                    let totalIncome = 0;
+                    gameState.buildings.forEach(b => {
+                        if (b.building.incomePerMinute) {
+                            totalIncome += b.building.incomePerMinute / 60;
+                        }
+                    });
+                    
+                    if (totalIncome > 0) {
+                        const oldMoney = gameState.money;
+                        gameState.money += totalIncome;
+                        
+                        if (Date.now() % 10000 < 1000) {
+                            showNotification(`💰 Income: +$${totalIncome.toFixed(1)}/sec from your buildings`, 'info', 2000);
+                        }
+                        
+                        updateGameUI();
+                        updateSelectedBuildingIndicator();
+                        checkLowFunds();
+                        
+                        if (document.getElementById('cardsModal').classList.contains('active')) {
+                            updateCardAffordability();
+                        }
+                    }
+                    
+                    // Check lose conditions every 2 seconds
+                    if (Date.now() % 2000 < 100) {
+                        gameTermination.checkLoseConditions();
+                    }
+                    
+                    // Update critical thresholds display
+                    updateCriticalThresholdsDisplay();
+                }
+            }, 1000);
+        }
+
+        function updateCardAffordability() {
+            const cards = document.querySelectorAll('.building-card-modal:not(.locked)');
+            cards.forEach(card => {
+                const buildingId = card.dataset.id;
+                const building = gameState.buildingTypes.find(b => b.id === buildingId);
+                
+                if (building) {
+                    const canAfford = gameState.money >= building.price;
+                    const atLimit = checkBuildingLimit(building.id);
+                    const priceDiv = card.querySelector('.modal-card-price');
+                    
+                    if (priceDiv) {
+                        priceDiv.style.color = canAfford ? '#ffaa55' : '#ff5555';
+                    }
+                    
+                    card.classList.toggle('disabled', !canAfford || atLimit);
+                    
+                    // Update limit display
+                    let limitDisplay = card.querySelector('.limit-display');
+                    if (gameState.buildingLimits[building.id]) {
+                        const currentCount = countBuildingsOfType(building.id);
+                        const limit = gameState.buildingLimits[building.id];
+                        
+                        if (!limitDisplay) {
+                            limitDisplay = document.createElement('div');
+                            limitDisplay.className = 'limit-display';
+                            limitDisplay.style.cssText = `
+                                background: ${currentCount >= limit ? '#ffebee' : '#e8f5e9'};
+                                color: ${currentCount >= limit ? '#c62828' : '#2d5016'};
+                                padding: 10px;
+                                border-radius: 0;
+                                text-align: center;
+                                font-size: 14px;
+                                font-weight: bold;
+                                margin-bottom: 15px;
+                                border: 2px solid ${currentCount >= limit ? '#ffcdd2' : '#c8e6c9'};
+                            `;
+                            const effectsDiv = card.querySelector('.modal-card-effects');
+                            if (effectsDiv) {
+                                card.insertBefore(limitDisplay, effectsDiv);
+                            }
+                        }
+                        limitDisplay.textContent = currentCount >= limit ? 
+                            '❌ Limit reached!' : `Limit: ${currentCount}/${limit}`;
+                        limitDisplay.style.background = currentCount >= limit ? '#ffebee' : '#e8f5e9';
+                        limitDisplay.style.color = currentCount >= limit ? '#c62828' : '#2d5016';
+                        limitDisplay.style.borderColor = currentCount >= limit ? '#ffcdd2' : '#c8e6c9';
+                    } else if (limitDisplay) {
+                        limitDisplay.remove();
+                    }
+                    
+                    // Update click behavior
+                    card.onclick = function(e) {
+                        if (canAfford && !atLimit) {
+                            const building = gameState.buildingTypes.find(b => b.id === buildingId);
+                            selectBuildingForGame(building, card);
+                            setTimeout(hideBuildingCardsModal, 300);
+                        } else if (!canAfford) {
+                            showNotification(
+                                `❌ You need $${building.price} to build ${building.name}. You only have $${gameState.money}.`, 
+                                'error', 
+                                3000
+                            );
+                            card.style.animation = 'shake 0.5s ease';
+                            setTimeout(() => {
+                                card.style.animation = '';
+                            }, 500);
+                        } else if (atLimit) {
+                            showNotification(
+                                `❌ You've reached the limit for ${building.name} in this level!`, 
+                                'error', 
+                                3000
+                            );
+                        }
+                    };
+                }
+            });
+        }
+
+        function updateAvailableCells() {
+            const occupied = document.querySelectorAll('.grid-cell.occupied').length;
+            const available = 25 - occupied;
+            // Note: This function is called but available cells display might not be in HTML
+        }
+
+        function checkLowFunds() {
+            const lowFundsThreshold = 200;
+            if (gameState.money < lowFundsThreshold && gameState.money > 0) {
+                showNotification(
+                    `💰 LOW FUNDS WARNING!\nYou only have $${gameState.money}.\nConsider cheaper buildings or wait for income.`, 
+                    'warning', 
+                    4000
+                );
+            }
+            
+            if (gameState.money <= 0) {
+                showNotification(
+                    `💸 YOU'RE BROKE!\nWait for income from your buildings or start with cheaper options.`, 
+                    'error', 
+                    5000
+                );
+            }
+        }
+
+        // ============================================
+        // TOGGLE AQI INDICATOR
+        // ============================================
+        function toggleAqiIndicator() {
+            const indicator = document.getElementById('gameplayAqiIndicator');
+            const toggleBtn = document.getElementById('toggleAqiBtn');
+            
+            if (indicator.style.display === 'none') {
+                indicator.style.display = 'flex';
+                toggleBtn.querySelector('.hide-text').style.display = 'inline';
+                toggleBtn.querySelector('.show-text').style.display = 'none';
+            } else {
+                indicator.style.display = 'none';
+                toggleBtn.querySelector('.hide-text').style.display = 'none';
+                toggleBtn.querySelector('.show-text').style.display = 'inline';
+            }
+        }
+
+        // ============================================
+        // MODAL FUNCTIONS
+        // ============================================
+        function showBuildingCardsModal() {
+            document.getElementById('cardsModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            loadBuildingCardsInModal();
+            updateCardAffordability();
+            
+            if (gameState.selectedBuilding) {
+                const selectedInGame = document.getElementById('selectedInGame');
+                selectedInGame.innerHTML = `✅ Selected: <strong>${gameState.selectedBuilding.icon} ${gameState.selectedBuilding.name}</strong> ($${gameState.selectedBuilding.price})`;
+                selectedInGame.classList.add('show');
+                
+                document.querySelectorAll('.building-card-modal').forEach(c => {
+                    c.classList.remove('selected');
+                    if (c.dataset.id === gameState.selectedBuilding.id) {
+                        c.classList.add('selected');
+                    }
+                });
+            }
+        }
+
+        function hideBuildingCardsModal() {
+            document.getElementById('cardsModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function loadBuildingCardsInModal() {
+            const cardsGrid = document.getElementById('cardsGridModal');
+            cardsGrid.innerHTML = '';
+            
+            const levelData = gameState.levelData[gameState.currentLevel];
+            
+            gameState.buildingTypes.forEach((building, index) => {
+                const isAvailable = levelData.availableBuildings.includes(building.id);
+                const isSelected = gameState.selectedBuilding && gameState.selectedBuilding.id === building.id;
+                
+                const card = document.createElement('div');
+                card.className = `building-card-modal ${isAvailable ? '' : 'locked'} ${isSelected ? 'selected' : ''}`;
+                card.dataset.id = building.id;
+                card.dataset.index = index;
+                
+                if (isAvailable) {
+                    card.onclick = function(e) {
+                        const building = gameState.buildingTypes[index];
+                        selectBuildingForGame(building, card);
+                    };
+                }
+                
+                // Get building limit info
+                const currentCount = countBuildingsOfType(building.id);
+                const limit = gameState.buildingLimits[building.id];
+                const atLimit = limit ? currentCount >= limit : false;
+                
+                card.innerHTML = `
+                    <div class="modal-card-header">
+                        <div class="modal-card-icon">${building.icon}</div>
+                        <div class="modal-card-info">
+                            <div class="modal-card-name">${building.name}</div>
+                            <div class="modal-card-price">$${building.price}</div>
+                        </div>
+                    </div>
+                    <div class="modal-card-description">${building.description}</div>
+                    ${limit ? `
+                    <div class="limit-display" style="
+                        background: ${atLimit ? '#ffebee' : '#e8f5e9'};
+                        color: ${atLimit ? '#c62828' : '#2d5016'};
+                        padding: 10px;
+                        border-radius: 0;
+                        text-align: center;
+                        font-size: 14px;
+                        font-weight: bold;
+                        margin-bottom: 15px;
+                        border: 2px solid ${atLimit ? '#ffcdd2' : '#c8e6c9'};
+                    ">
+                        ${atLimit ? '❌ Limit reached!' : `Limit: ${currentCount}/${limit}`}
+                    </div>
+                    ` : ''}
+                    <div class="modal-card-effects">
+                        ${building.effects.map(effect => `
+                            <div class="modal-card-effect">
+                                <span>${effect.label}:</span>
+                                <span class="effect-${effect.type}">${effect.value}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${!isAvailable ? '<div style="text-align: center; color: #ff5555; margin-top: 10px; font-weight: bold;">🔒 Locked in this level</div>' : ''}
+                `;
+                
+                cardsGrid.appendChild(card);
+            });
+            
+            // Update level restrictions text
+            const restrictions = document.getElementById('levelRestrictions');
+            if (Object.keys(levelData.buildingLimits).length > 0) {
+                restrictions.textContent = `Level restrictions: ${Object.entries(levelData.buildingLimits).map(([id, limit]) => {
+                    const building = gameState.buildingTypes.find(b => b.id === id);
+                    return `${building?.name || id}: ${limit}`;
+                }).join(', ')}`;
+                restrictions.style.display = 'block';
+            } else {
+                restrictions.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // NOTIFICATION SYSTEM
+        // ============================================
+        function showNotification(message, type = 'info', duration = 3000) {
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = message;
+            notification.style.display = 'block';
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, duration + 300);
+        }
+
+        // ============================================
+        // CHALLENGE SYSTEM
+        // ============================================
+        function showRandomChallenge() {
+            const challenges = [
+                {
+                    avatar: "👧",
+                    text: "Maya says: 'The air smells funny near the factory! Can we plant some trees nearby?'",
+                    options: [
+                        { text: "Build a Park nearby 🌳", effect: { aqi: -5, money: -150 } },
+                        { text: "Ignore for now ⏭️", effect: { aqi: 2, money: 0 } },
+                        { text: "Build Solar Farm instead ☀️", effect: { aqi: -10, money: -400 } }
+                    ],
+                    teaching: "Parks improve local air quality and happiness!"
+                },
+                {
+                    avatar: "👨‍🏭",
+                    text: "Worker says: 'We need more jobs! But please, use clean energy this time.'",
+                    options: [
+                        { text: "Build Wind Turbine 💨", effect: { aqi: -12, money: -300 } },
+                        { text: "Build Factory anyway 🏭", effect: { aqi: 15, money: 100 } },
+                        { text: "Wait for more money 💰", effect: { aqi: 0, money: 0 } }
+                    ],
+                    teaching: "Clean energy creates jobs without pollution!"
+                }
+            ];
+            
+            const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+            document.getElementById('characterText').textContent = randomChallenge.text;
+            document.getElementById('characterText').previousElementSibling.textContent = randomChallenge.avatar;
+            
+            const optionsDiv = document.getElementById('requestOptions');
+            optionsDiv.innerHTML = '';
+            
+            randomChallenge.options.forEach(option => {
+                const btn = document.createElement('div');
+                btn.className = 'request-option';
+                btn.textContent = option.text;
+                btn.addEventListener('click', () => handleChallengeChoice(option, randomChallenge.teaching));
+                optionsDiv.appendChild(btn);
+            });
+            
+            document.getElementById('teachingMoment').textContent = randomChallenge.teaching;
+        }
+
+        function handleChallengeChoice(option, teaching) {
+            gameState.aqi = Math.max(0, gameState.aqi + option.effect.aqi);
+            gameState.money = Math.max(0, gameState.money + option.effect.money);
+            
+            updateGameUI();
+            updateSelectedBuildingIndicator();
+            updateCardAffordability();
+            showNotification(`Citizen response: ${option.text}`, 'info');
+            
+            document.getElementById('requestOptions').innerHTML = '';
+            setTimeout(showRandomChallenge, 2000);
+        }
+    </script>
+</body>
+</html>
