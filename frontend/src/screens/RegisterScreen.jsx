@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, 
-  StyleSheet, KeyboardAvoidingView, ActivityIndicator 
+import { API_ENDPOINTS } from '../config/config.js';
+import {
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, KeyboardAvoidingView, ActivityIndicator
 } from 'react-native';
 
 export default function RegisterScreen({ navigation }) {
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail]     = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState(""); // success / error
 
-  const API_URL = "http://10.101.36.35:5000/api/auth/register";
+  const API_URL = API_ENDPOINTS.REGISTER;
 
 
 
@@ -44,7 +45,7 @@ export default function RegisterScreen({ navigation }) {
         setMessage("🎉 Account created successfully!");
 
         setTimeout(() => navigation.navigate('Login'), 1200);
-      } 
+      }
       else {
         setMessageType("error");
         setMessage(data.message || "Something went wrong!");
@@ -67,7 +68,7 @@ export default function RegisterScreen({ navigation }) {
 
       {/* Card */}
       <View style={styles.card}>
-        
+
         <Text style={styles.label}>Full Name</Text>
         <TextInput
           style={styles.input}
@@ -108,7 +109,7 @@ export default function RegisterScreen({ navigation }) {
         ) : null}
 
         {/* Register Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.registerButton}
           onPress={handleRegister}
           disabled={loading}
@@ -123,7 +124,7 @@ export default function RegisterScreen({ navigation }) {
 
       {/* Already Registered */}
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.loginText}>Already registered? <Text style={{fontWeight:'bold'}}>Login</Text></Text>
+        <Text style={styles.loginText}>Already registered? <Text style={{ fontWeight: 'bold' }}>Login</Text></Text>
       </TouchableOpacity>
 
       {/* Back */}

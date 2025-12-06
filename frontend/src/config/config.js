@@ -14,4 +14,11 @@ export const API_ENDPOINTS = {
   COMPLAINTS: `${BASE_URL}/api/reports`,
   SCHEDULE_CLEANUP: `${BASE_URL}/api/reports/schedule`,
   SCHEDULE_COUNTS: `${BASE_URL}/api/reports/schedule/counts`,
+  CHALLENGES: `${BASE_URL}/api/challenges`,
+  STUDENT: `${BASE_URL}/api/student`,
+  USER: `${BASE_URL}/api/user`,
+  LEARNING_MODULES: `${BASE_URL}/api/learningmodules`,
+  REGISTER: `${BASE_URL}/api/auth/register`,
+  SUBMISSIONS: `${BASE_URL}/api/submissions`,
+  SET_STUDENT_PASSWORD: `${BASE_URL}/api/auth/set-student-password`,
 };

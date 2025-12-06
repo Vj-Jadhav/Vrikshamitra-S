@@ -18,6 +18,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import YoutubePlayer from "react-native-youtube-iframe";
+import { API_ENDPOINTS } from '../config/config.js';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -49,7 +50,7 @@ export default function LearningModuleScreen({ navigation }) {
   const [slideAnim] = useState(new Animated.Value(50));
 
   // 🚀 1. FETCH ALL MODULES FROM DATABASE
-  const BACKEND_URL = "http://10.147.34.133:5000/api/learningmodules";
+  const BACKEND_URL = API_ENDPOINTS.LEARNING_MODULES;
 
   useEffect(() => {
     // Animate on mount
@@ -91,7 +92,7 @@ export default function LearningModuleScreen({ navigation }) {
         const data = await AsyncStorage.getItem("completedLessons");
         const completed = data ? JSON.parse(data) : [];
         setCompletedLessons(completed);
-        
+
         // Update user stats
         setUserStats(prev => ({
           ...prev,
@@ -110,13 +111,13 @@ export default function LearningModuleScreen({ navigation }) {
 
     const percent = (completedLessons.length / allLessons.length) * 100;
     setProgressPercentage(Math.min(percent.toFixed(1), 100));
-    
+
     // Calculate total points
     const totalPoints = completedLessons.reduce((sum, lessonId) => {
       const lesson = allLessons.find(l => l.id === lessonId);
       return sum + (lesson?.points || 0);
     }, 0);
-    
+
     setUserStats(prev => ({
       ...prev,
       totalPoints,
@@ -135,8 +136,8 @@ export default function LearningModuleScreen({ navigation }) {
 
   // Filter and search lessons
   const filteredLessons = useMemo(() => {
-    let filtered = activeCategory === 'all' 
-      ? allLessons 
+    let filtered = activeCategory === 'all'
+      ? allLessons
       : allLessons.filter(lesson => lesson.category === activeCategory);
 
     if (searchQuery) {
@@ -238,13 +239,13 @@ export default function LearningModuleScreen({ navigation }) {
   // Handle lesson completion (with quiz)
   const handleLessonComplete = useCallback(async () => {
     const passingScore = Math.ceil(selectedLesson.quiz.length * 0.6);
-    
+
     if (quizScore >= passingScore) {
       if (!completedLessons.includes(selectedLesson.id)) {
         const updated = [...new Set([...completedLessons, selectedLesson.id])];
         setCompletedLessons(updated);
         await AsyncStorage.setItem("completedLessons", JSON.stringify(updated));
-        
+
         setUserStats(prev => ({
           ...prev,
           completed: prev.completed + 1,
@@ -276,7 +277,7 @@ export default function LearningModuleScreen({ navigation }) {
       const updated = [...new Set([...completedLessons, selectedLesson.id])];
       setCompletedLessons(updated);
       await AsyncStorage.setItem("completedLessons", JSON.stringify(updated));
-      
+
       setUserStats(prev => ({
         ...prev,
         completed: prev.completed + 1,
@@ -337,7 +338,7 @@ export default function LearningModuleScreen({ navigation }) {
         onChangeText={setSearchQuery}
         placeholderTextColor="#999"
       />
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.searchClose}
         onPress={() => {
           setShowSearch(false);
@@ -382,7 +383,7 @@ export default function LearningModuleScreen({ navigation }) {
                 </>
               )}
             </View>
-            
+
             <View style={styles.lessonHeaderOverlay}>
               {category && (
                 <View style={[styles.categoryTag, { backgroundColor: category.color }]}>
@@ -398,11 +399,11 @@ export default function LearningModuleScreen({ navigation }) {
 
             {progress > 0 && !isCompleted && (
               <View style={styles.progressBar}>
-                <View 
+                <View
                   style={[
-                    styles.progressFill, 
+                    styles.progressFill,
                     { width: `${progress}%` }
-                  ]} 
+                  ]}
                 />
               </View>
             )}
@@ -446,7 +447,7 @@ export default function LearningModuleScreen({ navigation }) {
                 <Text style={styles.completedButtonText}>✓ Completed</Text>
               </View>
             ) : (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.startButton}
                 onPress={() => handleModulePress(lesson)}
               >
@@ -475,7 +476,7 @@ export default function LearningModuleScreen({ navigation }) {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation?.goBack?.()}
         >
@@ -484,7 +485,7 @@ export default function LearningModuleScreen({ navigation }) {
 
         <Text style={styles.headerTitle}>Learning Module</Text>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.searchButton}
           onPress={() => setShowSearch(!showSearch)}
         >
@@ -494,12 +495,12 @@ export default function LearningModuleScreen({ navigation }) {
 
       {showSearch && renderSearchBar()}
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* User Progress Card */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.progressCard,
             {
@@ -547,8 +548,8 @@ export default function LearningModuleScreen({ navigation }) {
 
         {/* Categories */}
         <View style={styles.section}>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoriesScroll}
           >
@@ -592,14 +593,14 @@ export default function LearningModuleScreen({ navigation }) {
               </Text>
             </View>
           ) : (
-            filteredLessons.map((lesson, index) => 
+            filteredLessons.map((lesson, index) =>
               renderLessonCard(lesson, index)
             )
           )}
         </View>
 
         {/* Achievement Banner */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.achievementBanner,
             {
@@ -671,7 +672,7 @@ export default function LearningModuleScreen({ navigation }) {
                       <Text style={styles.lessonInfoText}>
                         {selectedLesson.description || 'Watch the video to learn more about this topic.'}
                       </Text>
-                      
+
                       <View style={styles.lessonInfoMeta}>
                         <View style={styles.infoMetaItem}>
                           <Text style={styles.infoMetaLabel}>Duration:</Text>
@@ -690,13 +691,13 @@ export default function LearningModuleScreen({ navigation }) {
                       </View>
                     </View>
 
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.completeVideoButton}
                       onPress={handleVideoComplete}
                     >
                       <Text style={styles.completeVideoButtonText}>
-                        {selectedLesson.quiz && selectedLesson.quiz.length > 0 
-                          ? "I've Watched the Video - Take Quiz →" 
+                        {selectedLesson.quiz && selectedLesson.quiz.length > 0
+                          ? "I've Watched the Video - Take Quiz →"
                           : "Complete Lesson →"}
                       </Text>
                     </TouchableOpacity>
@@ -706,7 +707,7 @@ export default function LearningModuleScreen({ navigation }) {
                     <Text style={styles.noVideoText}>
                       No video available for this lesson. Please check back later.
                     </Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.completeVideoButton}
                       onPress={closeLesson}
                     >
@@ -722,11 +723,11 @@ export default function LearningModuleScreen({ navigation }) {
                     Question {currentQuestionIndex + 1} of {selectedLesson.quiz.length}
                   </Text>
                   <View style={styles.quizProgressBar}>
-                    <View 
+                    <View
                       style={[
-                        styles.quizProgressFill, 
+                        styles.quizProgressFill,
                         { width: `${((currentQuestionIndex + 1) / selectedLesson.quiz.length) * 100}%` }
-                      ]} 
+                      ]}
                     />
                   </View>
                 </View>
@@ -735,7 +736,7 @@ export default function LearningModuleScreen({ navigation }) {
                   {selectedLesson.quiz[currentQuestionIndex].question}
                 </Text>
 
-                <ScrollView 
+                <ScrollView
                   style={styles.answersScroll}
                   showsVerticalScrollIndicator={false}
                 >
@@ -763,7 +764,7 @@ export default function LearningModuleScreen({ navigation }) {
                   </View>
                 </ScrollView>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.nextButton,
                     selectedAnswer === null && styles.nextButtonDisabled
@@ -803,7 +804,7 @@ export default function LearningModuleScreen({ navigation }) {
                   </View>
                 )}
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.finishButton}
                   onPress={handleLessonComplete}
                 >
@@ -821,8 +822,8 @@ export default function LearningModuleScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: '#f8f9fa',
   },
   loadingContainer: {

@@ -17,8 +17,9 @@ import { Icon } from "../components/CustomIcon";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { API_ENDPOINTS } from '../config/config.js';
 
-const BASE_URL = "http://10.101.36.133:5000/api/submissions";
+const BASE_URL = API_ENDPOINTS.SUBMISSIONS;
 const CLOUDINARY_CLOUD_NAME = "dabzuwe9l"; // Replace with your Cloudinary cloud name
 const CLOUDINARY_UPLOAD_PRESET = "unsigned_upload"; // Replace with your upload preset
 const CLOUDINARY_API_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
@@ -150,7 +151,7 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
         const { PERMISSIONS, RESULTS, request } = require("react-native-permissions");
         const cameraPermission = PERMISSIONS.ANDROID.CAMERA;
         const result = await request(cameraPermission);
-        
+
         if (result !== RESULTS.GRANTED) {
           Alert.alert(
             "Permission Denied",
@@ -268,7 +269,7 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
     try {
       setUploading(true);
       setUploadProgress(0);
-      
+
       const token = await AsyncStorage.getItem("authToken");
       const studentId = await AsyncStorage.getItem("studentId");
       const studentName = await AsyncStorage.getItem("studentName");
@@ -369,7 +370,7 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
     if (error.message?.includes("Cloudinary")) {
       return "Image upload to Cloudinary failed. Please check your internet connection and try again.";
     }
-    
+
     if (error.response) {
       switch (error.response.status) {
         case 401:
@@ -384,15 +385,15 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
           return error.response.data?.message || "Upload failed.";
       }
     }
-    
+
     if (error.code === "ECONNABORTED") {
       return "Request timeout. Please check your connection.";
     }
-    
+
     if (error.message?.includes("Network Error")) {
       return "Network error. Please check your internet connection.";
     }
-    
+
     return error.message || "An unexpected error occurred.";
   };
 
@@ -436,9 +437,9 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
           <Text style={styles.badgeIcon}>{badgeIcon}</Text>
           <Text style={[styles.statusText, { color: iconColor }]}>{statusText}</Text>
         </View>
-        
+
         {submissionDetails?.cloudinaryUrl && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.cloudinaryInfo}
             onPress={() => {
               if (submissionDetails.cloudinaryUrl) {
@@ -454,14 +455,14 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
             <Text style={styles.cloudinaryText}>Stored on Cloudinary</Text>
           </TouchableOpacity>
         )}
-        
+
         {submissionDetails?.feedback && (
           <View style={styles.feedbackContainer}>
             <Text style={styles.feedbackLabel}>Faculty Feedback:</Text>
             <Text style={styles.feedbackText}>{submissionDetails.feedback}</Text>
           </View>
         )}
-        
+
         {submissionDetails?.reviewedAt && (
           <Text style={styles.dateText}>
             Reviewed: {new Date(submissionDetails.reviewedAt).toLocaleDateString()}
@@ -483,11 +484,11 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
           Uploading to Cloudinary... {Math.round(uploadProgress)}%
         </Text>
         <View style={styles.progressBar}>
-          <View 
+          <View
             style={[
-              styles.progressFill, 
+              styles.progressFill,
               { width: `${uploadProgress}%` }
-            ]} 
+            ]}
           />
         </View>
       </View>
@@ -496,20 +497,20 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
 
   const formattedDeadline = challenge.deadline
     ? new Date(challenge.deadline).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
     : "No deadline";
 
   return (
-    <ScrollView 
-      style={styles.container} 
+    <ScrollView
+      style={styles.container}
       showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl 
-          refreshing={refreshing} 
+        <RefreshControl
+          refreshing={refreshing}
           onRefresh={onRefresh}
           colors={["#4CAF50"]}
           tintColor="#4CAF50"
@@ -518,7 +519,7 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -616,10 +617,10 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
               >
                 <Icon name="close-circle" size={28} color="#F44336" />
               </TouchableOpacity>
-              
+
               <View style={styles.imageInfo}>
                 <Text style={styles.imageInfoText}>
-                  Size: {(selectedImage.fileSize / (1024*1024)).toFixed(2)} MB
+                  Size: {(selectedImage.fileSize / (1024 * 1024)).toFixed(2)} MB
                 </Text>
               </View>
             </View>

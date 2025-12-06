@@ -13,9 +13,9 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Icon } from '../components/CustomIcon'; // Changed from Ionicons to custom Icon
+import { API_ENDPOINTS } from '../config/config.js';
 
-
-const BASE_URL = "http://172.16.106.21:5000/api/challenges";
+const CHALLENGES_URL = API_ENDPOINTS.CHALLENGES;
 
 const ChallengesScreen = ({ navigation }) => {
   const [challenges, setChallenges] = useState([]);
@@ -72,8 +72,8 @@ const ChallengesScreen = ({ navigation }) => {
       const { id, token } = userData;
 
       console.log(`Fetching challenges for student ID: ${id}`);
-      
-      const res = await axios.get(`${BASE_URL}/student/${id}`, {
+
+      const res = await axios.get(`${CHALLENGES_URL}/student/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -81,7 +81,7 @@ const ChallengesScreen = ({ navigation }) => {
 
       console.log("API Response success:", res.data?.success);
       console.log("Number of challenges:", res.data?.challenges?.length);
-      
+
       // Log the first challenge to see ALL properties
       if (res.data?.challenges?.length > 0) {
         console.log("First challenge FULL object:", JSON.stringify(res.data.challenges[0], null, 2));
@@ -104,7 +104,7 @@ const ChallengesScreen = ({ navigation }) => {
             difficulty: challenge.difficulty || "Medium"
           };
         });
-        
+
         console.log("Transformed challenges:", transformedChallenges);
         setChallenges(transformedChallenges);
       } else {
@@ -160,7 +160,7 @@ const ChallengesScreen = ({ navigation }) => {
       const deadlineDate = new Date(deadline);
       const diffTime = deadlineDate - now;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays < 0) return "Expired";
       if (diffDays === 0) return "Due today";
       if (diffDays === 1) return "1 day left";
@@ -172,7 +172,7 @@ const ChallengesScreen = ({ navigation }) => {
 
   const getDifficultyColor = (difficulty) => {
     if (!difficulty) return '#757575';
-    
+
     const diffLower = difficulty.toLowerCase();
     switch (diffLower) {
       case 'easy': return '#4CAF50';
@@ -185,7 +185,7 @@ const ChallengesScreen = ({ navigation }) => {
   const renderChallenge = ({ item, index }) => {
     console.log(`Rendering challenge ${index + 1}:`, item.title);
     console.log(`Challenge ${index + 1} ecoPoints:`, item.ecoPoints);
-    
+
     // Extract properties with debugging
     const challenge = {
       id: item._id || item.id || `challenge-${index}`,
@@ -205,8 +205,8 @@ const ChallengesScreen = ({ navigation }) => {
     console.log(`Final ecoPoints value for "${challenge.title}":`, challenge.ecoPoints);
 
     const timeLeft = getTimeLeft(challenge.deadline);
-    const deadlineColor = timeLeft === "Expired" ? "#F44336" : 
-                         timeLeft.includes("Due today") ? "#FF9800" : "#4CAF50";
+    const deadlineColor = timeLeft === "Expired" ? "#F44336" :
+      timeLeft.includes("Due today") ? "#FF9800" : "#4CAF50";
 
     return (
       <TouchableOpacity
@@ -230,10 +230,10 @@ const ChallengesScreen = ({ navigation }) => {
               styles.difficultyBadge,
               { backgroundColor: getDifficultyColor(challenge.difficulty) + '20' }
             ]}>
-              <Icon 
-                name="trophy" 
-                size={14} 
-                color={getDifficultyColor(challenge.difficulty)} 
+              <Icon
+                name="trophy"
+                size={14}
+                color={getDifficultyColor(challenge.difficulty)}
               />
               <Text style={[
                 styles.difficultyText,
@@ -243,7 +243,7 @@ const ChallengesScreen = ({ navigation }) => {
               </Text>
             </View>
           </View>
-          
+
           {/* EcoPoints Display */}
           <View style={styles.ecopointsContainer}>
             <View style={styles.ecopointsBadge}>
@@ -301,7 +301,7 @@ const ChallengesScreen = ({ navigation }) => {
         </View>
 
         {/* Start Challenge Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.startButton}
           onPress={() => {
             console.log("Button pressed for:", challenge.title);
@@ -322,7 +322,7 @@ const ChallengesScreen = ({ navigation }) => {
       <Text style={styles.emptyStateText}>
         You don't have any challenges assigned yet. Check back later for new challenges!
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.refreshButton}
         onPress={() => fetchChallenges()}
       >
@@ -364,7 +364,7 @@ const ChallengesScreen = ({ navigation }) => {
         <View style={styles.errorContainer}>
           <Icon name="alert-circle" size={50} color="#ff6b6b" />
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.retryButton}
             onPress={() => fetchChallenges()}
           >

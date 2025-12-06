@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_ENDPOINTS } from '../config/config.js';
 
 export default function EditProfileScreen({ navigation, route }) {
 
@@ -20,7 +21,7 @@ export default function EditProfileScreen({ navigation, route }) {
     }
 
     try {
-      const API_URL = `http://10.168.69.133:5000/api/user/${userId}`;
+      const API_URL = `${API_ENDPOINTS.USER}/${userId}`;
 
       const response = await fetch(API_URL, {
         method: "PUT",

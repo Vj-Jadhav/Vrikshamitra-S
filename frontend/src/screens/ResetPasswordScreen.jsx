@@ -3,6 +3,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView
 } from 'react-native';
+import { API_ENDPOINTS } from '../config/config.js';
 
 export default function ResetPasswordScreen({ navigation, route }) {
   const [password, setPassword] = useState("");
@@ -11,7 +12,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
   const [token, setToken] = useState(route.params?.token || "");
   const [email, setEmail] = useState(route.params?.email || "");
 
-  const RESET_PASSWORD_URL = "http://10.147.34.133:5000/api/auth/reset-password";
+  const RESET_PASSWORD_URL = API_ENDPOINTS.RESET_PASSWORD;
 
   const handleResetPassword = async () => {
     if (!password || !confirmPassword) {
@@ -70,7 +71,7 @@ export default function ResetPasswordScreen({ navigation, route }) {
     <KeyboardAvoidingView style={styles.container} behavior="padding">
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.title}>Reset Password 🔒</Text>
-        
+
         <View style={styles.card}>
           <Text style={styles.subtitle}>
             Enter your new password below

@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  TouchableOpacity, 
-  ScrollView, 
-  Modal, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  Modal,
   FlatList,
   Alert
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_ENDPOINTS } from '../config/config.js';
 
 // Move avatars array outside component to avoid recreation
 const avatars = [
@@ -38,7 +39,7 @@ export default function ProfileScreen({ navigation }) {
       const studentGrade = await AsyncStorage.getItem("studentGrade");
       const studentRollNumber = await AsyncStorage.getItem("studentRollNumber");
       const studentData = await AsyncStorage.getItem("studentData");
-      
+
       console.log("=== PROFILE STORAGE CHECK ===");
       console.log("Student ID:", studentId);
       console.log("Student Name:", studentName);
@@ -47,7 +48,7 @@ export default function ProfileScreen({ navigation }) {
       console.log("Student Roll Number:", studentRollNumber);
       console.log("Complete Student Data:", studentData);
       console.log("=============================");
-      
+
       return { studentId, studentName, studentEmail, studentGrade, studentRollNumber, studentData };
     } catch (error) {
       console.log("Storage check error:", error);
@@ -59,7 +60,7 @@ export default function ProfileScreen({ navigation }) {
     try {
       // First, check what's actually in storage
       const storageData = await checkStorage();
-      
+
       // Get ALL student data from AsyncStorage
       const studentId = await AsyncStorage.getItem("studentId");
       const studentName = await AsyncStorage.getItem("studentName");
@@ -67,7 +68,7 @@ export default function ProfileScreen({ navigation }) {
       const studentGrade = await AsyncStorage.getItem("studentGrade");
       const studentRollNumber = await AsyncStorage.getItem("studentRollNumber");
       const completeStudentData = await AsyncStorage.getItem("studentData");
-      
+
       console.log("PROFILE STUDENT DATA FROM STORAGE:", {
         studentId,
         studentName,
@@ -80,7 +81,7 @@ export default function ProfileScreen({ navigation }) {
         // ✅ PREFERRED: Use complete student data from storage
         const parsedData = JSON.parse(completeStudentData);
         console.log("✅ Using complete student data:", parsedData);
-        
+
         const studentData = {
           id: parsedData._id || parsedData.id || studentId,
           name: parsedData.name || studentName || "Student Name",
@@ -91,7 +92,7 @@ export default function ProfileScreen({ navigation }) {
           points: parsedData.points || 2571,
           rank: parsedData.rank || 3
         };
-        
+
         setStudent(studentData);
       } else if (studentId && studentName) {
         // ✅ FALLBACK: Use individual storage items
@@ -105,7 +106,7 @@ export default function ProfileScreen({ navigation }) {
           points: 2571,
           rank: 3
         };
-        
+
         console.log("✅ Using individual storage items:", studentData);
         setStudent(studentData);
         await AsyncStorage.setItem("studentData", JSON.stringify(studentData));
@@ -132,15 +133,15 @@ export default function ProfileScreen({ navigation }) {
         return;
       }
 
-      const API_URL = `http://10.168.69.133:5000/api/student/${studentId}`;
+      const API_URL = `${API_ENDPOINTS.STUDENT}/${studentId}`;
       console.log("Fetching student from API:", API_URL);
-      
+
       const res = await fetch(API_URL);
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       console.log("PROFILE STUDENT API DATA:", data);
 
@@ -156,11 +157,11 @@ export default function ProfileScreen({ navigation }) {
           points: data.points || 2571,
           rank: data.rank || 3
         };
-        
+
         console.log("✅ API Student Data:", completeStudentData);
         setStudent(completeStudentData);
         await AsyncStorage.setItem("studentData", JSON.stringify(completeStudentData));
-        
+
         // Also update individual fields for backward compatibility
         if (data.name) await AsyncStorage.setItem("studentName", data.name);
         if (data.email) await AsyncStorage.setItem("studentEmail", data.email);
@@ -202,9 +203,9 @@ export default function ProfileScreen({ navigation }) {
         return;
       }
 
-      const API_URL = `http://10.168.69.133:5000/api/student/${studentId}/avatar`;
+      const API_URL = `${API_ENDPOINTS.STUDENT}/${studentId}/avatar`;
       console.log("Updating student avatar at:", API_URL);
-      
+
       const response = await fetch(API_URL, {
         method: 'PUT',
         headers: {
@@ -217,19 +218,19 @@ export default function ProfileScreen({ navigation }) {
 
       if (response.ok) {
         const updatedStudent = await response.json();
-        
+
         // Update local state
         setStudent(prevStudent => ({
           ...prevStudent,
           photo: avatarUri
         }));
-        
+
         // Also update local storage
         await AsyncStorage.setItem("studentData", JSON.stringify({
           ...student,
           photo: avatarUri
         }));
-        
+
         setAvatarModalVisible(false);
         Alert.alert("Success", "Avatar updated successfully!");
         console.log("Student avatar updated successfully");
@@ -251,13 +252,13 @@ export default function ProfileScreen({ navigation }) {
       ...prevStudent,
       photo: avatarUri
     }));
-    
+
     // Update local storage
     await AsyncStorage.setItem("studentData", JSON.stringify({
       ...student,
       photo: avatarUri
     }));
-    
+
     setAvatarModalVisible(false);
     Alert.alert("Success", "Avatar updated locally!");
   };
@@ -277,7 +278,7 @@ export default function ProfileScreen({ navigation }) {
         "userId",
         "userData"
       ]);
-      
+
       console.log("✅ All student data cleared from storage");
       navigation.navigate("Login");
     } catch (error) {
@@ -297,29 +298,29 @@ export default function ProfileScreen({ navigation }) {
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Choose Your Avatar</Text>
-          
+
           <FlatList
             data={avatars}
             numColumns={3}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
                   styles.avatarOption,
                   student?.photo === item.uri && styles.selectedAvatar
                 ]}
                 onPress={() => updateAvatar(item.uri)}
               >
-                <Image 
-                  source={{ uri: item.uri }} 
-                  style={styles.avatarOptionImage} 
+                <Image
+                  source={{ uri: item.uri }}
+                  style={styles.avatarOptionImage}
                 />
               </TouchableOpacity>
             )}
             contentContainerStyle={styles.avatarsGrid}
           />
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.cancelButton}
             onPress={() => setAvatarModalVisible(false)}
           >
@@ -346,7 +347,7 @@ export default function ProfileScreen({ navigation }) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={{ fontSize: 18, marginBottom: 10 }}>Student profile not found</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.retryButton}
           onPress={fetchProfile}
         >
@@ -360,13 +361,13 @@ export default function ProfileScreen({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Profile</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.profileIconContainer}
           onPress={() => setAvatarModalVisible(true)}
         >
-          <Image 
-            source={{ uri: student.photo || avatars[0].uri }} 
-            style={styles.profileIcon} 
+          <Image
+            source={{ uri: student.photo || avatars[0].uri }}
+            style={styles.profileIcon}
             defaultSource={{ uri: avatars[0].uri }}
           />
         </TouchableOpacity>
@@ -376,9 +377,9 @@ export default function ProfileScreen({ navigation }) {
         <View style={styles.profileCard}>
           <TouchableOpacity onPress={() => setAvatarModalVisible(true)}>
             <View style={styles.avatarContainer}>
-              <Image 
-                source={{ uri: student.photo || avatars[0].uri }} 
-                style={styles.profileImage} 
+              <Image
+                source={{ uri: student.photo || avatars[0].uri }}
+                style={styles.profileImage}
                 defaultSource={{ uri: avatars[0].uri }}
               />
               <View style={styles.editAvatarBadge}>
@@ -389,7 +390,7 @@ export default function ProfileScreen({ navigation }) {
 
           <Text style={styles.userName}>{student.name || "Student Name"}</Text>
           <Text style={styles.userEmail}>{student.email || "student@school.com"}</Text>
-          
+
           {/* Student Info */}
           {student.grade && (
             <View style={styles.studentInfoContainer}>
@@ -433,8 +434,8 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.menuText}>About</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.menuItem, styles.logoutButton]} 
+          <TouchableOpacity
+            style={[styles.menuItem, styles.logoutButton]}
             onPress={handleLogout}
           >
             <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
@@ -517,25 +518,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
   },
-  userName: { 
-    fontSize: 20, 
-    fontWeight: "bold", 
-    color: "#000", 
+  userName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
     marginTop: 5,
     textAlign: 'center'
   },
-  userEmail: { 
-    fontSize: 14, 
-    color: "#777", 
+  userEmail: {
+    fontSize: 14,
+    color: "#777",
     marginBottom: 10,
     textAlign: 'center'
   },
   studentInfoContainer: {
     marginBottom: 15,
   },
-  studentInfo: { 
-    fontSize: 14, 
-    color: "#3a9322ff", 
+  studentInfo: {
+    fontSize: 14,
+    color: "#3a9322ff",
     fontWeight: "600",
     textAlign: 'center'
   },

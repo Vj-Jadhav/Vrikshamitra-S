@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, 
-  StyleSheet, Alert, ActivityIndicator 
+import {
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, Alert, ActivityIndicator
 } from 'react-native';
+import { API_ENDPOINTS } from '../config/config.js';
 
 export default function SetPasswordScreen({ route, navigation }) {
   const { studentId, email } = route.params;
@@ -29,7 +30,7 @@ export default function SetPasswordScreen({ route, navigation }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://10.147.34.133:5000/api/auth/set-student-password', {
+      const response = await fetch(API_ENDPOINTS.SET_STUDENT_PASSWORD, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -42,7 +43,7 @@ export default function SetPasswordScreen({ route, navigation }) {
 
       if (response.ok) {
         Alert.alert(
-          "Success", 
+          "Success",
           "Password set successfully! You can now login.",
           [
             {
@@ -87,7 +88,7 @@ export default function SetPasswordScreen({ route, navigation }) {
 
         <Text style={styles.note}>Password must be at least 6 characters</Text>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.button}
           onPress={handleSetPassword}
           disabled={loading}
