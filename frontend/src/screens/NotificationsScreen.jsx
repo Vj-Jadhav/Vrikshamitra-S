@@ -1,8 +1,12 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
 export default function NotificationsScreen({ navigation }) {
+  // Ideally fetch from backend. Since no endpoint exists yet, we initialize as empty array
+  // to avoid showing dummy data.
+  const [notifications, setNotifications] = useState([]);
+
   return (
     <View style={styles.container}>
 
@@ -21,30 +25,23 @@ export default function NotificationsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        
-        {/* Notification 1 */}
-        <View style={styles.notificationCard}>
-          <Text style={styles.notificationTitle}>🎉 Congratulations!</Text>
-          <Text style={styles.notificationMessage}>
-            You have earned 50 Eco-Points today.
-          </Text>
-        </View>
 
-        {/* Notification 2 */}
-        <View style={styles.notificationCard}>
-          <Text style={styles.notificationTitle}>⚠️ Reminder</Text>
-          <Text style={styles.notificationMessage}>
-            Don't forget to complete today's challenge!
-          </Text>
-        </View>
-
-        {/* Notification 3 */}
-        <View style={styles.notificationCard}>
-          <Text style={styles.notificationTitle}>🌱 New Learning Module</Text>
-          <Text style={styles.notificationMessage}>
-            "Save Water, Save Earth" module is now available.
-          </Text>
-        </View>
+        {notifications.length > 0 ? (
+          notifications.map((notif, index) => (
+            <View key={index} style={styles.notificationCard}>
+              <Text style={styles.notificationTitle}>{notif.title}</Text>
+              <Text style={styles.notificationMessage}>{notif.message}</Text>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            {/* Simple Icon or Text for Empty State */}
+            <Text style={styles.emptyStateTitle}>No Notification Yet</Text>
+            <Text style={styles.emptyStateText}>
+              You're all caught up! Check back later for updates, challenge reminders, and announcements.
+            </Text>
+          </View>
+        )}
 
       </ScrollView>
 
@@ -73,6 +70,7 @@ const styles = StyleSheet.create({
   },
 
   scrollContainer: {
+    flexGrow: 1,
     padding: 20,
   },
 
@@ -93,5 +91,26 @@ const styles = StyleSheet.create({
   notificationMessage: {
     fontSize: 13,
     color: "#555",
+  },
+
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ccc',
+    marginTop: 20,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginHorizontal: 40,
+    marginTop: 10,
+    lineHeight: 20,
   },
 });

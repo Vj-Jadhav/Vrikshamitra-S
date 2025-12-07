@@ -84,13 +84,13 @@ export default function ProfileScreen({ navigation }) {
 
         const studentData = {
           id: parsedData._id || parsedData.id || studentId,
-          name: parsedData.name || studentName || "Student Name",
-          email: parsedData.email || studentEmail || "student@school.com", // ✅ GET EMAIL
+          name: parsedData.name || studentName || "Unknown",
+          email: parsedData.email || studentEmail || "No Email",
           grade: parsedData.grade || studentGrade,
           rollNumber: parsedData.rollNumber || studentRollNumber,
           photo: parsedData.photo || avatars[0].uri,
-          points: parsedData.points || 2571,
-          rank: parsedData.rank || 3
+          points: parsedData.points || 0,
+          rank: parsedData.rank || 0
         };
 
         setStudent(studentData);
@@ -99,12 +99,12 @@ export default function ProfileScreen({ navigation }) {
         const studentData = {
           id: studentId,
           name: studentName,
-          email: studentEmail || "student@school.com", // ✅ GET EMAIL
+          email: studentEmail || "No Email",
           grade: studentGrade,
           rollNumber: studentRollNumber,
           photo: avatars[0].uri,
-          points: 2571,
-          rank: 3
+          points: 0,
+          rank: 0
         };
 
         console.log("✅ Using individual storage items:", studentData);
@@ -149,13 +149,13 @@ export default function ProfileScreen({ navigation }) {
         // Ensure we have all required fields with fallbacks
         const completeStudentData = {
           id: data._id || studentId,
-          name: data.name || "Student Name",
-          email: data.email || await AsyncStorage.getItem("studentEmail") || "student@school.com", // ✅ GET EMAIL FROM STORAGE AS FALLBACK
+          name: data.name || "Unknown",
+          email: data.email || await AsyncStorage.getItem("studentEmail") || "No Email",
           grade: data.grade || "",
           rollNumber: data.rollNumber || "",
           photo: data.photo || avatars[0].uri,
-          points: data.points || 2571,
-          rank: data.rank || 3
+          points: data.points || 0,
+          rank: data.rank || 0
         };
 
         console.log("✅ API Student Data:", completeStudentData);
@@ -181,13 +181,13 @@ export default function ProfileScreen({ navigation }) {
         // Ultimate fallback: create basic student object
         const basicStudent = {
           id: await AsyncStorage.getItem("studentId"),
-          name: await AsyncStorage.getItem("studentName") || "Student",
-          email: await AsyncStorage.getItem("studentEmail") || "student@school.com", // ✅ GET EMAIL
+          name: await AsyncStorage.getItem("studentName") || "Unknown",
+          email: await AsyncStorage.getItem("studentEmail") || "No Email",
           grade: await AsyncStorage.getItem("studentGrade"),
           rollNumber: await AsyncStorage.getItem("studentRollNumber"),
           photo: avatars[0].uri,
-          points: 2571,
-          rank: 3
+          points: 0,
+          rank: 0
         };
         console.log("⚠️ Using basic student fallback:", basicStudent);
         setStudent(basicStudent);
@@ -388,8 +388,8 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.userName}>{student.name || "Student Name"}</Text>
-          <Text style={styles.userEmail}>{student.email || "student@school.com"}</Text>
+          <Text style={styles.userName}>{student.name || "Unknown"}</Text>
+          <Text style={styles.userEmail}>{student.email || "No Email"}</Text>
 
           {/* Student Info */}
           {student.grade && (
@@ -402,12 +402,12 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>{student.points || 2571}</Text>
+              <Text style={styles.statValue}>{student.points || 0}</Text>
               <Text style={styles.statLabel}>Eco Points</Text>
             </View>
 
             <View style={styles.statBox}>
-              <Text style={styles.statValue}>#{student.rank || 3}</Text>
+              <Text style={styles.statValue}>#{student.rank || "N/A"}</Text>
               <Text style={styles.statLabel}>Rank</Text>
             </View>
           </View>

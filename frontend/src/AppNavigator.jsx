@@ -17,6 +17,11 @@ import ChallengesScreen from './screens/ChallengesScreen';
 import ChallengeDetailsScreen from './screens/ChallengeDetailsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
+import EditProfileScreen from './screens/EditProfileScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import HelpSupportScreen from './screens/HelpSupportScreen';
+import AboutScreen from './screens/AboutScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
 
 // ================= Story Feature (from story branch) =================
 import MainLayout from './MainLayout';
@@ -62,6 +67,11 @@ export default function AppNavigator() {
         />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
+        <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+        <Stack.Screen name="SettingsScreen" component={SettingsScreen} />
+        <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
+        <Stack.Screen name="AboutScreen" component={AboutScreen} />
+        <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen} />
 
 
 
