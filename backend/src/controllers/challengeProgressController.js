@@ -64,7 +64,9 @@ export const getStudentChallengesWithDetails = async (req, res) => {
         ...challenge,
         facultyId: facultyId,
         facultyName: facultyName,
-        createdBy: challenge.createdBy?._id || challenge.createdBy
+        createdBy: challenge.createdBy?._id || challenge.createdBy,
+        progressStatus: progress?.status || 'not_started',
+        pointsEarned: progress?.pointsEarned || 0,
       };
     });
 

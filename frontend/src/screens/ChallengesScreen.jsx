@@ -8,7 +8,10 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  RefreshControl
+  RefreshControl,
+  Modal,
+  Image,
+  ImageBackground
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -23,6 +26,7 @@ const ChallengesScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [userName, setUserName] = useState("");
+  const [showCertificate, setShowCertificate] = useState(false);
 
   const loadUserData = async () => {
     try {
@@ -101,7 +105,9 @@ const ChallengesScreen = ({ navigation }) => {
             title: challenge.title || "Untitled Challenge",
             description: challenge.description || "No description",
             category: challenge.category || "General",
-            difficulty: challenge.difficulty || "Medium"
+            difficulty: challenge.difficulty || "Medium",
+            progressStatus: challenge.progressStatus || "not_started",
+            pointsEarned: challenge.pointsEarned || 0
           };
         });
 
@@ -138,6 +144,81 @@ const ChallengesScreen = ({ navigation }) => {
   useEffect(() => {
     fetchChallenges();
   }, []);
+
+  const calculateProgress = () => {
+    if (challenges.length === 0) return 0;
+    const completedCount = challenges.filter(c => c.progressStatus === 'approved').length;
+    return (completedCount / challenges.length); // 0 to 1
+  };
+
+  const progress = calculateProgress();
+  const isCompleted = progress === 1 && challenges.length > 0;
+
+  const renderProgressBar = () => (
+    <View style={styles.progressContainer}>
+      <View style={styles.progressHeader}>
+        <Text style={styles.progressLabel}>Your Progress</Text>
+        <Text style={styles.progressPercentage}>{Math.round(progress * 100)}%</Text>
+      </View>
+      <View style={styles.progressBarBackground}>
+        <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+      </View>
+      <Text style={styles.progressSubtext}>
+        {challenges.filter(c => c.progressStatus === 'approved').length} of {challenges.length} challenges completed
+      </Text>
+
+      {isCompleted && (
+        <TouchableOpacity
+          style={styles.certificateButton}
+          onPress={() => setShowCertificate(true)}
+        >
+          <Icon name="ribbon" size={20} color="#fff" />
+          <Text style={styles.certificateButtonText}>View Certificate</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const CertificateModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={showCertificate}
+      onRequestClose={() => setShowCertificate(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.certificateContainer}>
+          <View style={styles.certificateBorder}>
+            <View style={styles.certificateHeader}>
+              <Icon name="ribbon" size={50} color="#D4AF37" />
+              <Text style={styles.certificateTitle}>Certificate of Completion</Text>
+            </View>
+
+            <Text style={styles.certificateText}>This certifies that</Text>
+            <Text style={styles.certificateName}>{userName || "Student"}</Text>
+            <Text style={styles.certificateText}>has successfully completed all assigned challenges in</Text>
+            <Text style={styles.certificateCourse}>Vrikshamitra Eco-Program</Text>
+
+            <View style={styles.certificateDate}>
+              <Text style={styles.dateLabel}>Date: {new Date().toLocaleDateString()}</Text>
+            </View>
+
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2917/2917633.png' }}
+              style={styles.stampImage}
+            />
+
+            <TouchableOpacity
+              style={styles.closeCertButton}
+              onPress={() => setShowCertificate(false)}
+            >
+              <Text style={styles.closeCertText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const formatDate = (dateString) => {
     if (!dateString) return "No deadline";
@@ -395,18 +476,22 @@ const ChallengesScreen = ({ navigation }) => {
           }
           ListHeaderComponent={
             challenges.length > 0 ? (
-              <View style={styles.statsContainer}>
-                <Text style={styles.statsText}>
-                  📊 You have {challenges.length} active challenge{challenges.length !== 1 ? 's' : ''}
-                </Text>
-                <Text style={styles.statsSubtext}>
-                  Total potential points: {challenges.reduce((sum, c) => sum + (c.ecoPoints || 0), 0)}
-                </Text>
+              <View>
+                {renderProgressBar()}
+                <View style={styles.statsContainer}>
+                  <Text style={styles.statsText}>
+                    You have {challenges.length} active challenge{challenges.length !== 1 ? 's' : ''}
+                  </Text>
+                  <Text style={styles.statsSubtext}>
+                    Total potential points: {challenges.reduce((sum, c) => sum + (c.ecoPoints || 0), 0)}
+                  </Text>
+                </View>
               </View>
             ) : null
           }
         />
       )}
+      <CertificateModal />
     </View>
   );
 };
@@ -672,5 +757,146 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 30,
+  },
+  progressContainer: {
+    backgroundColor: '#fff',
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#4CAF50',
+  },
+  progressBarBackground: {
+    height: 10,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 5,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 5,
+  },
+  progressSubtext: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+  certificateButton: {
+    backgroundColor: '#D4AF37', // Gold color
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  certificateButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  certificateContainer: {
+    backgroundColor: '#fff',
+    width: '100%',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  certificateBorder: {
+    margin: 10,
+    borderWidth: 2,
+    borderColor: '#D4AF37',
+    borderStyle: 'dashed',
+    padding: 20,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  certificateHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  certificateTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#D4AF37',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  certificateText: {
+    fontSize: 16,
+    color: '#666',
+    marginVertical: 5,
+    textAlign: 'center',
+  },
+  certificateName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2E7D32', // Green
+    marginVertical: 10,
+    textAlign: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingBottom: 5,
+    width: '100%',
+  },
+  certificateCourse: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 5,
+    textAlign: 'center',
+  },
+  certificateDate: {
+    marginTop: 30,
+    alignSelf: 'flex-start',
+  },
+  dateLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  stampImage: {
+    width: 80,
+    height: 80,
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    opacity: 0.8,
+  },
+  closeCertButton: {
+    marginTop: 40,
+    backgroundColor: '#D4AF37',
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  closeCertText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
