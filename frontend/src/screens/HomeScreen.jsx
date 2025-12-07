@@ -325,6 +325,18 @@ export default function HomeScreen({ navigation }) {
               </View>
             </TouchableOpacity>
 
+            <TouchableOpacity
+  style={styles.gameCard}
+  activeOpacity={0.6}
+  onPress={() => navigation.navigate("PlantTracking")}
+>
+  <View style={[styles.gameCardInner, { backgroundColor: '#6ECF6E' }]}>
+    <Image source={require('../assets/plant_growth.png')} style={styles.gameImage} />
+    <Text style={styles.gameCardText}>Plant Growth</Text>
+  </View>
+</TouchableOpacity>
+
+
           </View>
 
         </View>

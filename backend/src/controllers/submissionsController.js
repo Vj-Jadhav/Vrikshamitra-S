@@ -209,7 +209,12 @@ export const approveSubmission = async (req, res) => {
       return res.json({ success: true, message: "Submission is already approved", submission });
     }
 
-    const pointsToAward = submission.points || 0;
+    // OPTIMIZED: Fetch Challenge to get correct ecoPoints
+    const { default: Challenge } = await import("../models/Challenge.js");
+    const challenge = await Challenge.findById(submission.challengeId);
+
+    // Fallback to submission points or 0 if challenge not found (shouldn't happen)
+    const pointsToAward = challenge ? challenge.ecoPoints : (submission.points || 0);
 
     // 1. Update Submission
     submission.status = "approved";

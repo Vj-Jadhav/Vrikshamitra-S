@@ -42,6 +42,7 @@ import SeedSaverGameScreen from './screens/SeedSaverGameScreen';
 
 import GarbageReport from './screens/GarbageReport';
 import GarbageParticipate from './screens/GarbageParticipate';
+import PlantTracking from './screens/PlantTracking';
 
 const Stack = createNativeStackNavigator();
 
@@ -96,6 +97,7 @@ export default function AppNavigator() {
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />
+        <Stack.Screen name="PlantTracking" component={PlantTracking} />
 
       </Stack.Navigator>
     </NavigationContainer>

@@ -44,10 +44,7 @@ export const getChallenges = async (req, res) => {
         const assignedChallengeIds = assignments.map(a => a.challengeId);
 
         query = {
-          $or: [
-            { createdBy: req.user.id },
-            { _id: { $in: assignedChallengeIds } }
-          ]
+          _id: { $in: assignedChallengeIds }
         };
       } else if (req.user.role === 'institute') {
         query = { createdBy: req.user.id };
@@ -63,12 +60,36 @@ export const getChallenges = async (req, res) => {
   }
 };
 
+const ECO_POINT_STRUCTURE = {
+  government: {
+    "environmental": 40,
+    "green-cover": 35,
+    "waste-management": 30,
+    "water-conservation": 20,
+    "energy": 25,
+    "other": 15 // Using 15 as the base for 15-20 range
+  },
+  institute: {
+    "environmental": 30,
+    "green-cover": 25,
+    "waste-management": 20,
+    "water-conservation": 10,
+    "energy": 15,
+    "other": 10
+  }
+};
+
 /**
  * @desc    Create new challenge
  * @route   POST /challenges
  */
 export const createChallenge = async (req, res) => {
   try {
+    // Restrict faculty from creating challenges
+    if (req.user.role === 'faculty') {
+      return res.status(403).json({ message: "Access denied. Faculty cannot create challenges." });
+    }
+
     console.log('📥 Received challenge creation data:', req.body); // Debug log
 
     const {
@@ -82,9 +103,25 @@ export const createChallenge = async (req, res) => {
       deadline,
       requirements,
       resources,
-      createdBy,
-      ecoPoints // ADDED: Extract ecoPoints from request body
+      createdBy
     } = req.body;
+
+    // Determine creator type and assign EcoPoints
+    let determinedEcoPoints = 0;
+    const creatorRole = req.user.role; // 'admin' or 'institute'
+
+    if (creatorRole === 'admin') {
+      // Admin is Government
+      determinedEcoPoints = ECO_POINT_STRUCTURE.government[category] || 0;
+    } else if (creatorRole === 'institute') {
+      determinedEcoPoints = ECO_POINT_STRUCTURE.institute[category] || 0;
+    } else {
+      // Fallback or explicit EcoPoints if passed (rare case)
+      determinedEcoPoints = req.body.ecoPoints || 0;
+    }
+
+    // Log the determination
+    console.log(`🎯 EcoPoints determination: Role=${creatorRole}, Category=${category}, Points=${determinedEcoPoints}`);
 
     // Auto-sync mandatory with priority
     const isMandatory = priority === "mandatory";
@@ -101,7 +138,7 @@ export const createChallenge = async (req, res) => {
       requirements,
       resources,
       createdBy,
-      ecoPoints: ecoPoints || 0 // ADDED: Include ecoPoints with default value
+      ecoPoints: determinedEcoPoints
     });
 
     console.log('💾 Created challenge:', challenge); // Debug log
@@ -128,9 +165,14 @@ export const updateChallenge = async (req, res) => {
       updates.mandatory = updates.priority === "mandatory";
     }
 
-    // Ensure ecoPoints is included in updates
-    if (updates.ecoPoints === undefined) {
-      updates.ecoPoints = 0; // Set default if not provided
+    // Recalculate EcoPoints if category is changed
+    if (updates.category) {
+      const creatorRole = req.user.role;
+      if (creatorRole === 'admin') {
+        updates.ecoPoints = ECO_POINT_STRUCTURE.government[updates.category] || 0;
+      } else if (creatorRole === 'institute') {
+        updates.ecoPoints = ECO_POINT_STRUCTURE.institute[updates.category] || 0;
+      }
     }
 
     const updatedChallenge = await Challenge.findByIdAndUpdate(

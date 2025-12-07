@@ -15,6 +15,7 @@ import challengeRoutes from "./routes/challengeRoutes.js";
 import learningModuleRoutes from "./routes/learningModule.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js"; // ADDED
 
 const app = express();
 
@@ -28,6 +29,7 @@ connectDB();
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/student", studentRoutes); // ADDED
 app.use("/api/government", governmentRoutes);
 app.use("/api/institute", instituteRoutes);
 app.use("/api/challenges", challengeRoutes);
@@ -37,6 +39,9 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/reports/schedule", scheduleRoutes);
 import submissionsRoutes from "./routes/submissionsRoutes.js";
 app.use("/api/submissions", submissionsRoutes);
+
+import facultyRoutes from "./routes/facultyRoutes.js";
+app.use("/api/faculty", facultyRoutes);
 
 // Serve static files
 import path from "path";

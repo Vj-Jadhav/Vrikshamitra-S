@@ -1,6 +1,6 @@
 // InstituteRegister.js
 import { useState } from "react";
-import { API } from "../utils/api";
+import { API, registerInstitute } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
@@ -25,7 +25,7 @@ const initialFormState = {
   instituteType: "",
   accreditation: "",
   affiliation: "",
-  
+
   // Contact Information
   address: "",
   city: "",
@@ -35,7 +35,7 @@ const initialFormState = {
   phone: "",
   website: "",
   alternatePhone: "",
-  
+
   // Institute Details
   totalStudents: "",
   totalStaff: "",
@@ -43,33 +43,33 @@ const initialFormState = {
   establishedYear: "",
   campusArea: "",
   infrastructure: [],
-  
+
   // Principal/Head Details
   principalName: "",
   principalEmail: "",
   principalPhone: "",
   principalQualification: "",
   principalExperience: "",
-  
+
   // Academic Details
   academicSession: "",
   workingDays: [],
-  
+
   // School specific
   schoolLevel: "",
   grades: [],
   board: "",
-  
+
   // College specific
   departments: [],
   courses: [],
   universityAffiliated: "",
-  
+
   // University specific
   faculties: [],
   programs: [],
   researchCenters: [],
-  
+
   // Custom fields
   customDepartment: "",
   customCourse: "",
@@ -140,7 +140,7 @@ export default function InstituteRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateStep(4)) {
       alert("Please fix the errors before submitting");
       return;
@@ -158,7 +158,7 @@ export default function InstituteRegister() {
         instituteType: form.instituteType,
         accreditation: form.accreditation?.trim() || "",
         affiliation: form.affiliation?.trim() || "",
-        
+
         // Contact Info
         address: form.address.trim(),
         city: form.city.trim(),
@@ -168,7 +168,7 @@ export default function InstituteRegister() {
         phone: form.phone.trim(),
         website: form.website?.trim() || "",
         alternatePhone: form.alternatePhone?.trim() || "",
-        
+
         // Institute Details
         totalStudents: form.totalStudents ? parseInt(form.totalStudents) : 0,
         totalStaff: form.totalStaff ? parseInt(form.totalStaff) : 0,
@@ -176,14 +176,14 @@ export default function InstituteRegister() {
         establishedYear: form.establishedYear ? parseInt(form.establishedYear) : null,
         campusArea: form.campusArea?.trim() || "",
         infrastructure: form.infrastructure || [],
-        
+
         // Principal Details
         principalName: form.principalName.trim(),
         principalEmail: form.principalEmail?.trim() || "",
         principalPhone: form.principalPhone?.trim() || "",
         principalQualification: form.principalQualification?.trim() || "",
         principalExperience: form.principalExperience?.trim() || "",
-        
+
         // Academic Details - Send as array
         academicSession: form.academicSession || "",
         workingDays: form.workingDays || [],
@@ -210,17 +210,17 @@ export default function InstituteRegister() {
       };
 
       console.log("📤 Sending registration payload:", payload);
-      
-      // FIXED: Use API instance to make the registration request
-      const response = await API.post("/api/institute/register", payload);
-      console.log("✅ Registration successful:", response.data);
-      
+
+      // FIXED: Use registerInstitute utility to ensure correct endpoint
+      const data = await registerInstitute(payload);
+      console.log("✅ Registration successful:", data);
+
       alert("Institute registered successfully! You can now login.");
       navigate("/login");
-      
+
     } catch (err) {
       console.error("❌ Registration error:", err);
-      
+
       if (err.response?.data) {
         const errorData = err.response.data;
         alert(`Registration failed: ${errorData.message || "Unknown error"}`);
@@ -263,7 +263,7 @@ export default function InstituteRegister() {
   const renderStepContent = () => {
     // Ensure form is always defined
     const currentForm = form || initialFormState;
-    
+
     switch (step) {
       case 1:
         return <BasicInfoStep form={currentForm} setForm={setForm} errors={errors} />;
@@ -271,9 +271,9 @@ export default function InstituteRegister() {
         return <InstituteTypeStep form={currentForm} setForm={setForm} errors={errors} />;
       case 3:
         return (
-          <ContactInfoStep 
-            form={currentForm} 
-            setForm={setForm} 
+          <ContactInfoStep
+            form={currentForm}
+            setForm={setForm}
             errors={errors}
             renderInstituteSpecificFields={renderInstituteSpecificFields}
           />
@@ -306,11 +306,10 @@ export default function InstituteRegister() {
             {[1, 2, 3, 4].map((stepNum) => (
               <div key={stepNum} className="flex flex-col items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                    step >= stepNum
+                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${step >= stepNum
                       ? "bg-blue-600 border-blue-600 text-white"
                       : "border-gray-300 text-gray-500"
-                  }`}
+                    }`}
                 >
                   {step > stepNum ? <Check size={20} /> : stepNum}
                 </div>
@@ -349,7 +348,7 @@ export default function InstituteRegister() {
                 Previous
               </button>
             )}
-            
+
             {step < 4 ? (
               <button
                 type="button"
