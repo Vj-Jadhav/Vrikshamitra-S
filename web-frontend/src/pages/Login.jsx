@@ -6,10 +6,10 @@ import { motion } from "framer-motion";
 import { Lock, Mail, User } from "lucide-react";
 
 export default function Login() {
-  const [form, setForm] = useState({ 
-    email: "", 
-    password: "", 
-    role: "" 
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    role: ""
   });
   const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
@@ -18,33 +18,33 @@ export default function Login() {
   const handleOTPFlow = async (email, role) => {
     try {
       setLoading(true);
-      
+
       // FIXED: Correct endpoint URLs
-      const endpoint = role === "student" 
-        ? "/auth/student/login-attempt" 
+      const endpoint = role === "student"
+        ? "/auth/student/login-attempt"
         : "/auth/faculty/login-attempt";
-      
+
       console.log("Calling OTP endpoint:", endpoint, "with email:", email);
-      
+
       const attemptResponse = await API.post(endpoint, { email });
-      
+
       console.log("OTP response:", attemptResponse.data);
-      
+
       if (attemptResponse.data.requiresPasswordSetup) {
         // Redirect to OTP verification page
-        navigate("/setup-password", { 
-          state: { 
+        navigate("/setup-password", {
+          state: {
             email: email,
             role: role,
             otpExpires: attemptResponse.data.otpExpires,
             message: attemptResponse.data.message
-          } 
+          }
         });
         return true; // OTP flow initiated
       }
-      
+
       return false; // No OTP needed, proceed with normal login
-      
+
     } catch (error) {
       console.error("OTP flow error:", error);
       alert(error.response?.data?.message || "Error initiating password setup");
@@ -103,16 +103,16 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      
+
       // Handle specific error cases
       if (error.response?.data?.requiresPasswordSetup) {
         // This shouldn't happen with our flow, but as backup
-        navigate("/setup-password", { 
-          state: { 
+        navigate("/setup-password", {
+          state: {
             email: form.email,
             role: form.role,
             message: error.response.data.message
-          } 
+          }
         });
       } else {
         alert(error.response?.data?.message || "Invalid credentials. Please try again.");
@@ -228,7 +228,7 @@ export default function Login() {
         <p className="text-center text-sm text-gray-500 mt-6">
           Don't have an account?{" "}
           <span
-            onClick={() => navigate("/InstituteRegistration")}
+            onClick={() => navigate("/Institute-Registration")}
             className="text-green-700 font-semibold cursor-pointer hover:underline"
           >
             Register
@@ -237,14 +237,14 @@ export default function Login() {
 
         {/* Role-specific info */}
         {roleInfo && (
-  <div
-    className={`mt-4 p-3 ${roleInfo.bgColor} rounded-lg border ${roleInfo.borderColor}`}
-  >
-    <p className={`text-xs ${roleInfo.textColor} text-center`}>
-      <strong>First time {form.role}?</strong> {roleInfo.message}
-    </p>
-  </div>
-)}
+          <div
+            className={`mt-4 p-3 ${roleInfo.bgColor} rounded-lg border ${roleInfo.borderColor}`}
+          >
+            <p className={`text-xs ${roleInfo.textColor} text-center`}>
+              <strong>First time {form.role}?</strong> {roleInfo.message}
+            </p>
+          </div>
+        )}
 
       </motion.div>
     </div>
