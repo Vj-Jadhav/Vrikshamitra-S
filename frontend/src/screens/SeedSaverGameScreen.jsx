@@ -2,7 +2,7 @@ import React from "react";
 import { View, Platform } from "react-native";
 import { WebView } from "react-native-webview";
 
-export default function AQIGameScreen() {
+export default function SeedSaverGameScreen() {
   return (
     <View style={{ flex: 1 }}>
       <WebView

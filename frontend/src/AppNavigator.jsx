@@ -56,15 +56,15 @@ export default function AppNavigator() {
         <Stack.Screen name="LearningModuleScreen" component={LearningModuleScreen} />
         <Stack.Screen name="GamesScreen" component={GamesScreen} />
         <Stack.Screen name="ChallengesScreen" component={ChallengesScreen} />
-        <Stack.Screen 
+        <Stack.Screen
           name="ChallengeDetailsScreen"  // THIS NAME MUST MATCH EXACTLY
           component={ChallengeDetailsScreen}
         />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
-        
-        
-        
+
+
+
 
         {/* Bottom Navigation Layout */}
         <Stack.Screen name="Main" component={MainLayout} />
@@ -80,9 +80,9 @@ export default function AppNavigator() {
         <Stack.Screen name="Garden" component={GardenScreen} />
         <Stack.Screen name="Recycle" component={RecycleScreen} />
         <Stack.Screen name="Learning" component={LearningScreen} />
-        <Stack.Screen name="OceanGame" component={OceanGameScreen}/>
-        <Stack.Screen name="AQIGame" component={AQIGameScreen}/>
-        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen}/>
+        <Stack.Screen name="OceanGame" component={OceanGameScreen} />
+        <Stack.Screen name="AQIGame" component={AQIGameScreen} />
+        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen} />
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />
@@ -91,3 +91,5 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+// Force reload
