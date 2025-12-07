@@ -20,13 +20,25 @@ import axios from "axios";
 import { API_ENDPOINTS } from '../config/config.js';
 
 const BASE_URL = API_ENDPOINTS.SUBMISSIONS;
-const CLOUDINARY_CLOUD_NAME = "dabzuwe9l"; // Replace with your Cloudinary cloud name
-const CLOUDINARY_UPLOAD_PRESET = "unsigned_upload"; // Replace with your upload preset
-const CLOUDINARY_API_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const { width: screenWidth } = Dimensions.get("window");
 
 const ChallengeDetailsScreen = ({ route, navigation }) => {
+  // Safety check for route params
+  if (!route.params || !route.params.challenge) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.errorText}>Error: Challenge data missing</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={{ color: '#4CAF50', marginTop: 10 }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   const { challenge } = route.params;
   const [selectedImage, setSelectedImage] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -194,63 +206,15 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
     );
   };
 
-  // ===================
-  // UPLOAD TO CLOUDINARY
-  // ===================
-  const uploadToCloudinary = async (imageUri, fileName, fileType) => {
-    try {
-      setUploadProgress(10); // Start progress
 
-      const formData = new FormData();
-      formData.append("file", {
-        uri: Platform.OS === "ios" ? imageUri.replace("file://", "") : imageUri,
-        type: fileType || "image/jpeg",
-        name: fileName || `ecoproof_${Date.now()}.jpg`,
-      });
-      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-      formData.append("folder", "ecochallenge_submissions");
-      formData.append("tags", "ecochallenge,student_submission");
-      formData.append("context", `challenge=${challenge.title}|timestamp=${Date.now()}`);
-
-      setUploadProgress(30); // Upload started
-
-      const response = await fetch(CLOUDINARY_API_URL, {
-        method: "POST",
-        body: formData,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      setUploadProgress(70); // Upload completed, processing
-
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error.message);
-      }
-
-      setUploadProgress(100); // Upload successful
-
-      return {
-        url: data.secure_url,
-        publicId: data.public_id,
-        format: data.format,
-        bytes: data.bytes,
-        width: data.width,
-        height: data.height,
-        thumbnailUrl: data.secure_url.replace("/upload/", "/upload/w_300,h_300,c_fill/"),
-      };
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
-      throw new Error(`Cloudinary upload failed: ${error.message}`);
-    }
-  };
 
   // ===================
   // UPLOAD SUBMISSION
   // ===================
-  const uploadSubmission = async () => {
+  // ===================
+  // UPLOAD SUBMISSION
+  // ===================
+  const submitProof = async () => {
     if (!selectedImage) {
       Alert.alert("Upload Required", "Please select an image first.");
       return;
@@ -289,50 +253,44 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
         return;
       }
 
-      // Upload to Cloudinary
-      Alert.alert(
-        "Uploading to Cloudinary",
-        "Please wait while we upload your image...",
-        [],
-        { cancelable: false }
-      );
+      // Create FormData
+      const formData = new FormData();
+      formData.append("file", {
+        uri: Platform.OS === "ios" ? selectedImage.uri.replace("file://", "") : selectedImage.uri,
+        type: selectedImage.type || "image/jpeg",
+        name: selectedImage.fileName || `proof_${Date.now()}.jpg`,
+      });
 
-      const cloudinaryResult = await uploadToCloudinary(
-        selectedImage.uri,
-        selectedImage.fileName,
-        selectedImage.type
-      );
+      // Append other data
+      formData.append("challengeId", challenge.id || challenge._id);
+      formData.append("studentId", studentId);
+      formData.append("studentName", studentName);
+      formData.append("studentEmail", studentEmail);
+      formData.append("challengeTitle", challenge.title);
+      formData.append("facultyId", challenge.facultyId || challenge.createdBy);
+      formData.append("facultyName", challenge.facultyName || "Unknown Faculty");
+      formData.append("points", challenge.ecoPoints);
 
-      // Save submission data to backend
-      const submissionData = {
-        challengeId: challenge.id || challenge._id,
-        studentId: studentId,
-        studentName: studentName,
-        studentEmail: studentEmail,
-        challengeTitle: challenge.title,
-        facultyId: challenge.createdBy || challenge.facultyId,
-        facultyName: challenge.facultyName,
-        points: challenge.ecoPoints,
-        cloudinaryUrl: cloudinaryResult.url,
-        cloudinaryPublicId: cloudinaryResult.publicId,
-        thumbnailUrl: cloudinaryResult.thumbnailUrl,
-        imageFormat: cloudinaryResult.format,
-        imageSize: cloudinaryResult.bytes,
-        imageDimensions: {
-          width: cloudinaryResult.width,
-          height: cloudinaryResult.height,
-        },
-      };
+      if (selectedImage.width && selectedImage.height) {
+        formData.append("imageDimensions", JSON.stringify({
+          width: selectedImage.width,
+          height: selectedImage.height
+        }));
+      }
 
       const response = await axios.post(
         `${BASE_URL}/submit`,
-        submissionData,
+        formData,
         {
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
           timeout: 30000,
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          },
         }
       );
 
@@ -438,21 +396,21 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
           <Text style={[styles.statusText, { color: iconColor }]}>{statusText}</Text>
         </View>
 
-        {submissionDetails?.cloudinaryUrl && (
+        {(submissionDetails?.imageUrl || submissionDetails?.localFilePath || submissionDetails?.cloudinaryUrl) && (
           <TouchableOpacity
             style={styles.cloudinaryInfo}
             onPress={() => {
-              if (submissionDetails.cloudinaryUrl) {
+              if (submissionDetails?.imageUrl || submissionDetails?.localFilePath || submissionDetails?.cloudinaryUrl) {
                 Alert.alert(
-                  "Cloudinary Storage",
-                  "Your image is securely stored on Cloudinary's cloud storage.",
+                  "Secure Storage",
+                  "Your image is securely stored on our server.",
                   [{ text: "OK" }]
                 );
               }
             }}
           >
             <Icon name="cloud-upload" size={16} color="#2196F3" />
-            <Text style={styles.cloudinaryText}>Stored on Cloudinary</Text>
+            <Text style={styles.cloudinaryText}>Stored on Server</Text>
           </TouchableOpacity>
         )}
 
@@ -583,23 +541,15 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
           </Text>
 
           {/* Image Selection Buttons */}
+          {/* Image Selection Button */}
           <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.galleryButton]}
-              onPress={pickImage}
-              disabled={uploading}
-            >
-              <Icon name="images" size={22} color="#fff" />
-              <Text style={styles.buttonText}>Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.cameraButton]}
+              style={[styles.actionButton, styles.cameraButton, { flex: 1 }]}
               onPress={takePhoto}
               disabled={uploading}
             >
               <Icon name="camera" size={22} color="#fff" />
-              <Text style={styles.buttonText}>Camera</Text>
+              <Text style={styles.buttonText}>Take Photo</Text>
             </TouchableOpacity>
           </View>
 
@@ -632,7 +582,7 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
               styles.uploadButton,
               (uploading || !selectedImage) && styles.disabledButton,
             ]}
-            onPress={uploadSubmission}
+            onPress={submitProof}
             disabled={uploading || !selectedImage}
           >
             {uploading ? (
@@ -641,39 +591,21 @@ const ChallengeDetailsScreen = ({ route, navigation }) => {
               <View style={styles.uploadButtonContent}>
                 <Icon name="cloud-upload" size={20} color="#fff" />
                 <Text style={styles.uploadButtonText}>
-                  Submit to Cloudinary
+                  Submit Proof
                 </Text>
               </View>
             )}
           </TouchableOpacity>
 
-          {/* Cloudinary Info */}
+          {/* Server Upload Info */}
           <View style={styles.cloudinaryInfoCard}>
             <View style={styles.cloudinaryHeader}>
-              <Icon name="cloud" size={20} color="#2196F3" />
-              <Text style={styles.cloudinaryTitle}>Cloudinary Storage</Text>
+              <Icon name="cloud-upload" size={20} color="#2196F3" />
+              <Text style={styles.cloudinaryTitle}>Server Upload</Text>
             </View>
             <Text style={styles.cloudinaryDescription}>
-              Your images are securely uploaded to Cloudinary's cloud storage for fast, reliable access by faculty reviewers.
+              Your proof is uploaded directly to our secure server for faculty review.
             </Text>
-            <View style={styles.requirementsList}>
-              <View style={styles.requirementItem}>
-                <Icon name="checkmark-circle" size={16} color="#4CAF50" />
-                <Text style={styles.requirementText}>Max size: 10MB</Text>
-              </View>
-              <View style={styles.requirementItem}>
-                <Icon name="checkmark-circle" size={16} color="#4CAF50" />
-                <Text style={styles.requirementText}>JPEG, PNG, GIF formats</Text>
-              </View>
-              <View style={styles.requirementItem}>
-                <Icon name="checkmark-circle" size={16} color="#4CAF50" />
-                <Text style={styles.requirementText}>Secure cloud storage</Text>
-              </View>
-              <View style={styles.requirementItem}>
-                <Icon name="checkmark-circle" size={16} color="#4CAF50" />
-                <Text style={styles.requirementText}>Fast loading for faculty</Text>
-              </View>
-            </View>
           </View>
         </View>
       )}

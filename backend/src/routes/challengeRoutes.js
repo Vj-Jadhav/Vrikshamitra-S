@@ -10,25 +10,29 @@ import {
 
 import { getStudentChallengesWithDetails } from "../controllers/challengeProgressController.js";
 
-// ← ADD THIS
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// GET all challenges
-router.get("/", getChallenges);
-
-// GET challenges for a specific student
+/**
+ * STUDENT ROUTES (No Auth Required)
+ */
 router.get("/student/:studentId", getStudentChallengesWithDetails);
 
-// ← NEW ROUTE ADDED HERE
+/**
+ * FACULTY & ADMIN ROUTES (Protected)
+ */
 
-// Create new challenge
-router.post("/", createChallenge);
+// Get all challenges — faculty/admin only
+router.get("/", protect, getChallenges);
 
-// Update challenge
-router.put("/:id", updateChallenge);
+// Create new challenge — faculty/admin only
+router.post("/", protect, createChallenge);
 
-// Delete challenge
-router.delete("/:id", deleteChallenge);
+// Update challenge — faculty/admin only
+router.put("/:id", protect, updateChallenge);
+
+// Delete challenge — faculty/admin only
+router.delete("/:id", protect, deleteChallenge);
 
 export default router;

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { saveAs } from 'file-saver';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://10.101.36.133:5000";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
 
 const STATUS = {
   PENDING: 'pending',
@@ -11,24 +11,24 @@ const STATUS = {
 };
 
 const STATUS_CONFIG = {
-  pending: { 
-    label: "PENDING REVIEW", 
-    color: "text-yellow-700", 
-    bg: "bg-yellow-100", 
+  pending: {
+    label: "PENDING REVIEW",
+    color: "text-yellow-700",
+    bg: "bg-yellow-100",
     border: "border-yellow-300",
     icon: "⏳"
   },
-  approved: { 
-    label: "APPROVED", 
-    color: "text-emerald-700", 
-    bg: "bg-emerald-100", 
+  approved: {
+    label: "APPROVED",
+    color: "text-emerald-700",
+    bg: "bg-emerald-100",
     border: "border-emerald-300",
     icon: "✅"
   },
-  rejected: { 
-    label: "REJECTED", 
-    color: "text-red-700", 
-    bg: "bg-red-100", 
+  rejected: {
+    label: "REJECTED",
+    color: "text-red-700",
+    bg: "bg-red-100",
     border: "border-red-300",
     icon: "❌"
   }
@@ -53,15 +53,34 @@ const FacultySubmissions = () => {
 
   const CLOUDINARY_CLOUD_NAME = "your-cloud-name"; // Replace with your Cloudinary cloud name
 
+  const getToken = () => {
+    return localStorage.getItem('token');
+  };
+
   const fetchSubmissions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await axios.get(`${API_BASE_URL}/api/submissions`);
-      
+
+      const token = getToken();
+
+      if (!token) {
+        setError("Please login to view submissions");
+        setLoading(false);
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
+
+      const res = await axios.get(`${API_BASE_URL}/api/submissions`, config);
+
       const submissionsData = res.data.submissions || res.data;
       setSubmissions(submissionsData || []);
-      
+
       // Calculate stats
       const statsData = {
         total: submissionsData.length,
@@ -71,7 +90,7 @@ const FacultySubmissions = () => {
         cloudinaryCount: submissionsData.filter(s => s.cloudinaryUrl).length
       };
       setStats(statsData);
-      
+
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Failed to fetch submissions";
       setError(errorMessage);
@@ -89,11 +108,19 @@ const FacultySubmissions = () => {
     try {
       setProcessingIds(prev => new Set(prev).add(id));
 
+      const token = getToken();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
+
       const res = await axios.patch(
         `${API_BASE_URL}/api/submissions/${id}/approve`,
-        { 
-          feedback: feedback[id]?.trim() || "Good job! Submission approved." 
-        }
+        {
+          feedback: feedback[id]?.trim() || "Good job! Submission approved."
+        },
+        config
       );
 
       if (res.data.success) {
@@ -132,11 +159,19 @@ const FacultySubmissions = () => {
     try {
       setProcessingIds(prev => new Set(prev).add(id));
 
+      const token = getToken();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
+
       const res = await axios.patch(
         `${API_BASE_URL}/api/submissions/${id}/reject`,
-        { 
-          feedback: feedbackText 
-        }
+        {
+          feedback: feedbackText
+        },
+        config
       );
 
       if (res.data.success) {
@@ -173,41 +208,51 @@ const FacultySubmissions = () => {
   };
 
   const getOptimizedImageUrl = (submission) => {
-    if (!submission.cloudinaryUrl) {
-      return submission.fileUrl || `${API_BASE_URL}/api/submissions/download/${submission._id}`;
+    // Priority 1: Check for local image URL provided by backend
+    if (submission.imageUrl) {
+      return submission.imageUrl.startsWith("http") ? submission.imageUrl : `${API_BASE_URL}${submission.imageUrl}`;
     }
-    
-    // Apply Cloudinary transformations for optimal display
-    const cloudinaryUrl = submission.cloudinaryUrl;
-    
-    // Insert transformations for better display
-    if (cloudinaryUrl.includes('/upload/')) {
-      const parts = cloudinaryUrl.split('/upload/');
-      return `${parts[0]}/upload/w_1200,h_800,c_fill,q_auto,f_auto/${parts[1]}`;
+
+    // Priority 2: Check for Cloudinary URL
+    if (submission.cloudinaryUrl) {
+      const cloudinaryUrl = submission.cloudinaryUrl;
+      // Use efficient transformation if possible
+      if (cloudinaryUrl.includes('/upload/')) {
+        const parts = cloudinaryUrl.split('/upload/');
+        return `${parts[0]}/upload/w_1200,h_800,c_fill,q_auto,f_auto/${parts[1]}`;
+      }
+      return cloudinaryUrl;
     }
-    
-    return cloudinaryUrl;
+
+    // Use placeholder or broken image
+    return "https://via.placeholder.com/600x400?text=No+Proof+Image";
   };
 
   const getThumbnailUrl = (submission) => {
+    // Priority 1: Check for local image URL
+    if (submission.imageUrl) {
+      return submission.imageUrl.startsWith("http") ? submission.imageUrl : `${API_BASE_URL}${submission.imageUrl}`;
+    }
+
     if (submission.thumbnailUrl) {
       return submission.thumbnailUrl;
     }
-    
+
     if (submission.cloudinaryUrl) {
       const cloudinaryUrl = submission.cloudinaryUrl;
       if (cloudinaryUrl.includes('/upload/')) {
         const parts = cloudinaryUrl.split('/upload/');
         return `${parts[0]}/upload/w_300,h_200,c_fill/${parts[1]}`;
       }
+      return cloudinaryUrl;
     }
-    
-    return getOptimizedImageUrl(submission);
+
+    return "https://via.placeholder.com/300x200?text=Proof";
   };
 
   const handleViewProof = async (submission) => {
     const imageUrl = getOptimizedImageUrl(submission);
-    
+
     // Open image in modal
     setSelectedImage({
       url: imageUrl,
@@ -220,10 +265,10 @@ const FacultySubmissions = () => {
       const imageUrl = getOptimizedImageUrl(submission);
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      
+
       const fileName = `submission_${submission.studentId?.name || 'student'}_${submission._id}.${submission.imageFormat || 'jpg'}`;
       saveAs(blob, fileName);
-      
+
       alert(`✅ Image downloaded as ${fileName}`);
     } catch (error) {
       console.error("Download error:", error);
@@ -237,9 +282,9 @@ const FacultySubmissions = () => {
 
   const filteredSubmissions = submissions.filter(sub => {
     const matchesFilter = filter === 'all' || sub.status === filter;
-    
+
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       sub.studentId?.name?.toLowerCase().includes(searchLower) ||
       sub.challengeId?.title?.toLowerCase().includes(searchLower) ||
       sub.studentId?.email?.toLowerCase().includes(searchLower) ||
@@ -333,7 +378,7 @@ const FacultySubmissions = () => {
           </div>
           <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Submissions</h3>
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={fetchSubmissions}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
           >
@@ -355,14 +400,14 @@ const FacultySubmissions = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button 
+          <button
             onClick={handleExportCSV}
             className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center gap-2"
             title="Export all submissions to CSV"
           >
             📥 Export CSV
           </button>
-          <button 
+          <button
             onClick={fetchSubmissions}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
           >
@@ -387,7 +432,7 @@ const FacultySubmissions = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -399,7 +444,7 @@ const FacultySubmissions = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -411,7 +456,7 @@ const FacultySubmissions = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -423,7 +468,7 @@ const FacultySubmissions = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -459,8 +504,8 @@ const FacultySubmissions = () => {
             </div>
           </div>
           <div className="flex gap-3">
-            <select 
-              value={filter} 
+            <select
+              value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
             >
@@ -483,8 +528,8 @@ const FacultySubmissions = () => {
             {submissions.length === 0 ? "No submissions yet" : "No matching submissions"}
           </h3>
           <p className="text-gray-500 max-w-md mx-auto">
-            {submissions.length === 0 
-              ? "Students haven't submitted any work for review yet." 
+            {submissions.length === 0
+              ? "Students haven't submitted any work for review yet."
               : "Try adjusting your search or filter criteria."}
           </p>
         </div>
@@ -494,7 +539,7 @@ const FacultySubmissions = () => {
             const statusConfig = STATUS_CONFIG[sub.status] || STATUS_CONFIG.pending;
             const isProcessing = processingIds.has(sub._id);
             const thumbnailUrl = getThumbnailUrl(sub);
-            
+
             return (
               <div
                 key={sub._id}
@@ -546,7 +591,7 @@ const FacultySubmissions = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
@@ -560,7 +605,7 @@ const FacultySubmissions = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
@@ -618,7 +663,7 @@ const FacultySubmissions = () => {
                     {/* Right Column - Actions & Thumbnail */}
                     <div className="lg:w-80 space-y-4">
                       {/* Image Thumbnail */}
-                      <div 
+                      <div
                         className="relative rounded-lg overflow-hidden cursor-pointer group"
                         onClick={() => handleViewProof(sub)}
                       >
@@ -694,9 +739,8 @@ const FacultySubmissions = () => {
                             <button
                               onClick={() => handleApprove(sub._id)}
                               disabled={isProcessing}
-                              className={`px-4 py-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
-                                isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
+                              className={`px-4 py-2.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm font-medium flex items-center justify-center gap-2 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
                             >
                               {isProcessing ? (
                                 <>
@@ -712,9 +756,8 @@ const FacultySubmissions = () => {
                             <button
                               onClick={() => handleReject(sub._id)}
                               disabled={isProcessing}
-                              className={`px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
-                                isProcessing ? 'opacity-50 cursor-not-allowed' : ''
-                              }`}
+                              className={`px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium flex items-center justify-center gap-2 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
                             >
                               {isProcessing ? (
                                 <>
@@ -761,7 +804,7 @@ const FacultySubmissions = () => {
                 </svg>
               </button>
             </div>
-            
+
             <div className="p-4 max-h-[70vh] overflow-auto">
               <img
                 src={selectedImage.url}
@@ -772,7 +815,7 @@ const FacultySubmissions = () => {
                 }}
               />
             </div>
-            
+
             <div className="p-4 border-t flex justify-between items-center">
               <div className="text-sm text-gray-600">
                 {selectedImage.submission.cloudinaryUrl && (

@@ -1,21 +1,30 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const submissionsController = require("../controllers/submissionsController");
-const authMiddleware = require("../middlewares/auth");
+import * as submissionsController from "../controllers/submissionsController.js";
+import { protect as authMiddleware } from "../middlewares/auth.js";
+import upload from "../middleware/uploadMiddleware.js";
+import { facultyOnly } from "../middlewares/roleAuth.js"; // <-- ADD THIS
 
-// Public routes
+// Public route - no auth
 router.get("/status", submissionsController.getSubmissionStatus);
 
-// Protected routes (require authentication)
+// Protected routes
 router.use(authMiddleware);
 
-// Student routes
-router.post("/submit", submissionsController.submitProof);
+// Student route
+router.post(
+  "/submit",
+  upload.single("file"),
+  submissionsController.submitProof
+);
 
-// Faculty routes
-router.get("/", submissionsController.getAllSubmissions);
-router.patch("/:id/approve", submissionsController.approveSubmission);
-router.patch("/:id/reject", submissionsController.rejectSubmission);
-router.delete("/:id", submissionsController.deleteSubmission);
+// Faculty-only routes
+router.get("/", facultyOnly, submissionsController.getAllSubmissions);
 
-module.exports = router;
+router.patch("/:id/approve", facultyOnly, submissionsController.approveSubmission);
+
+router.patch("/:id/reject", facultyOnly, submissionsController.rejectSubmission);
+
+router.delete("/:id", facultyOnly, submissionsController.deleteSubmission);
+
+export default router;

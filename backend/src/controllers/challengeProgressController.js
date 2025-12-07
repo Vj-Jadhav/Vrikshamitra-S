@@ -1,7 +1,7 @@
 
-
 import StudentChallengeProgress from "../models/StudentChallengeProgress.js";
 import Challenge from "../models/Challenge.js";
+import ChallengeAssignment from "../models/ChallengeAssignment.js"; // Import Assignment model
 
 export const getStudentChallengesWithDetails = async (req, res) => {
   try {
@@ -13,39 +13,70 @@ export const getStudentChallengesWithDetails = async (req, res) => {
       return res.status(400).json({ message: "studentId is required" });
     }
 
-    // STEP 1: Fetch the challenge IDs for this student
-    const progressData = await StudentChallengeProgress.find(
-      { studentId },
-      { challengeId: 1, _id: 0 }
-    ).lean();
+    // STEP 1: Fetch progress records with Assignment details populated
+    // We populate 'facultyCoordinator' in the assignment because that is the Faculty responsible for this.
+    const progressData = await StudentChallengeProgress.find({ studentId })
+      .populate({
+        path: "assignmentId",
+        populate: {
+          path: "facultyCoordinator",
+          select: "name email _id"
+        }
+      })
+      .lean();
 
-    console.log(`Found ${progressData.length} progress records for student`);
+    console.log(`Found ${progressData.length} progress records `);
 
     if (progressData.length === 0) {
-      console.log("No challenges found for this student");
       return res.status(200).json({
         success: true,
-        message: "No challenges found for this student",
+        message: "No challenges found",
         challenges: [],
       });
     }
 
-    // Extract only challengeIds from results
+    // Extract challenge IDs
     const challengeIds = progressData.map((item) => item.challengeId);
-    console.log(`Challenge IDs: ${JSON.stringify(challengeIds)}`);
 
-    // STEP 2: Fetch full challenge details using those IDs
+    // STEP 2: Fetch full challenge details
     const fullChallenges = await Challenge.find({
       _id: { $in: challengeIds },
-    }).lean();
+    }).populate("createdBy", "fullName email").lean();
 
-    console.log(`Found ${fullChallenges.length} full challenges`);
-    console.log(`First challenge sample: ${JSON.stringify(fullChallenges[0])}`);
+    // STEP 3: Merge Challenge Data with Assignment/Faculty Data
+    const challengesWithFaculty = fullChallenges.map(challenge => {
+      const progress = progressData.find(p => p.challengeId.toString() === challenge._id.toString());
+      const assignment = progress?.assignmentId;
+
+      // DESTINATION LOGIC:
+      // Submissions should go to the Faculty Coordinator if one is assigned.
+      // If not, they fallback to the Challenge Creator (e.g., if created directly by a faculty without assignment, or by admin).
+
+      let facultyId = challenge.createdBy?._id || challenge.createdBy;
+      let facultyName = challenge.createdBy?.fullName || "Institute Admin";
+
+      if (assignment?.facultyCoordinator) {
+        facultyId = assignment.facultyCoordinator._id;
+        facultyName = assignment.facultyCoordinator.name;
+      }
+
+      return {
+        ...challenge,
+        facultyId: facultyId,
+        facultyName: facultyName,
+        createdBy: challenge.createdBy?._id || challenge.createdBy
+      };
+    });
+
+    console.log(`Returning ${challengesWithFaculty.length} challenges with faculty details`);
+    if (challengesWithFaculty.length > 0) {
+      console.log("Sample Faculty ID:", challengesWithFaculty[0].facultyId);
+    }
 
     return res.status(200).json({
       success: true,
-      count: fullChallenges.length,
-      challenges: fullChallenges,
+      count: challengesWithFaculty.length,
+      challenges: challengesWithFaculty,
     });
   } catch (error) {
     console.error("Error fetching student challenge details:", error);

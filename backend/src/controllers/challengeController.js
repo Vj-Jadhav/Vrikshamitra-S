@@ -2,9 +2,63 @@ import Challenge from "../models/Challenge.js";
 
 export const getChallenges = async (req, res) => {
   try {
-    const challenges = await Challenge.find().sort({ createdAt: -1 });
+    let query = {};
+
+    // If the user is authenticated (which they should be for this route), check their role
+    // Assuming authMiddleware adds req.user
+    if (req.user) {
+      if (req.user.role === 'faculty') {
+        // Faculty should see:
+        // 1. Challenges they created
+        // 2. Challenges assigned to them (via ChallengeAssignment - logic needed or simplified "createdBy")
+        // For now, based on user request "allocated by institute", it might mean "Challenges assigned to them".
+        // Typically, challenges are "Questions".
+        // If a faculty logs in, they want to see challenges they can MANAGE or challenges their students are doing?
+        // "ManageChallenges.jsx" implies managing challenges they created or have rights to.
+
+        // Let's filter by createdBy for now as a safe default for "My Challenges"
+        // If the user specifically said "allocated by institute", that suggests `ChallengeAssignment`.
+        // But `Challenge` model has `createdBy`.
+        // IF challenges are created BY the institute AND "assigned" to faculty to oversee, checking `createdBy` won't work if it's the Institute ID.
+
+        // Let's check ChallengeAssignment to find challenges assigned to this faculty.
+        // This is complex because we need to join/lookup.
+
+        // QUICK FIX: Filter by createdBy for simple "My Created Challenges" view
+        // OR if request query param exists?
+
+        // Re-reading user request: "show the faculty that only those challenges that they got allocated by institute"
+        // This likely refers to `ChallengeAssignment` where `facultyCoordinator` or `assignedBy` logic applies.
+        // However, `ManageChallenges` fetches `/api/challenges`.
+
+        // Let's implement a hybrid:
+        // If role is faculty, find ChallengeAssignments where `facultyCoordinator` == req.user.id
+        // Collect those challengeIds.
+        // ALSO find challenges where `createdBy` == req.user.id
+        // Return unique set.
+
+        const { default: ChallengeAssignment } = await import("../models/ChallengeAssignment.js");
+
+        // Find assignments where this faculty is the coordinator
+        const assignments = await ChallengeAssignment.find({ facultyCoordinator: req.user.id }).select('challengeId');
+        const assignedChallengeIds = assignments.map(a => a.challengeId);
+
+        query = {
+          $or: [
+            { createdBy: req.user.id },
+            { _id: { $in: assignedChallengeIds } }
+          ]
+        };
+      } else if (req.user.role === 'institute') {
+        query = { createdBy: req.user.id };
+      }
+      // Admins see all
+    }
+
+    const challenges = await Challenge.find(query).sort({ createdAt: -1 });
     res.status(200).json(challenges);
   } catch (error) {
+    console.error("Get challenges error:", error);
     res.status(500).json({ message: "Failed to fetch challenges", error });
   }
 };
@@ -16,7 +70,7 @@ export const getChallenges = async (req, res) => {
 export const createChallenge = async (req, res) => {
   try {
     console.log('📥 Received challenge creation data:', req.body); // Debug log
-    
+
     const {
       title,
       description,
@@ -51,7 +105,7 @@ export const createChallenge = async (req, res) => {
     });
 
     console.log('💾 Created challenge:', challenge); // Debug log
-    
+
     res.status(201).json(challenge);
   } catch (error) {
     console.error('❌ Error creating challenge:', error); // Debug log
@@ -66,7 +120,7 @@ export const createChallenge = async (req, res) => {
 export const updateChallenge = async (req, res) => {
   try {
     console.log('📥 Received challenge update data:', req.body); // Debug log
-    
+
     const updates = { ...req.body };
 
     // Keep mandatory consistent with priority if changed
@@ -90,7 +144,7 @@ export const updateChallenge = async (req, res) => {
     }
 
     console.log('💾 Updated challenge:', updatedChallenge); // Debug log
-    
+
     res.status(200).json(updatedChallenge);
   } catch (error) {
     console.error('❌ Error updating challenge:', error); // Debug log

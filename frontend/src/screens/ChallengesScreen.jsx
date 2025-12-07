@@ -199,7 +199,11 @@ const ChallengesScreen = ({ navigation }) => {
       startDate: item.startDate,
       status: item.status || "active",
       requirements: item.requirements || "",
-      resources: item.resources || []
+      resources: item.resources || [],
+      // Ensure these fields are passed for submission
+      createdBy: item.createdBy,
+      facultyId: item.facultyId || item.createdBy, // some challenges might use one or other
+      facultyName: item.facultyName || "Institute Faculty" // Fallback name if not provided
     };
 
     console.log(`Final ecoPoints value for "${challenge.title}":`, challenge.ecoPoints);

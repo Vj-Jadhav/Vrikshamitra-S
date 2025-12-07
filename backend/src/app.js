@@ -35,6 +35,14 @@ app.use("/api/learningmodules", learningModuleRoutes);
 
 app.use("/api/reports", reportRoutes);
 app.use("/api/reports/schedule", scheduleRoutes);
+import submissionsRoutes from "./routes/submissionsRoutes.js";
+app.use("/api/submissions", submissionsRoutes);
 
+// Serve static files
+import path from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 export default app;

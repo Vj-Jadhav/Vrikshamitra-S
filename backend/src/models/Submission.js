@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const submissionSchema = new mongoose.Schema({
   challengeId: {
@@ -8,7 +8,7 @@ const submissionSchema = new mongoose.Schema({
   },
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "student",
+    ref: "Student",
     required: true,
   },
   studentName: {
@@ -25,7 +25,7 @@ const submissionSchema = new mongoose.Schema({
   },
   facultyId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "faculty",
+    ref: "Faculty",
     required: true,
   },
   facultyName: {
@@ -36,15 +36,21 @@ const submissionSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  
+
   // Cloudinary fields
+  // Cloudinary fields (Optional now)
   cloudinaryUrl: {
     type: String,
-    required: true,
   },
   cloudinaryPublicId: {
     type: String,
-    required: true,
+  },
+  // Local storage fields
+  localFilePath: {
+    type: String,
+  },
+  imageUrl: {
+    type: String, // Full URL to access the image
   },
   thumbnailUrl: {
     type: String,
@@ -59,7 +65,7 @@ const submissionSchema = new mongoose.Schema({
     width: Number,
     height: Number,
   },
-  
+
   // Status and tracking
   status: {
     type: String,
@@ -72,7 +78,7 @@ const submissionSchema = new mongoose.Schema({
   pointsAwarded: {
     type: Number,
   },
-  
+
   // Timestamps
   uploadedAt: {
     type: Date,
@@ -91,4 +97,5 @@ submissionSchema.index({ status: 1 });
 submissionSchema.index({ facultyId: 1 });
 submissionSchema.index({ uploadedAt: -1 });
 
-module.exports = mongoose.model("Submission", submissionSchema);
+const Submission = mongoose.model("Submission", submissionSchema);
+export default Submission;
