@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seed Saver</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Loading screen styling -->
+    <style>
+      body { background: #E8F5E9; margin: 0; overflow: hidden; }
+
+      .loading-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        background: #E8F5E9;
+        font-family: 'Poppins', sans-serif;
+        font-size: 20px;
+        font-weight: 600;
+        color: #2E7D32;
+      }
+
+      .loading-bar {
+        width: 70%;
+        height: 12px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 12px;
+      }
+
+      .loading-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #4CAF50, #81C784);
+      }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="backdrop" id="backdrop"></div>
+
+    <div class="ui-overlay">
+
+        <div class="score-display">
+            <div id="leafIcon"></div>
+            <span id="scoreText">0</span>
+        </div>
+
+        <!-- CHANGED: Added -container suffix to match CSS -->
+        <div class="seed-inventory-container" id="seedInventory"></div>
+
+        <div class="green-score-map">
+            <div class="map-title">Green Score</div>
+            <div class="map-path" id="mapPath">
+                <div class="map-player" id="mapPlayer"></div>
+            </div>
+        </div>
+
+        <button class="ui-button" id="plantStationBtn" aria-label="Open Plant Station">
+            <div id="plantStationIcon"></div>
+        </button>
+
+        <button class="ui-button" id="pauseBtn" aria-label="Pause Game"></button>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div>Loading Seed Saver...</div>
+        <div class="loading-bar">
+            <div class="loading-fill" id="loadingFill"></div>
+        </div>
+    </div>
+
+    <!-- Load main JS file -->
+    <script src="main.js"></script>
+</body>
+</html>
