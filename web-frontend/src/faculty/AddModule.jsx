@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+// Remove this line: import "./AddModule.css";
 
 const AddModule = () => {
   const [formData, setFormData] = useState({
@@ -7,14 +8,16 @@ const AddModule = () => {
     title: "",
     subtitle: "",
     category: "climate",
-    duration: "",
-    points: "",
-    totalLessons: "",
+    duration: "10 min",
+    points: "10",
+    totalLessons: "1",
     difficulty: "Beginner",
     color: "#34eb5b",
     youtubeId: "",
     description: "",
     imageUrl: "",
+    tags: "",
+    isActive: true,
     quiz: [],
   });
 
@@ -23,6 +26,7 @@ const AddModule = () => {
     options: ["", "", "", ""],
     correctAnswer: 0,
     explanation: "",
+    points: 1
   });
 
   const [loading, setLoading] = useState(false);
@@ -40,7 +44,7 @@ const AddModule = () => {
   const [difficultyLevels] = useState(["Beginner", "Intermediate", "Advanced"]);
   const [existingIds, setExistingIds] = useState([]);
 
-  // Styles
+  // Inline styles
   const styles = {
     container: {
       minHeight: "100vh",
@@ -49,7 +53,7 @@ const AddModule = () => {
       fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     },
     card: {
-      maxWidth: "1000px",
+      maxWidth: "1200px",
       margin: "0 auto",
       background: "white",
       borderRadius: "20px",
@@ -90,13 +94,28 @@ const AddModule = () => {
     form: {
       display: "flex",
       flexDirection: "column",
-      gap: "25px",
+      gap: "30px",
+    },
+    formSection: {
+      background: "#f8f9fa",
+      borderRadius: "15px",
+      padding: "25px",
+      border: "1px solid #e9ecef",
     },
     formGrid: {
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
       gap: "20px",
       marginBottom: "20px",
+    },
+    optionsGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(2, 1fr)",
+      gap: "15px",
+      marginBottom: "20px",
+    },
+    fullWidth: {
+      gridColumn: "1 / -1",
     },
     formGroup: {
       display: "flex",
@@ -125,7 +144,7 @@ const AddModule = () => {
       transition: "all 0.3s ease",
       width: "100%",
       boxSizing: "border-box",
-      minHeight: "100px",
+      minHeight: "120px",
       resize: "vertical",
       fontFamily: "inherit",
     },
@@ -176,18 +195,10 @@ const AddModule = () => {
       marginTop: "5px",
     },
     quizSection: {
-      background: "#f8f9fa",
+      background: "#fff",
       borderRadius: "15px",
       padding: "25px",
       border: "2px solid #e9ecef",
-    },
-    quizTitle: {
-      fontSize: "1.3rem",
-      color: "#495057",
-      marginBottom: "20px",
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
     },
     quizList: {
       marginBottom: "25px",
@@ -195,7 +206,7 @@ const AddModule = () => {
       overflowY: "auto",
     },
     quizItem: {
-      background: "white",
+      background: "#f8f9fa",
       borderRadius: "10px",
       padding: "15px",
       marginBottom: "10px",
@@ -205,68 +216,49 @@ const AddModule = () => {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
+      marginBottom: "8px",
     },
     quizQuestionPreview: {
       color: "#333",
       fontWeight: "500",
+      flex: "1",
     },
-    removeQuizBtn: {
-      background: "#dc3545",
-      color: "white",
-      border: "none",
-      padding: "5px 15px",
-      borderRadius: "5px",
-      cursor: "pointer",
+    quizItemDetails: {
       fontSize: "0.85rem",
-      transition: "background 0.3s",
+      color: "#666",
     },
-    quizForm: {
-      background: "white",
-      padding: "20px",
-      borderRadius: "10px",
-      border: "1px solid #dee2e6",
-    },
-    quizFormTitle: {
-      color: "#495057",
-      marginBottom: "20px",
-      fontSize: "1.1rem",
-    },
-    optionsGrid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(2, 1fr)",
-      gap: "15px",
-      marginBottom: "20px",
-    },
-    addQuizBtn: {
-      background: "#28a745",
-      color: "white",
+    btn: {
+      padding: "10px 20px",
       border: "none",
-      padding: "12px 25px",
       borderRadius: "8px",
       fontWeight: "600",
       cursor: "pointer",
-      transition: "background 0.3s",
-      display: "flex",
+      transition: "all 0.3s ease",
+      fontSize: "1rem",
+      display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
       gap: "8px",
-      width: "100%",
-      fontSize: "1rem",
     },
-    submitBtn: {
+    btnSm: {
+      padding: "5px 15px",
+      fontSize: "0.85rem",
+    },
+    btnDanger: {
+      background: "#dc3545",
+      color: "white",
+    },
+    btnSuccess: {
+      background: "#28a745",
+      color: "white",
+      width: "100%",
+      padding: "12px",
+    },
+    btnPrimary: {
       background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
       color: "white",
-      border: "none",
       padding: "16px 30px",
-      borderRadius: "10px",
       fontSize: "1.1rem",
-      fontWeight: "600",
-      cursor: "pointer",
-      transition: "transform 0.3s, box-shadow 0.3s",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: "10px",
       marginTop: "20px",
       width: "100%",
     },
@@ -278,80 +270,54 @@ const AddModule = () => {
       borderTopColor: "white",
       animation: "spin 1s ease-in-out infinite",
     },
-    // Animation keyframes
-    keyframes: `
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-    `,
-    // Focus styles
-    focusStyle: {
-      outline: "none",
-      borderColor: "#667eea",
-      boxShadow: "0 0 0 3px rgba(102, 126, 234, 0.1)",
-    },
   };
 
-  // Add hover effects for buttons
-  const buttonHoverStyle = {
-    backgroundColor: "#218838",
-  };
-
-  const submitBtnHoverStyle = {
-    transform: "translateY(-2px)",
-    boxShadow: "0 10px 20px rgba(102, 126, 234, 0.3)",
-  };
-
-  // Fetch existing module IDs to prevent duplicates
+  // Fetch existing module IDs
   useEffect(() => {
-    const fetchExistingModules = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/api/learningmodules");
-        const ids = response.data.map(module => module.id);
-        setExistingIds(ids);
-      } catch (error) {
-        console.error("Error fetching existing modules:", error);
-      }
-    };
     fetchExistingModules();
   }, []);
 
-  // Handle non-quiz field changes
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    
-    // Clear message when user starts typing
-    if (message.text) {
-      setMessage({ type: "", text: "" });
+  const fetchExistingModules = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/learningmodules");
+      if (response.data.success) {
+        const ids = response.data.data.map(module => module.id);
+        setExistingIds(ids);
+      }
+    } catch (error) {
+      console.error("Error fetching existing modules:", error);
     }
   };
 
-  // Handle quiz options
+  // Handle form field changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setMessage({ type: "", text: "" });
+  };
+
+  // Handle quiz options changes
   const handleQuizChange = (e, index) => {
     const updatedOptions = [...quizItem.options];
     updatedOptions[index] = e.target.value;
-
     setQuizItem({
       ...quizItem,
       options: updatedOptions,
     });
   };
 
-  // Add quiz item into array
+  // Add quiz item
   const addQuiz = () => {
     if (!quizItem.question.trim()) {
       setMessage({ type: "error", text: "Quiz question cannot be empty" });
       return;
     }
 
-    // Check if all options are filled
     if (quizItem.options.some(opt => !opt.trim())) {
       setMessage({ type: "error", text: "Please fill all 4 options" });
       return;
     }
 
-    // Validate correct answer index
     if (quizItem.correctAnswer < 0 || quizItem.correctAnswer > 3) {
       setMessage({ type: "error", text: "Correct answer must be between 0 and 3" });
       return;
@@ -362,12 +328,12 @@ const AddModule = () => {
       quiz: [...prev.quiz, { ...quizItem }],
     }));
 
-    // Reset quiz item
     setQuizItem({
       question: "",
       options: ["", "", "", ""],
       correctAnswer: 0,
       explanation: "",
+      points: 1
     });
 
     setMessage({ type: "success", text: "Quiz question added successfully!" });
@@ -398,20 +364,15 @@ const AddModule = () => {
       return false;
     }
 
-    if (!formData.category) {
-      setMessage({ type: "error", text: "Category is required" });
-      return false;
-    }
-
-    if (!formData.youtubeId && !formData.description) {
-      setMessage({ type: "error", text: "Please provide either a YouTube ID or Description" });
+    if (!formData.description.trim()) {
+      setMessage({ type: "error", text: "Description is required" });
       return false;
     }
 
     return true;
   };
 
-  // Submit module
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -423,21 +384,22 @@ const AddModule = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      // Prepare payload with proper data types
+      // Prepare payload
       const payload = {
         ...formData,
         id: Number(formData.id),
         points: Number(formData.points) || 0,
-        totalLessons: Number(formData.totalLessons) || 0,
-        // Ensure quiz correctAnswer is number
+        totalLessons: Number(formData.totalLessons) || 1,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [],
         quiz: formData.quiz.map(q => ({
           ...q,
-          correctAnswer: Number(q.correctAnswer)
+          correctAnswer: Number(q.correctAnswer),
+          points: Number(q.points) || 1
         }))
       };
 
       const response = await axios.post(
-        "http://localhost:5000/api/learningmodules/add", 
+        "http://localhost:5000/api/learningmodules", 
         payload,
         {
           headers: {
@@ -446,38 +408,46 @@ const AddModule = () => {
         }
       );
 
-      setMessage({ 
-        type: "success", 
-        text: "✅ Module added successfully!" 
-      });
+      if (response.data.success) {
+        setMessage({ 
+          type: "success", 
+          text: "✅ Module added successfully!" 
+        });
 
-      // Reset form
-      setFormData({
-        id: "",
-        title: "",
-        subtitle: "",
-        category: "climate",
-        duration: "",
-        points: "",
-        totalLessons: "",
-        difficulty: "Beginner",
-        color: "#34eb5b",
-        youtubeId: "",
-        description: "",
-        imageUrl: "",
-        quiz: [],
-      });
+        // Reset form
+        setFormData({
+          id: "",
+          title: "",
+          subtitle: "",
+          category: "climate",
+          duration: "10 min",
+          points: "10",
+          totalLessons: "1",
+          difficulty: "Beginner",
+          color: "#34eb5b",
+          youtubeId: "",
+          description: "",
+          imageUrl: "",
+          tags: "",
+          isActive: true,
+          quiz: [],
+        });
 
-      // Update existing IDs
-      setExistingIds([...existingIds, Number(formData.id)]);
+        // Update existing IDs
+        setExistingIds([...existingIds, Number(formData.id)]);
 
-      // Clear message after 5 seconds
-      setTimeout(() => {
-        setMessage({ type: "", text: "" });
-      }, 5000);
-
+        // Clear message after 5 seconds
+        setTimeout(() => {
+          setMessage({ type: "", text: "" });
+        }, 5000);
+      } else {
+        setMessage({ 
+          type: "error", 
+          text: response.data.message || "Failed to add module"
+        });
+      }
     } catch (err) {
-      console.error("Error details:", err.response?.data || err.message);
+      console.error("Error adding module:", err);
       
       const errorMessage = err.response?.data?.message || 
                           err.response?.data?.error || 
@@ -492,52 +462,48 @@ const AddModule = () => {
     setLoading(false);
   };
 
-  // Handle color input with preview
-  const handleColorChange = (e) => {
-    const { value } = e.target;
-    setFormData(prev => ({ ...prev, color: value }));
-  };
-
-  // Handle input focus
-  const handleFocus = (e) => {
-    e.target.style.outline = "none";
-    e.target.style.borderColor = "#667eea";
-    e.target.style.boxShadow = "0 0 0 3px rgba(102, 126, 234, 0.1)";
-  };
-
-  // Handle input blur
-  const handleBlur = (e) => {
-    e.target.style.borderColor = "#e0e0e0";
-    e.target.style.boxShadow = "none";
-  };
-
-  // Handle button hover
-  const handleButtonMouseEnter = (e) => {
-    if (e.target.type === "button") {
-      if (e.target.classList.contains("add-quiz-btn")) {
-        e.target.style.backgroundColor = "#218838";
-      } else if (e.target.classList.contains("submit-btn")) {
-        e.target.style.transform = "translateY(-2px)";
-        e.target.style.boxShadow = "0 10px 20px rgba(102, 126, 234, 0.3)";
-      }
-    }
-  };
-
-  // Handle button mouse leave
-  const handleButtonMouseLeave = (e) => {
-    if (e.target.type === "button") {
-      if (e.target.classList.contains("add-quiz-btn")) {
-        e.target.style.backgroundColor = "#28a745";
-      } else if (e.target.classList.contains("submit-btn")) {
-        e.target.style.transform = "none";
-        e.target.style.boxShadow = "none";
-      }
-    }
-  };
-
   return (
     <div style={styles.container}>
-      <style>{styles.keyframes}</style>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        
+        input:focus, textarea:focus, select:focus {
+          outline: none;
+          border-color: #667eea !important;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+        }
+        
+        .btn-danger:hover {
+          background-color: #c82333 !important;
+        }
+        
+        .btn-success:hover {
+          background-color: #218838 !important;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        .btn-primary:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        
+        @media (max-width: 768px) {
+          .form-grid {
+            grid-template-columns: 1fr !important;
+          }
+          
+          .options-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+      
       <div style={styles.card}>
         <h2 style={styles.title}>Add New Learning Module</h2>
         
@@ -548,238 +514,225 @@ const AddModule = () => {
         )}
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.formGrid}>
-            {/* Module ID */}
-            <div style={styles.formGroup}>
-              <label htmlFor="id" style={styles.label}>Module ID *</label>
-              <input
-                type="number"
-                id="id"
-                name="id"
-                value={formData.id}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="Enter unique module ID"
-                style={styles.input}
-                required
-                min="1"
-              />
-              {existingIds.includes(Number(formData.id)) && formData.id && (
-                <small style={styles.errorText}>⚠️ This ID already exists</small>
-              )}
-            </div>
-
-            {/* Title */}
-            <div style={styles.formGroup}>
-              <label htmlFor="title" style={styles.label}>Title *</label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="Module title"
-                style={styles.input}
-                required
-              />
-            </div>
-
-            {/* Subtitle */}
-            <div style={styles.formGroup}>
-              <label htmlFor="subtitle" style={styles.label}>Subtitle</label>
-              <input
-                type="text"
-                id="subtitle"
-                name="subtitle"
-                value={formData.subtitle}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="Brief subtitle"
-                style={styles.input}
-              />
-            </div>
-
-            {/* Category */}
-            <div style={styles.formGroup}>
-              <label htmlFor="category" style={styles.label}>Category *</label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={styles.select}
-                required
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Duration */}
-            <div style={styles.formGroup}>
-              <label htmlFor="duration" style={styles.label}>Duration</label>
-              <input
-                type="text"
-                id="duration"
-                name="duration"
-                value={formData.duration}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="e.g., 15 min"
-                style={styles.input}
-              />
-            </div>
-
-            {/* Points */}
-            <div style={styles.formGroup}>
-              <label htmlFor="points" style={styles.label}>Points</label>
-              <input
-                type="number"
-                id="points"
-                name="points"
-                value={formData.points}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="Points awarded"
-                style={styles.input}
-                min="0"
-              />
-            </div>
-
-            {/* Total Lessons */}
-            <div style={styles.formGroup}>
-              <label htmlFor="totalLessons" style={styles.label}>Total Lessons</label>
-              <input
-                type="number"
-                id="totalLessons"
-                name="totalLessons"
-                value={formData.totalLessons}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="Number of lessons"
-                style={styles.input}
-                min="0"
-              />
-            </div>
-
-            {/* Difficulty */}
-            <div style={styles.formGroup}>
-              <label htmlFor="difficulty" style={styles.label}>Difficulty</label>
-              <select
-                id="difficulty"
-                name="difficulty"
-                value={formData.difficulty}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                style={styles.select}
-              >
-                {difficultyLevels.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Color with preview */}
-            <div style={styles.formGroup}>
-              <label htmlFor="color" style={styles.label}>Theme Color</label>
-              <div style={styles.colorContainer}>
+          {/* Basic Information Section */}
+          <div style={styles.formSection}>
+            <h3>Basic Information</h3>
+            <div style={styles.formGrid}>
+              <div style={styles.formGroup}>
+                <label htmlFor="id" style={styles.label}>Module ID *</label>
                 <input
-                  type="color"
-                  id="color"
-                  name="color"
-                  value={formData.color}
-                  onChange={handleColorChange}
-                  style={styles.colorPicker}
+                  type="number"
+                  id="id"
+                  name="id"
+                  value={formData.id}
+                  onChange={handleChange}
+                  placeholder="Enter unique module ID"
+                  required
+                  min="1"
+                  style={styles.input}
                 />
+                {existingIds.includes(Number(formData.id)) && formData.id && (
+                  <small style={styles.errorText}>⚠️ This ID already exists</small>
+                )}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="title" style={styles.label}>Title *</label>
                 <input
                   type="text"
-                  value={formData.color}
-                  onChange={handleColorChange}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  placeholder="#34eb5b"
-                  style={styles.colorTextInput}
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Module title"
+                  required
+                  style={styles.input}
                 />
-                <div 
-                  style={{...styles.colorPreview, backgroundColor: formData.color}}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="subtitle" style={styles.label}>Subtitle</label>
+                <input
+                  type="text"
+                  id="subtitle"
+                  name="subtitle"
+                  value={formData.subtitle}
+                  onChange={handleChange}
+                  placeholder="Brief subtitle"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="category" style={styles.label}>Category *</label>
+                <select
+                  id="category"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  required
+                  style={styles.select}
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="duration" style={styles.label}>Duration</label>
+                <input
+                  type="text"
+                  id="duration"
+                  name="duration"
+                  value={formData.duration}
+                  onChange={handleChange}
+                  placeholder="e.g., 15 min"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="points" style={styles.label}>Points</label>
+                <input
+                  type="number"
+                  id="points"
+                  name="points"
+                  value={formData.points}
+                  onChange={handleChange}
+                  placeholder="Points awarded"
+                  min="0"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="totalLessons" style={styles.label}>Total Lessons</label>
+                <input
+                  type="number"
+                  id="totalLessons"
+                  name="totalLessons"
+                  value={formData.totalLessons}
+                  onChange={handleChange}
+                  placeholder="Number of lessons"
+                  min="1"
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="difficulty" style={styles.label}>Difficulty</label>
+                <select
+                  id="difficulty"
+                  name="difficulty"
+                  value={formData.difficulty}
+                  onChange={handleChange}
+                  style={styles.select}
+                >
+                  {difficultyLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="tags" style={styles.label}>Tags (comma separated)</label>
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleChange}
+                  placeholder="e.g., climate-change, sustainability, water-conservation"
+                  style={styles.input}
                 />
               </div>
             </div>
+          </div>
 
-            {/* YouTube ID */}
-            <div style={styles.formGroup}>
-              <label htmlFor="youtubeId" style={styles.label}>YouTube Video ID</label>
-              <input
-                type="text"
-                id="youtubeId"
-                name="youtubeId"
-                value={formData.youtubeId}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="YouTube video ID (after v=)"
-                style={styles.input}
-              />
-              {formData.youtubeId && (
+          {/* Media Section */}
+          <div style={styles.formSection}>
+            <h3>Media & Appearance</h3>
+            <div style={styles.formGrid}>
+              <div style={styles.formGroup}>
+                <label htmlFor="color" style={styles.label}>Theme Color</label>
+                <div style={styles.colorContainer}>
+                  <input
+                    type="color"
+                    id="color"
+                    name="color"
+                    value={formData.color}
+                    onChange={handleChange}
+                    style={styles.colorPicker}
+                  />
+                  <input
+                    type="text"
+                    value={formData.color}
+                    onChange={handleChange}
+                    placeholder="#34eb5b"
+                    style={styles.colorTextInput}
+                  />
+                  <div 
+                    style={{...styles.colorPreview, backgroundColor: formData.color}}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label htmlFor="youtubeId" style={styles.label}>YouTube Video ID</label>
+                <input
+                  type="text"
+                  id="youtubeId"
+                  name="youtubeId"
+                  value={formData.youtubeId}
+                  onChange={handleChange}
+                  placeholder="YouTube video ID (after v=)"
+                  style={styles.input}
+                />
                 <small style={styles.helpText}>
                   Example: For https://youtube.com/watch?v=abc123, enter "abc123"
                 </small>
-              )}
-            </div>
+              </div>
 
-            {/* Image URL */}
-            <div style={styles.formGroup}>
-              <label htmlFor="imageUrl" style={styles.label}>Image URL</label>
-              <input
-                type="text"
-                id="imageUrl"
-                name="imageUrl"
-                value={formData.imageUrl}
+              <div style={styles.formGroup}>
+                <label htmlFor="imageUrl" style={styles.label}>Image URL</label>
+                <input
+                  type="text"
+                  id="imageUrl"
+                  name="imageUrl"
+                  value={formData.imageUrl}
+                  onChange={handleChange}
+                  placeholder="https://example.com/image.jpg"
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Description Section */}
+          <div style={styles.formSection}>
+            <div style={{...styles.formGroup, ...styles.fullWidth}}>
+              <label htmlFor="description" style={styles.label}>Description *</label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                placeholder="https://example.com/image.jpg"
-                style={styles.input}
+                placeholder="Detailed description of the module..."
+                rows="6"
+                required
+                style={styles.textarea}
               />
             </div>
           </div>
 
-          {/* Description */}
-          <div style={{...styles.formGroup, gridColumn: "1 / -1"}}>
-            <label htmlFor="description" style={styles.label}>Description *</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              placeholder="Detailed description of the module..."
-              style={styles.textarea}
-              rows="4"
-              required={!formData.youtubeId}
-            />
-          </div>
-
           {/* Quiz Section */}
-          <div style={styles.quizSection}>
-            <h3 style={styles.quizTitle}>Add Quiz Questions ({formData.quiz.length} added)</h3>
+          <div style={{...styles.formSection, ...styles.quizSection}}>
+            <h3>Quiz Questions ({formData.quiz.length} added)</h3>
             
             {/* Display added quizzes */}
             {formData.quiz.length > 0 && (
@@ -788,17 +741,18 @@ const AddModule = () => {
                   <div key={index} style={styles.quizItem}>
                     <div style={styles.quizItemHeader}>
                       <span style={styles.quizQuestionPreview}>
-                        Q{index + 1}: {q.question.substring(0, 50)}...
+                        Q{index + 1}: {q.question.substring(0, 60)}...
                       </span>
                       <button
                         type="button"
                         onClick={() => removeQuiz(index)}
-                        style={styles.removeQuizBtn}
-                        onMouseEnter={handleButtonMouseEnter}
-                        onMouseLeave={handleButtonMouseLeave}
+                        style={{...styles.btn, ...styles.btnSm, ...styles.btnDanger}}
                       >
                         Remove
                       </button>
+                    </div>
+                    <div style={styles.quizItemDetails}>
+                      <small>Correct: Option {q.correctAnswer + 1} | Points: {q.points}</small>
                     </div>
                   </div>
                 ))}
@@ -806,8 +760,8 @@ const AddModule = () => {
             )}
 
             {/* Add new quiz form */}
-            <div style={styles.quizForm}>
-              <h4 style={styles.quizFormTitle}>Add New Question</h4>
+            <div style={{ background: "white", padding: "20px", borderRadius: "10px", border: "1px solid #dee2e6" }}>
+              <h4>Add New Question</h4>
               
               <div style={styles.formGroup}>
                 <label style={styles.label}>Question *</label>
@@ -817,8 +771,6 @@ const AddModule = () => {
                   onChange={(e) =>
                     setQuizItem({ ...quizItem, question: e.target.value })
                   }
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
                   placeholder="Enter question text"
                   style={styles.input}
                 />
@@ -832,8 +784,6 @@ const AddModule = () => {
                       type="text"
                       value={opt}
                       onChange={(e) => handleQuizChange(e, index)}
-                      onFocus={handleFocus}
-                      onBlur={handleBlur}
                       placeholder={`Option ${index + 1}`}
                       style={styles.input}
                     />
@@ -841,25 +791,41 @@ const AddModule = () => {
                 ))}
               </div>
 
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Correct Answer Index *</label>
-                <select
-                  value={quizItem.correctAnswer}
-                  onChange={(e) =>
-                    setQuizItem({
-                      ...quizItem,
-                      correctAnswer: Number(e.target.value),
-                    })
-                  }
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  style={styles.select}
-                >
-                  <option value="0">Option 1</option>
-                  <option value="1">Option 2</option>
-                  <option value="2">Option 3</option>
-                  <option value="3">Option 4</option>
-                </select>
+              <div style={styles.formGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Correct Answer *</label>
+                  <select
+                    value={quizItem.correctAnswer}
+                    onChange={(e) =>
+                      setQuizItem({
+                        ...quizItem,
+                        correctAnswer: Number(e.target.value),
+                      })
+                    }
+                    style={styles.select}
+                  >
+                    <option value="0">Option 1</option>
+                    <option value="1">Option 2</option>
+                    <option value="2">Option 3</option>
+                    <option value="3">Option 4</option>
+                  </select>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Points for this question</label>
+                  <input
+                    type="number"
+                    value={quizItem.points}
+                    onChange={(e) =>
+                      setQuizItem({
+                        ...quizItem,
+                        points: Number(e.target.value),
+                      })
+                    }
+                    min="1"
+                    style={styles.input}
+                  />
+                </div>
               </div>
 
               <div style={styles.formGroup}>
@@ -869,21 +835,16 @@ const AddModule = () => {
                   onChange={(e) =>
                     setQuizItem({ ...quizItem, explanation: e.target.value })
                   }
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
                   placeholder="Explanation for the correct answer"
-                  style={{...styles.textarea, minHeight: "80px"}}
-                  rows="2"
+                  rows="3"
+                  style={styles.textarea}
                 />
               </div>
 
               <button
                 type="button"
                 onClick={addQuiz}
-                className="add-quiz-btn"
-                style={styles.addQuizBtn}
-                onMouseEnter={handleButtonMouseEnter}
-                onMouseLeave={handleButtonMouseLeave}
+                style={{...styles.btn, ...styles.btnSuccess}}
               >
                 + Add This Question
               </button>
@@ -894,14 +855,12 @@ const AddModule = () => {
           <button
             type="submit"
             disabled={loading}
-            className="submit-btn"
             style={{
-              ...styles.submitBtn,
+              ...styles.btn,
+              ...styles.btnPrimary,
               opacity: loading ? "0.7" : "1",
               cursor: loading ? "not-allowed" : "pointer",
             }}
-            onMouseEnter={handleButtonMouseEnter}
-            onMouseLeave={handleButtonMouseLeave}
           >
             {loading ? (
               <>
@@ -914,47 +873,6 @@ const AddModule = () => {
           </button>
         </form>
       </div>
-
-      {/* Responsive styles via media query */}
-      <style>{`
-        @media (max-width: 768px) {
-          .add-module-card {
-            padding: 20px;
-            margin: 10px;
-          }
-          
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .options-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .color-input-container {
-            flex-wrap: wrap;
-          }
-        }
-        
-        input:focus, textarea:focus, select:focus {
-          outline: none;
-          border-color: #667eea !important;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
-        }
-        
-        .add-quiz-btn:hover {
-          background-color: #218838 !important;
-        }
-        
-        .submit-btn:hover:not(:disabled) {
-          transform: translateY(-2px) !important;
-          box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3) !important;
-        }
-        
-        .remove-quiz-btn:hover {
-          background-color: #c82333 !important;
-        }
-      `}</style>
     </div>
   );
 };
