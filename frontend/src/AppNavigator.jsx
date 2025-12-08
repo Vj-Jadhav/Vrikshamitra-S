@@ -37,6 +37,8 @@ import RecycleScreen from './screens/RecycleScreen';
 import LearningScreen from './screens/LearningScreen';
 import OceanGameScreen from './screens/OceanGameScreen';
 import AQIGameScreen from './screens/AQIGameScreen';
+import WasteSorter from './screens/WasteSorter';
+import NatureQuiz from './screens/NatureQuiz';
 import SeedSaverGameScreen from './screens/SeedSaverGameScreen';
 
 
@@ -91,9 +93,11 @@ export default function AppNavigator() {
         <Stack.Screen name="Garden" component={GardenScreen} />
         <Stack.Screen name="Recycle" component={RecycleScreen} />
         <Stack.Screen name="Learning" component={LearningScreen} />
-        <Stack.Screen name="OceanGame" component={OceanGameScreen} />
-        <Stack.Screen name="AQIGame" component={AQIGameScreen} />
-        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen} />
+        <Stack.Screen name="OceanGame" component={OceanGameScreen}/>
+        <Stack.Screen name="AQIGame" component={AQIGameScreen}/>
+        <Stack.Screen name="WasteSorter" component={WasteSorter}/>
+        <Stack.Screen name="NatureQuiz" component={NatureQuiz}/>
+        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen}/>
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />
