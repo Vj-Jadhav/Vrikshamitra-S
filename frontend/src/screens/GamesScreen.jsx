@@ -329,7 +329,7 @@ export default function GamesScreen() {
             </Text>
             <TouchableOpacity
               style={[styles.featuredButton, styles.garbageSorterButton]}
-              onPress={() => navigation.navigate("MiniGames")}
+              onPress={() => navigation.navigat("WasteSorter")}
             >
               <Text style={styles.featuredButtonText}>
                 Start Sorting Waste
