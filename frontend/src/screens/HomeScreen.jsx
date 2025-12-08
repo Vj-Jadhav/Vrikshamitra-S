@@ -15,6 +15,12 @@ import ArVr from '../assets/ArVr.jpg';
 import CommunityWatch from '../assets/CommunityWatch.png';
 import EarthHeroes from '../assets/EarthHeroes.jpg';
 import PlantDetective from '../assets/PlantDetective.png';
+import CategoryAir from '../assets/category_air.png';
+import CategoryEnergy from '../assets/category_energy.png';
+import CategoryFood from '../assets/category_food.png';
+import CategoryWaste from '../assets/category_waste.png';
+import CategoryWater from '../assets/category_water.png';
+import CategoryLand from '../assets/category_land.png';
 
 // Default avatar URLs
 const defaultAvatars = [
@@ -335,6 +341,35 @@ export default function HomeScreen({ navigation }) {
 
         </View>
 
+        {/* Categories Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <View style={styles.categoriesGrid}>
+            {[
+              { id: '1', title: 'AIR', image: CategoryAir, color: '#E1F5FE' },
+              { id: '2', title: 'ENERGY', image: CategoryEnergy, color: '#FFF8E1' },
+              { id: '3', title: 'FOOD', image: CategoryFood, color: '#FFEBEE' },
+              { id: '4', title: 'WASTE', image: CategoryWaste, color: '#E8F5E9' },
+              { id: '5', title: 'WATER', image: CategoryWater, color: '#E0F7FA' },
+              { id: '6', title: 'LAND', image: CategoryLand, color: '#EFEBE9' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.categoryCard, { backgroundColor: item.color }]}
+                activeOpacity={0.7}
+                onPress={() => {
+                  navigation.navigate('CategoryJourneyScreen', { category: item.title });
+                }}
+              >
+                <Image source={item.image} style={styles.categoryImage} resizeMode="cover" />
+                <View style={styles.categoryTitleContainer}>
+                  <Text style={styles.categoryTitle}>{item.title}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Games Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Fun and Educational Games</Text>
@@ -599,6 +634,39 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 8,
     resizeMode: 'cover',
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  categoryCard: {
+    width: '30%',
+    height: 100,
+    borderRadius: 15,
+    marginBottom: 5,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+  },
+  categoryTitleContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingVertical: 4,
+    alignItems: 'center',
+  },
+  categoryTitle: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff',
   },
   gameCardText: {
     fontSize: 12,

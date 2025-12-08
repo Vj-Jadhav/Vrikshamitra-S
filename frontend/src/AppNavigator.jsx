@@ -26,6 +26,8 @@ import ResetPasswordScreen from './screens/ResetPasswordScreen';
 // ================= Story Feature (from story branch) =================
 import MainLayout from './MainLayout';
 import StorytellingGame from './screens/StorytellingGame';
+import AirStorytellingGame from './screens/AirStorytellingGame';
+import AirGamesScreen from './screens/AirGamesScreen';
 import ChapterScreen from './screens/ChapterScreen';
 
 // ================= Game Map Screens =================
@@ -46,6 +48,7 @@ import GarbageReport from './screens/GarbageReport';
 import GarbageParticipate from './screens/GarbageParticipate';
 import PlantTracking from './screens/PlantTracking';
 import AwarenessPopupScreen from './screens/AwarenessPopupScreen';
+import CategoryJourneyScreen from './screens/CategoryJourneyScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -85,6 +88,8 @@ export default function AppNavigator() {
 
         {/* Story Mode */}
         <Stack.Screen name="StorytellingGame" component={StorytellingGame} />
+        <Stack.Screen name="AirStorytellingGame" component={AirStorytellingGame} />
+        <Stack.Screen name="AirGamesScreen" component={AirGamesScreen} />
         <Stack.Screen name="ChapterScreen" component={ChapterScreen} />
 
         {/* Game Map */}
@@ -94,18 +99,19 @@ export default function AppNavigator() {
         <Stack.Screen name="Garden" component={GardenScreen} />
         <Stack.Screen name="Recycle" component={RecycleScreen} />
         <Stack.Screen name="Learning" component={LearningScreen} />
-        <Stack.Screen name="OceanGame" component={OceanGameScreen}/>
-        <Stack.Screen name="AQIGame" component={AQIGameScreen}/>
-        <Stack.Screen name="WasteSorter" component={WasteSorter}/>
-        <Stack.Screen name="NatureQuiz" component={NatureQuiz}/>
-        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen}/>
-        <Stack.Screen name="SeedSaverGame" component={SeedSaverGameScreen}/>
-        <Stack.Screen name="AwarenessPopupScreen" component={AwarenessPopupScreen}/>
+        <Stack.Screen name="OceanGame" component={OceanGameScreen} />
+        <Stack.Screen name="AQIGame" component={AQIGameScreen} />
+        <Stack.Screen name="WasteSorter" component={WasteSorter} />
+        <Stack.Screen name="NatureQuiz" component={NatureQuiz} />
+        <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen} />
+        <Stack.Screen name="SeedSaverGame" component={SeedSaverGameScreen} />
+        <Stack.Screen name="AwarenessPopupScreen" component={AwarenessPopupScreen} />
 
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />
         <Stack.Screen name="PlantTracking" component={PlantTracking} />
+        <Stack.Screen name="CategoryJourneyScreen" component={CategoryJourneyScreen} />
 
       </Stack.Navigator>
     </NavigationContainer>
