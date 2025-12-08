@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -1797,10 +1798,1693 @@
           <button class="footer-btn" id="harvestAllBtn">⚡ Harvest All</button>
         </div>
       </div>
+=======
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plant Station - Soil Matrix</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <style>
+        /** @format */
+
+        /* ============================================
+           CSS RESET & BASE STYLES - MINECRAFT THEME
+           ============================================ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        body {
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(180deg, 
+                #7EC0EE 0%,      /* Sky top */
+                #7EC0EE 40%,     /* Sky middle */
+                #90C654 40%,     /* Horizon */
+                #90C654 100%     /* Grass */
+            );
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ============================================
+           MINECRAFT THEME VARIABLES
+           ============================================ */
+        :root {
+            /* Minecraft Colors */
+            --mc-green: #3CB371;
+            --mc-green-dark: #2E8B57;
+            --mc-dirt: #8B7355;
+            --mc-dirt-dark: #6B4F37;
+            --mc-dirt-light: #9C7D5E;
+            --mc-water: #3A96DD;
+            --mc-fertilizer: #F5B041;
+            --mc-bone-meal: #F0F0F0;
+            --mc-stone: #7F7F7F;
+            --mc-oak: #8B7355;
+            --mc-border: #5A5A5A;
+            --mc-text: #FFFFFF;
+            --mc-text-dark: #333333;
+            --mc-text-shadow: 2px 2px 0 #000;
+            --mc-yellow: #FFD700;
+            --mc-red: #FF4444;
+            --mc-brown: #8B4513;
+            --mc-brown-dark: #654321;
+            
+            /* Shadows with Minecraft block effect */
+            --mc-shadow-sm: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            --mc-shadow-md: 6px 6px 0 rgba(0, 0, 0, 0.3);
+            --mc-shadow-lg: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            
+            /* Minecraft block sizes - dynamic for responsiveness */
+            --block-size: 70px;
+            --block-gap: 4px;
+            
+            /* Spacing */
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            
+            /* Border Radius - Sharp edges for Minecraft */
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        /* Minecraft Font */
+        @font-face {
+            font-family: 'Minecraft';
+            src: url('https://fonts.cdnfonts.com/css/minecraft-4');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* ============================================
+           PLANT STATION CONTAINER
+           ============================================ */
+        .plant-station-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-md);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* ============================================
+           MINECRAFT STYLE HEADER
+           ============================================ */
+        .farm-header {
+            background: linear-gradient(135deg, var(--mc-brown) 0%, var(--mc-brown-dark) 100%);
+            padding: var(--space-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--mc-shadow-md);
+            border: 6px solid var(--mc-border);
+            margin-bottom: var(--space-xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-radius: var(--radius-lg);
+        }
+
+        .back-to-game-btn {
+            background: var(--mc-stone);
+            color: var(--mc-text);
+            border: 4px solid var(--mc-border);
+            padding: 12px 20px;
+            font-family: 'Minecraft', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            text-shadow: var(--mc-text-shadow);
+            transition: all 0.1s ease;
+            border-radius: var(--radius-sm);
+            min-height: 50px;
+        }
+
+        .back-to-game-btn:hover {
+            background: #8B7355;
+            transform: translate(2px, 2px);
+            box-shadow: var(--mc-shadow-sm);
+        }
+
+        .farm-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            text-align: center;
+            flex: 1;
+            font-family: 'Fredoka', 'Poppins', sans-serif;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-badge {
+            background: var(--mc-dirt);
+            padding: 8px 16px;
+            border: 3px solid var(--mc-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 100px;
+            border-radius: var(--radius-sm);
+        }
+
+        .stat-icon {
+            font-size: 20px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--mc-text);
+            font-family: 'Poppins', sans-serif;
+            text-shadow: var(--mc-text-shadow);
+        }
+
+        /* ============================================
+           RESOURCE PROGRESS BARS
+           ============================================ */
+        .section-container {
+            background: var(--mc-dirt);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--mc-shadow-sm);
+            margin-bottom: var(--space-lg);
+            border: 4px solid var(--mc-border);
+        }
+
+        .farm-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--mc-text);
+            font-family: 'Poppins', sans-serif;
+            text-shadow: var(--mc-text-shadow);
+            margin-bottom: var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-sm);
+            border-bottom: 3px solid var(--mc-border);
+            padding-bottom: var(--space-sm);
+        }
+
+        .section-badge {
+            background: var(--mc-green);
+            color: white;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid var(--mc-border);
+        }
+
+        .resource-progress-container {
+            background: var(--mc-dirt-dark);
+            padding: var(--space-lg);
+            border-radius: var(--radius-md);
+            border: 4px solid var(--mc-border);
+        }
+
+        .progress-bar-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .progress-label {
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            font-size: 16px;
+            margin-bottom: var(--space-sm);
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: var(--mc-stone);
+            border: 3px solid var(--mc-border);
+            overflow: hidden;
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .water-fill {
+            background: linear-gradient(90deg, var(--mc-water), #29B6F6);
+        }
+
+        .fertilizer-fill {
+            background: linear-gradient(90deg, var(--mc-fertilizer), #FF9800);
+        }
+
+        .xp-fill {
+            background: linear-gradient(90deg, var(--mc-green), var(--mc-green-dark));
+        }
+
+        /* ============================================
+           SOIL MATRIX - 4x4 GRID (MAIN FEATURE)
+           ============================================ */
+        .soil-matrix-section {
+            background: var(--mc-dirt-dark);
+            padding: var(--space-lg);
+            border: 6px solid var(--mc-border);
+            box-shadow: var(--mc-shadow-lg);
+            margin-bottom: var(--space-xl);
+            border-radius: var(--radius-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .soil-matrix-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(0, 0, 0, 0.1) 10px,
+                    rgba(0, 0, 0, 0.1) 20px
+                );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .soil-matrix-title {
+            font-size: 20px;
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            margin-bottom: var(--space-lg);
+            text-align: center;
+            border-bottom: 3px solid var(--mc-border);
+            padding-bottom: var(--space-md);
+            font-family: 'Minecraft', monospace;
+        }
+
+        /* Soil Matrix Grid Container */
+        .soil-matrix-container {
+            background: var(--mc-dirt);
+            padding: var(--space-lg);
+            border: 4px solid var(--mc-brown-dark);
+            margin: 0 auto;
+            display: inline-block;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 0, 0, 0.2),
+                0 0 0 4px var(--mc-brown);
+            border-radius: var(--radius-md);
+        }
+
+        /* 4x4 Grid Layout - 16 blocks */
+        .soil-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(4, var(--block-size));
+            grid-template-rows: repeat(4, var(--block-size));
+            gap: var(--block-gap);
+            background: transparent;
+            padding: var(--space-sm);
+            position: relative;
+        }
+
+        /* Individual Soil Blocks */
+        .soil-block {
+            width: var(--block-size);
+            height: var(--block-size);
+            background: linear-gradient(135deg, var(--mc-dirt) 0%, var(--mc-dirt-dark) 100%);
+            border: 3px solid var(--mc-border);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            border-radius: var(--radius-sm);
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Soil texture effect */
+        .soil-block::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(139, 69, 19, 0.3) 2px, transparent 2px),
+                radial-gradient(circle at 60% 70%, rgba(160, 82, 45, 0.3) 2px, transparent 2px),
+                radial-gradient(circle at 80% 20%, rgba(139, 69, 19, 0.3) 2px, transparent 2px);
+            background-size: 15px 15px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Hover effect for plantable soil */
+        .soil-block:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        /* Empty soil block */
+        .soil-block.empty {
+            background: linear-gradient(135deg, var(--mc-dirt-light) 0%, var(--mc-dirt) 100%);
+            opacity: 0.9;
+        }
+
+        .soil-block.empty:hover {
+            background: linear-gradient(135deg, #A88B7D 0%, #9C7D5E 100%);
+            border-color: var(--mc-green);
+        }
+
+        .soil-block.empty::after {
+            content: '+';
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Plantable soil block */
+        .soil-block.plantable {
+            background: linear-gradient(135deg, #4F7942 0%, #3D5E34 100%);
+            animation: pulse-glow 2s infinite;
+            border-color: var(--mc-green);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8); }
+        }
+
+        /* Planted soil block */
+        .soil-block.planted {
+            background: linear-gradient(135deg, #4F7942 0%, #3D5E34 100%);
+            cursor: pointer;
+            border-color: var(--mc-green-dark);
+        }
+
+        .soil-block.planted:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+            z-index: 3;
+        }
+
+        /* Plant Icon in Soil Block */
+        .plant-icon {
+            font-size: 32px;
+            filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .plant-stage {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: 'Minecraft', monospace;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        /* Plant needs indicator */
+        .plant-needs {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            display: flex;
+            gap: 3px;
+        }
+
+        .plant-need {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .need-water {
+            background: var(--mc-water);
+        }
+
+        .need-fertilizer {
+            background: var(--mc-fertilizer);
+        }
+
+        .need-fulfilled {
+            box-shadow: 0 0 6px currentColor;
+        }
+
+        /* ============================================
+           SEED SELECTION
+           ============================================ */
+        .seed-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .seed-card {
+            background: var(--mc-dirt);
+            border: 4px solid var(--mc-border);
+            padding: var(--space-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            border-radius: var(--radius-md);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .seed-card:hover {
+            background: #9C7D5E;
+            transform: translate(2px, 2px);
+        }
+
+        .seed-card.selected {
+            background: var(--mc-green);
+            border-color: var(--mc-green-dark);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.5);
+        }
+
+        .seed-icon {
+            font-size: 32px;
+            margin-bottom: var(--space-sm);
+            filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+        }
+
+        .seed-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            text-align: center;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .seed-info {
+            font-size: 12px;
+            color: #CCCCCC;
+            margin-bottom: 4px;
+        }
+
+        .seed-reward {
+            font-size: 12px;
+            color: var(--mc-yellow);
+            font-weight: 600;
+        }
+
+        .seed-count {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--mc-stone);
+            color: var(--mc-text);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 2px solid var(--mc-border);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .no-seeds-message {
+            text-align: center;
+            padding: var(--space-xl);
+            background: var(--mc-dirt-dark);
+            border-radius: var(--radius-lg);
+            border: 3px dashed var(--mc-border);
+        }
+
+        .no-seeds-icon {
+            font-size: 48px;
+            margin-bottom: var(--space-md);
+        }
+
+        .no-seeds-message h3 {
+            color: var(--mc-text);
+            margin-bottom: var(--space-sm);
+            font-size: 20px;
+        }
+
+        .no-seeds-message p {
+            color: #CCCCCC;
+            margin-bottom: var(--space-lg);
+        }
+
+        .collect-more-btn {
+            background: var(--mc-green);
+            color: white;
+            border: 3px solid var(--mc-border);
+            padding: 12px 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .collect-more-btn:hover {
+            background: var(--mc-green-dark);
+            transform: translateY(-2px);
+        }
+
+        /* ============================================
+           SEED POPUP (Water/Fertilizer Interface)
+           ============================================ */
+        .seed-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+            padding: var(--space-md);
+        }
+
+        .seed-popup-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .seed-popup {
+            background: var(--mc-dirt-dark);
+            border: 8px solid var(--mc-border);
+            padding: var(--space-xl);
+            min-width: 350px;
+            box-shadow: var(--mc-shadow-lg);
+            transform: scale(0);
+            animation: popupAppear 0.3s ease-out forwards;
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes popupAppear {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .seed-popup-header {
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            margin-bottom: var(--space-lg);
+            text-align: center;
+            font-size: 24px;
+            font-family: 'Minecraft', monospace;
+            border-bottom: 3px solid var(--mc-border);
+            padding-bottom: var(--space-md);
+        }
+
+        .seed-resources {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        @media (max-width: 768px) {
+            .seed-resources {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .resource-option {
+            background: var(--mc-stone);
+            border: 4px solid var(--mc-border);
+            padding: var(--space-lg);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-md);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resource-option:hover {
+            background: #8B7355;
+            transform: translate(3px, 3px);
+            box-shadow: var(--mc-shadow-sm);
+        }
+
+        .resource-option:active {
+            transform: translate(1px, 1px);
+        }
+
+        .resource-option.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .resource-option.disabled:hover {
+            transform: none;
+            background: var(--mc-stone);
+        }
+
+        .resource-icon {
+            font-size: 48px;
+            margin-bottom: var(--space-sm);
+            display: block;
+            filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+        }
+
+        .resource-name {
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            margin-bottom: var(--space-sm);
+            font-size: 18px;
+            font-family: 'Minecraft', monospace;
+        }
+
+        .resource-cost {
+            color: var(--mc-yellow);
+            text-shadow: var(--mc-text-shadow);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .seed-popup-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .mc-button {
+            flex: 1;
+            background: var(--mc-stone);
+            border: 4px solid var(--mc-border);
+            color: var(--mc-text);
+            padding: var(--space-md) var(--space-lg);
+            font-family: 'Minecraft', monospace;
+            cursor: pointer;
+            text-shadow: var(--mc-text-shadow);
+            transition: all 0.2s ease;
+            font-size: 16px;
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-sm);
+            min-height: 50px;
+        }
+
+        .mc-button:hover {
+            background: #8B7355;
+            transform: translate(2px, 2px);
+            box-shadow: var(--mc-shadow-sm);
+        }
+
+        .mc-button.primary {
+            background: var(--mc-green);
+            border-color: var(--mc-green-dark);
+        }
+
+        .mc-button.primary:hover {
+            background: var(--mc-green-dark);
+        }
+
+        .mc-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .mc-button.disabled:hover {
+            transform: none;
+            background: var(--mc-stone);
+        }
+
+        /* ============================================
+           RESOURCES SECTION
+           ============================================ */
+        .resources-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .resource-card {
+            background: var(--mc-dirt);
+            padding: var(--space-lg);
+            border-radius: var(--radius-md);
+            display: flex;
+            gap: var(--space-lg);
+            align-items: center;
+            box-shadow: var(--mc-shadow-sm);
+            border: 4px solid var(--mc-border);
+            transition: transform 0.1s ease;
+        }
+
+        .resource-card:hover {
+            transform: translate(2px, 2px);
+            box-shadow: var(--mc-shadow-md);
+        }
+
+        .resource-icon-card {
+            font-size: 40px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--mc-stone);
+            border-radius: var(--radius-sm);
+            border: 3px solid var(--mc-border);
+            flex-shrink: 0;
+        }
+
+        .resource-info h4 {
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .resource-info p {
+            color: #CCCCCC;
+            font-size: 14px;
+            margin-bottom: var(--space-sm);
+        }
+
+        .resource-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .resource-btn, .upgrade-btn {
+            padding: 10px 16px;
+            border: 3px solid var(--mc-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            font-family: 'Poppins', sans-serif;
+            min-height: 44px;
+        }
+
+        .resource-btn {
+            background: var(--mc-green);
+            color: white;
+        }
+
+        .upgrade-btn {
+            background: var(--mc-yellow);
+            color: #5D4037;
+        }
+
+        .resource-btn:hover, .upgrade-btn:hover {
+            transform: translate(1px, 1px);
+        }
+
+        .resource-btn:disabled, .upgrade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .resource-count, .upgrade-level {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+        }
+
+        /* ============================================
+           FARM STATS
+           ============================================ */
+        .farm-stats {
+            background: var(--mc-dirt);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+            box-shadow: var(--mc-shadow-md);
+            margin-bottom: var(--space-lg);
+            border: 4px solid var(--mc-border);
+        }
+
+        .farm-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: var(--space-md);
+            background: var(--mc-dirt-dark);
+            border-radius: var(--radius-md);
+            border: 3px solid var(--mc-border);
+            transition: transform 0.1s ease;
+        }
+
+        .farm-stat:hover {
+            transform: translate(1px, 1px);
+        }
+
+        .farm-stat-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .farm-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--mc-text);
+            font-family: 'Poppins', sans-serif;
+            text-shadow: var(--mc-text-shadow);
+        }
+
+        .farm-stat-label {
+            font-size: 12px;
+            color: #CCCCCC;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ============================================
+           HARVEST NOTIFICATION
+           ============================================ */
+        .harvest-notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: var(--mc-dirt-dark);
+            color: white;
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--mc-shadow-lg);
+            z-index: 1000;
+            transform: translateX(120%);
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            max-width: 400px;
+            border: 4px solid var(--mc-border);
+        }
+
+        .harvest-notification.show {
+            transform: translateX(0);
+        }
+
+        .harvest-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .harvest-icon {
+            font-size: 40px;
+            flex-shrink: 0;
+        }
+
+        .harvest-details h3 {
+            margin-bottom: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--mc-text);
+            text-shadow: var(--mc-text-shadow);
+        }
+
+        .harvest-details p {
+            color: #CCCCCC;
+            font-size: 14px;
+        }
+
+        /* ============================================
+           SELECTED SEED INDICATOR
+           ============================================ */
+        .selected-seed-indicator {
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: none;
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border: 3px solid white;
+            backdrop-filter: blur(10px);
+        }
+
+        .selected-seed-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+        }
+
+        .clear-selection-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .clear-selection-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .station-footer {
+            background: var(--mc-dirt-dark);
+            padding: var(--space-lg);
+            border-radius: var(--radius-lg);
+            margin-top: var(--space-xl);
+            border: 4px solid var(--mc-border);
+            box-shadow: var(--mc-shadow-md);
+        }
+
+        .footer-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .footer-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-sm);
+            background: var(--mc-dirt);
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--mc-border);
+        }
+
+        .footer-label {
+            color: var(--mc-text);
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .footer-value {
+            color: var(--mc-text);
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: var(--space-md);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .footer-btn {
+            background: var(--mc-stone);
+            border: 3px solid var(--mc-border);
+            color: var(--mc-text);
+            padding: 12px 24px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: var(--radius-md);
+            min-height: 50px;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .footer-btn:hover {
+            background: #8B7355;
+            transform: translate(2px, 2px);
+        }
+
+        .footer-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .footer-btn.highlight {
+            background: var(--mc-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8); }
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        /* Tablet & Small Desktop */
+        @media (max-width: 1024px) {
+            :root {
+                --block-size: 60px;
+            }
+            
+            .plant-station-container {
+                padding: 12px;
+            }
+            
+            .farm-header {
+                flex-wrap: wrap;
+                padding: 12px;
+                gap: 12px;
+            }
+            
+            .farm-title {
+                order: -1;
+                width: 100%;
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+            
+            .header-stats {
+                width: 100%;
+                justify-content: center;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+            
+            .stat-badge {
+                min-width: auto;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Mobile Devices (768px and below) */
+        @media (max-width: 768px) {
+            :root {
+                --block-size: 55px;
+                --space-lg: 20px;
+                --space-xl: 24px;
+            }
+            
+            body {
+                font-size: 14px;
+            }
+            
+            /* Make soil matrix larger and more visible */
+            .soil-matrix-grid {
+                grid-template-columns: repeat(4, var(--block-size));
+                grid-template-rows: repeat(4, var(--block-size));
+                gap: 5px;
+                padding: 10px;
+                margin: 0 auto;
+            }
+            
+            .soil-block {
+                width: var(--block-size);
+                height: var(--block-size);
+                border: 2px solid var(--mc-border);
+            }
+            
+            .plant-icon {
+                font-size: 24px;
+            }
+            
+            .plant-stage {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+            
+            /* Improve touch targets */
+            .mc-button, .resource-btn, .upgrade-btn, .footer-btn {
+                padding: 14px 20px;
+                min-height: 50px;
+                font-size: 16px;
+            }
+            
+            /* Adjust resources */
+            .resources-container {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .resource-card {
+                padding: 16px;
+            }
+            
+            /* Adjust seed cards */
+            .seed-cards-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .seed-card {
+                padding: 16px;
+                min-height: 130px;
+            }
+            
+            .seed-icon {
+                font-size: 28px;
+            }
+            
+            /* Stack footer actions */
+            .footer-actions {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .footer-btn {
+                width: 100%;
+                min-width: unset;
+            }
+            
+            /* Make popup more mobile-friendly */
+            .seed-popup {
+                min-width: 90vw;
+                margin: 0 16px;
+                padding: 20px;
+            }
+            
+            .seed-resources {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            /* Adjust header for mobile */
+            .back-to-game-btn {
+                padding: 10px 16px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+            
+            .farm-title {
+                font-size: 22px;
+            }
+            
+            .selected-seed-indicator {
+                top: 100px;
+                width: 90%;
+                max-width: 400px;
+                padding: 10px 20px;
+            }
+        }
+
+        /* Small Mobile Devices (480px and below) */
+        @media (max-width: 480px) {
+            :root {
+                --block-size: 50px;
+                --space-md: 12px;
+            }
+            
+            /* Make soil matrix blocks larger for small phones */
+            .soil-matrix-grid {
+                grid-template-columns: repeat(4, var(--block-size));
+                grid-template-rows: repeat(4, var(--block-size));
+                gap: 4px;
+            }
+            
+            .soil-block {
+                width: var(--block-size);
+                height: var(--block-size);
+            }
+            
+            .plant-icon {
+                font-size: 22px;
+            }
+            
+            /* Stack farm stats */
+            .farm-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            /* Smaller seed cards */
+            .seed-cards-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            
+            .seed-card {
+                padding: 12px;
+                min-height: 120px;
+            }
+            
+            .seed-icon {
+                font-size: 24px;
+            }
+            
+            /* Adjust header for small screens */
+            .farm-header {
+                padding: 10px;
+            }
+            
+            .farm-title {
+                font-size: 20px;
+            }
+            
+            .stat-badge {
+                padding: 6px 10px;
+                font-size: 12px;
+                min-width: 80px;
+            }
+            
+            /* Make popup full-width */
+            .seed-popup {
+                width: 95vw;
+                padding: 16px;
+            }
+            
+            /* Single column for resources on very small screens */
+            .resources-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Very small devices (360px and below) */
+        @media (max-width: 360px) {
+            :root {
+                --block-size: 45px;
+            }
+            
+            .soil-matrix-grid {
+                grid-template-columns: repeat(4, var(--block-size));
+                grid-template-rows: repeat(4, var(--block-size));
+                gap: 3px;
+            }
+            
+            .soil-block {
+                width: var(--block-size);
+                height: var(--block-size);
+            }
+            
+            .plant-icon {
+                font-size: 20px;
+            }
+            
+            /* Single column for seed cards on very small screens */
+            .seed-cards-container {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Smaller text on very small screens */
+            .farm-title {
+                font-size: 18px;
+            }
+            
+            .section-container {
+                padding: 12px;
+            }
+        }
+
+        /* Landscape Mode Fixes */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .plant-station-container {
+                padding: 8px;
+            }
+            
+            .soil-matrix-grid {
+                grid-template-columns: repeat(4, 50px);
+                grid-template-rows: repeat(4, 50px);
+            }
+            
+            .seed-cards-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .seed-card {
+                min-height: 100px;
+                padding: 8px;
+            }
+        }
+
+        /* Prevent horizontal scrolling */
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+            }
+            
+            .plant-station-container {
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+            
+            .soil-matrix-container {
+                max-width: 100%;
+                overflow-x: auto;
+                padding: 12px;
+            }
+            
+            .soil-matrix-grid {
+                min-width: min-content;
+            }
+        }
+
+        /* Improve touch feedback for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .soil-block:active {
+                transform: scale(0.95);
+                opacity: 0.9;
+            }
+            
+            .seed-card:active {
+                transform: scale(0.98);
+            }
+            
+            .mc-button:active, 
+            .resource-btn:active, 
+            .upgrade-btn:active,
+            .footer-btn:active {
+                transform: translate(1px, 1px);
+                opacity: 0.9;
+            }
+            
+            /* Larger touch targets for mobile */
+            .soil-block {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            /* Remove hover effects on mobile */
+            .soil-block:hover {
+                transform: none;
+            }
+            
+            .seed-card:hover,
+            .resource-card:hover,
+            .farm-stat:hover,
+            .mc-button:hover,
+            .resource-btn:hover,
+            .upgrade-btn:hover,
+            .footer-btn:hover {
+                transform: none;
+            }
+        }
+
+        /* Accessibility improvements */
+        button:focus-visible,
+        .soil-block:focus-visible,
+        .seed-card:focus-visible {
+            outline: 3px solid var(--mc-yellow);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Selected Seed Indicator -->
+    <div id="selectedSeedIndicator" class="selected-seed-indicator">
+        <div class="selected-seed-content">
+            <span id="selectedSeedIcon"></span>
+            <span id="selectedSeedName"></span>
+            <button id="clearSelectionBtn" class="clear-selection-btn">×</button>
+        </div>
+    </div>
+
+    <div class="plant-station-container">
+        <!-- Header -->
+        <div class="farm-header">
+            <button class="back-to-game-btn" id="backToGameBtn">
+                ← Back to Game
+            </button>
+            <div class="farm-title">🌱 Plant Station - Soil Matrix</div>
+            <div class="header-stats">
+                <div class="stat-badge" id="ecoPointsBadge">
+                    <span class="stat-icon">🍃</span>
+                    <span class="stat-value" id="ecoPoints">0</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">💧</span>
+                    <span class="stat-value" id="waterCount">10</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">🧴</span>
+                    <span class="stat-value" id="fertilizerCount">5</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="levelDisplay">Level 1</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Progress Bars -->
+        <div class="section-container">
+            <div class="resource-progress-container">
+                <div class="progress-bar-group">
+                    <div class="progress-label">
+                        Water: <span id="waterDisplay">10/50</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill water-fill" id="waterProgress"></div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-group">
+                    <div class="progress-label">
+                        Fertilizer: <span id="fertilizerDisplay">5/30</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div
+                            class="progress-fill fertilizer-fill"
+                            id="fertilizerProgress"
+                        ></div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-group">
+                    <div class="progress-label">
+                        XP: <span id="xpDisplay">0/100</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill xp-fill" id="xpProgress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Farm Stats -->
+        <div class="farm-stats">
+            <div class="farm-stat">
+                <div class="farm-stat-icon">🌱</div>
+                <div class="farm-stat-value" id="plantedCount">0</div>
+                <div class="farm-stat-label">Plants Growing</div>
+            </div>
+            <div class="farm-stat">
+                <div class="farm-stat-icon">⏱️</div>
+                <div class="farm-stat-value" id="growthBoost">1x</div>
+                <div class="farm-stat-label">Growth Rate</div>
+            </div>
+            <div class="farm-stat">
+                <div class="farm-stat-icon">🍎</div>
+                <div class="farm-stat-value" id="harvestedCount">0</div>
+                <div class="farm-stat-label">Harvested</div>
+            </div>
+            <div class="farm-stat">
+                <div class="farm-stat-icon">⭐</div>
+                <div class="farm-stat-value" id="totalYield">0</div>
+                <div class="farm-stat-label">Total Yield</div>
+            </div>
+        </div>
+
+        <!-- Seed Selection -->
+        <div class="section-container">
+            <div class="farm-section-title">
+                <span>Available Seeds</span>
+                <div class="section-badge" id="seedCountBadge">0</div>
+            </div>
+            <div class="seed-cards-container" id="seedCardsContainer">
+                <!-- Seed cards will be generated here -->
+                <div class="no-seeds-message" id="noSeedsMessage">
+                    <div class="no-seeds-icon">🌱</div>
+                    <h3>No Seeds Available</h3>
+                    <p>Collect seeds while running in the main game!</p>
+                    <button class="collect-more-btn" id="collectMoreBtn">
+                        Go Collect Seeds
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Soil Matrix - 4x4 Grid (MAIN GAME AREA) -->
+        <div class="section-container">
+            <div class="farm-section-title">
+                <span>Soil Matrix (4x4)</span>
+                <div class="section-badge" id="matrixSlotsBadge">0/16</div>
+            </div>
+            <div class="soil-matrix-section">
+                <div class="soil-matrix-title">Click on a soil block to plant</div>
+                <div class="soil-matrix-container">
+                    <div class="soil-matrix-grid" id="soilMatrixGrid">
+                        <!-- 16 soil blocks (4x4) will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources Section -->
+        <div class="section-container">
+            <div class="farm-section-title">
+                <span>Resources & Upgrades</span>
+            </div>
+            <div class="resources-container">
+                <div class="resource-card">
+                    <div class="resource-icon-card">💧</div>
+                    <div class="resource-info">
+                        <h4>Water</h4>
+                        <p>Water your plants to speed up growth</p>
+                        <div class="resource-actions">
+                            <button class="resource-btn" id="collectWaterBtn">
+                                Collect (+1)
+                            </button>
+                            <span class="resource-count" id="waterDisplayText">10</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon-card">🧴</div>
+                    <div class="resource-info">
+                        <h4>Fertilizer</h4>
+                        <p>Boost plant growth significantly</p>
+                        <div class="resource-actions">
+                            <button class="resource-btn" id="collectFertilizerBtn">
+                                Collect (+1)
+                            </button>
+                            <span class="resource-count" id="fertilizerDisplayText">5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-icon-card">✨</div>
+                    <div class="resource-info">
+                        <h4>Growth Boost</h4>
+                        <p>Speed up all plant growth</p>
+                        <div class="resource-actions">
+                            <button class="upgrade-btn" id="upgradeGrowthBtn">
+                                Upgrade (100🌿)
+                            </button>
+                            <span class="upgrade-level" id="growthLevel">Level 1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="station-footer">
+            <div class="footer-stats">
+                <div class="footer-stat">
+                    <span class="footer-label">Total Plants:</span>
+                    <span class="footer-value" id="totalPlants">0</span>
+                </div>
+                <div class="footer-stat">
+                    <span class="footer-label">Active Plants:</span>
+                    <span class="footer-value" id="activePlants">0</span>
+                </div>
+                <div class="footer-stat">
+                    <span class="footer-label">Ready to Harvest:</span>
+                    <span class="footer-value" id="readyPlants">0</span>
+                </div>
+            </div>
+            <div class="footer-actions">
+                <button class="footer-btn" id="autoWaterBtn">💧 Auto Water</button>
+                <button class="footer-btn" id="checkAllBtn">👀 Check All</button>
+                <button class="footer-btn" id="harvestAllBtn">⚡ Harvest All</button>
+            </div>
+        </div>
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
     </div>
 
     <!-- Harvest Notification -->
     <div class="harvest-notification" id="harvestNotification">
+<<<<<<< HEAD
       <div class="harvest-content">
         <div class="harvest-icon">🎉</div>
         <div class="harvest-details">
@@ -1808,6 +3492,15 @@
           <p class="harvest-reward" id="harvestRewardText"></p>
         </div>
       </div>
+=======
+        <div class="harvest-content">
+            <div class="harvest-icon">🎉</div>
+            <div class="harvest-details">
+                <h3 class="harvest-title">Harvest Complete!</h3>
+                <p class="harvest-reward" id="harvestRewardText"></p>
+            </div>
+        </div>
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
     </div>
 
     <!-- Seed Popup Overlay -->
@@ -1815,6 +3508,7 @@
 
     <!-- JavaScript -->
     <script>
+<<<<<<< HEAD
       /** @format */
 
       (() => {
@@ -2395,22 +4089,627 @@
                                         ? '<div class="resource-cost">✓ Fertilized</div>'
                                         : ""
                                     }
+=======
+        /** @format */
+
+        (() => {
+            "use strict";
+
+            // ===== ENHANCED PLANT DATA WITH MORE VARIETY =====
+            const PLANT_DATA = {
+                oak: {
+                    name: "Oak Tree",
+                    stages: ["seedling", "sapling", "young", "mature"],
+                    stageTimes: [20000, 40000, 60000, 80000],
+                    waterNeeds: [1, 2, 3, 4],
+                    fertilizerNeeds: [0, 1, 2, 3],
+                    harvest: {
+                        item: "Acorns",
+                        icon: "🌰",
+                        count: "3-5",
+                        reward: 50,
+                    },
+                    color: "#8B4513",
+                    size: "large",
+                },
+                maple: {
+                    name: "Maple Tree",
+                    stages: ["seedling", "sapling", "young", "mature"],
+                    stageTimes: [18000, 35000, 50000, 70000],
+                    waterNeeds: [1, 2, 2, 3],
+                    fertilizerNeeds: [0, 1, 1, 2],
+                    harvest: {
+                        item: "Maple Syrup",
+                        icon: "🍁",
+                        count: "2-4 bottles",
+                        reward: 60,
+                    },
+                    color: "#FF6B6B",
+                    size: "medium",
+                },
+                pine: {
+                    name: "Pine Tree",
+                    stages: ["seedling", "sapling", "young", "mature"],
+                    stageTimes: [15000, 30000, 45000, 60000],
+                    waterNeeds: [1, 1, 2, 2],
+                    fertilizerNeeds: [0, 0, 1, 1],
+                    harvest: {
+                        item: "Pine Cones",
+                        icon: "🎄",
+                        count: "5-8",
+                        reward: 40,
+                    },
+                    color: "#228B22",
+                    size: "large",
+                },
+                apple: {
+                    name: "Apple Tree",
+                    stages: ["seedling", "sapling", "young", "mature"],
+                    stageTimes: [25000, 50000, 75000, 100000],
+                    waterNeeds: [2, 3, 4, 5],
+                    fertilizerNeeds: [1, 2, 3, 4],
+                    harvest: {
+                        item: "Apples",
+                        icon: "🍎",
+                        count: "8-12",
+                        reward: 100,
+                    },
+                    color: "#FF4444",
+                    size: "medium",
+                },
+                cotton: {
+                    name: "Cotton Plant",
+                    stages: ["seedling", "budding", "flowering", "mature"],
+                    stageTimes: [10000, 20000, 30000, 40000],
+                    waterNeeds: [2, 3, 3, 2],
+                    fertilizerNeeds: [1, 2, 2, 1],
+                    harvest: {
+                        item: "Cotton Bolls",
+                        icon: "⚪",
+                        count: "10-15",
+                        reward: 70,
+                    },
+                    color: "#FFFFFF",
+                    size: "small",
+                },
+                wheat: {
+                    name: "Wheat",
+                    stages: ["sprout", "stem", "heading", "ripe"],
+                    stageTimes: [8000, 15000, 22000, 30000],
+                    waterNeeds: [1, 2, 3, 1],
+                    fertilizerNeeds: [1, 2, 2, 0],
+                    harvest: {
+                        item: "Wheat Grains",
+                        icon: "🌾",
+                        count: "20-30",
+                        reward: 80,
+                    },
+                    color: "#FFD700",
+                    size: "small",
+                },
+            };
+
+            // ===== CONFIGURATION =====
+            const CONFIG = {
+                SOIL_MATRIX_SLOTS: 16, // 4x4 matrix
+                UPDATE_INTERVAL: 1000,
+                AUTO_SAVE_INTERVAL: 30000,
+            };
+
+            // ===== GAME STATE =====
+            let gameState = {
+                // Resources
+                water: 10,
+                fertilizer: 5,
+                ecoPoints: 0,
+                growthBoost: 1,
+                experience: 0,
+                level: 1,
+
+                // Seeds inventory
+                seeds: {
+                    oak: 3,
+                    maple: 2,
+                    pine: 2,
+                    apple: 1,
+                    cotton: 3,
+                    wheat: 4,
+                },
+
+                // Soil Matrix slots (16 slots - 4x4 grid) - ONLY THIS GRID
+                soilMatrixSlots: Array(CONFIG.SOIL_MATRIX_SLOTS)
+                    .fill(null)
+                    .map((_, index) => ({
+                        plant: null,
+                        stage: 0,
+                        stageStartTime: Date.now(),
+                        waterGiven: 0,
+                        fertilizerGiven: 0,
+                        waterNeeded: 0,
+                        fertilizerNeeded: 0,
+                        isWatered: false,
+                        isFertilized: false,
+                        harvestReady: false,
+                        x: index % 4,
+                        y: Math.floor(index / 4),
+                    })),
+
+                // Statistics
+                totalPlanted: 0,
+                totalHarvested: 0,
+                totalYield: 0,
+                recentHarvests: [],
+
+                // Upgrades
+                upgrades: {
+                    autoWater: false,
+                    autoFertilizer: false,
+                    extraSlots: 0,
+                    fasterGrowth: 0,
+                },
+
+                // Selected seed for planting
+                selectedSeed: null,
+
+                // Achievements
+                achievements: {
+                    firstHarvest: false,
+                    masterFarmer: false,
+                    speedGrower: false,
+                    varietyExpert: false,
+                },
+            };
+
+            // ===== DOM ELEMENTS =====
+            const DOM = {
+                // Header
+                backToGameBtn: document.getElementById("backToGameBtn"),
+                ecoPoints: document.getElementById("ecoPoints"),
+                waterCount: document.getElementById("waterCount"),
+                fertilizerCount: document.getElementById("fertilizerCount"),
+                levelDisplay: document.getElementById("levelDisplay"),
+
+                // Stats
+                plantedCount: document.getElementById("plantedCount"),
+                growthBoost: document.getElementById("growthBoost"),
+                harvestedCount: document.getElementById("harvestedCount"),
+                totalYield: document.getElementById("totalYield"),
+
+                // Seed selection
+                seedCardsContainer: document.getElementById("seedCardsContainer"),
+                noSeedsMessage: document.getElementById("noSeedsMessage"),
+                collectMoreBtn: document.getElementById("collectMoreBtn"),
+                seedCountBadge: document.getElementById("seedCountBadge"),
+
+                // Soil Matrix
+                soilMatrixGrid: document.getElementById("soilMatrixGrid"),
+                matrixSlotsBadge: document.getElementById("matrixSlotsBadge"),
+
+                // Resources
+                waterDisplay: document.getElementById("waterDisplay"),
+                fertilizerDisplay: document.getElementById("fertilizerDisplay"),
+                collectWaterBtn: document.getElementById("collectWaterBtn"),
+                collectFertilizerBtn: document.getElementById("collectFertilizerBtn"),
+                upgradeGrowthBtn: document.getElementById("upgradeGrowthBtn"),
+                growthLevel: document.getElementById("growthLevel"),
+
+                // Progress bars
+                waterProgress: document.getElementById("waterProgress"),
+                fertilizerProgress: document.getElementById("fertilizerProgress"),
+                xpProgress: document.getElementById("xpProgress"),
+
+                // Selected seed indicator
+                selectedSeedIndicator: document.getElementById("selectedSeedIndicator"),
+                selectedSeedIcon: document.getElementById("selectedSeedIcon"),
+                selectedSeedName: document.getElementById("selectedSeedName"),
+                clearSelectionBtn: document.getElementById("clearSelectionBtn"),
+
+                // Footer
+                totalPlants: document.getElementById("totalPlants"),
+                activePlants: document.getElementById("activePlants"),
+                readyPlants: document.getElementById("readyPlants"),
+                autoWaterBtn: document.getElementById("autoWaterBtn"),
+                checkAllBtn: document.getElementById("checkAllBtn"),
+                harvestAllBtn: document.getElementById("harvestAllBtn"),
+
+                // Notification
+                harvestNotification: document.getElementById("harvestNotification"),
+                harvestRewardText: document.getElementById("harvestRewardText"),
+
+                // Popup overlay
+                seedPopupOverlay: document.getElementById("seedPopupOverlay"),
+            };
+
+            // ===== UTILITY FUNCTIONS =====
+            const Utils = {
+                formatTime: (ms) => {
+                    const seconds = Math.floor(ms / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const hours = Math.floor(minutes / 60);
+
+                    if (hours > 0) {
+                        return `${hours}h ${minutes % 60}m`;
+                    } else if (minutes > 0) {
+                        return `${minutes}m ${seconds % 60}s`;
+                    } else {
+                        return `${seconds}s`;
+                    }
+                },
+
+                getRandomInt: (min, max) => {
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                },
+
+                saveGame: () => {
+                    try {
+                        localStorage.setItem("plantStationSave", JSON.stringify(gameState));
+                    } catch (e) {
+                        console.warn("Failed to save game:", e);
+                    }
+                },
+
+                loadGame: () => {
+                    try {
+                        const saved = localStorage.getItem("plantStationSave");
+                        if (saved) {
+                            const loaded = JSON.parse(saved);
+                            gameState = { ...gameState, ...loaded };
+                            
+                            // Ensure arrays are properly initialized
+                            if (!Array.isArray(gameState.soilMatrixSlots) || gameState.soilMatrixSlots.length !== CONFIG.SOIL_MATRIX_SLOTS) {
+                                gameState.soilMatrixSlots = Array(CONFIG.SOIL_MATRIX_SLOTS)
+                                    .fill(null)
+                                    .map((_, index) => ({
+                                        plant: null,
+                                        stage: 0,
+                                        stageStartTime: Date.now(),
+                                        waterGiven: 0,
+                                        fertilizerGiven: 0,
+                                        waterNeeded: 0,
+                                        fertilizerNeeded: 0,
+                                        isWatered: false,
+                                        isFertilized: false,
+                                        harvestReady: false,
+                                        x: index % 4,
+                                        y: Math.floor(index / 4),
+                                    }));
+                            }
+                            
+                            if (!Array.isArray(gameState.recentHarvests)) {
+                                gameState.recentHarvests = [];
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Failed to load game:", e);
+                    }
+                },
+
+                addExperience: (amount) => {
+                    gameState.experience += amount;
+                    const xpForNextLevel = gameState.level * 100;
+                    if (gameState.experience >= xpForNextLevel) {
+                        gameState.experience -= xpForNextLevel;
+                        gameState.level++;
+                        // Level up reward
+                        gameState.water += 5;
+                        gameState.fertilizer += 3;
+                        gameState.ecoPoints += 100;
+                        showLevelUpNotification();
+                    }
+                    UI.updateProgressBars();
+                },
+
+                updateProgressBars: () => {
+                    const waterPercent = (gameState.water / 50) * 100;
+                    const fertilizerPercent = (gameState.fertilizer / 30) * 100;
+                    const xpForNextLevel = gameState.level * 100;
+                    const xpPercent = (gameState.experience / xpForNextLevel) * 100;
+
+                    if (DOM.waterProgress) {
+                        DOM.waterProgress.style.width = `${Math.min(waterPercent, 100)}%`;
+                    }
+                    if (DOM.fertilizerProgress) {
+                        DOM.fertilizerProgress.style.width = `${Math.min(fertilizerPercent, 100)}%`;
+                    }
+                    if (DOM.xpProgress) {
+                        DOM.xpProgress.style.width = `${Math.min(xpPercent, 100)}%`;
+                    }
+                },
+            };
+
+            // ===== PLANT FUNCTIONS =====
+            const PlantSystem = {
+                calculateGrowth: (slot) => {
+                    if (!slot.plant) return slot;
+
+                    const plantData = PLANT_DATA[slot.plant];
+                    if (!plantData) return slot;
+
+                    const now = Date.now();
+                    const timeInStage = now - slot.stageStartTime;
+
+                    // Apply growth boost
+                    const effectiveGrowthBoost = gameState.growthBoost + gameState.upgrades.fasterGrowth * 0.2;
+                    const stageTime = plantData.stageTimes[slot.stage] / effectiveGrowthBoost;
+
+                    // Check if ready to advance
+                    if (timeInStage >= stageTime && slot.stage < plantData.stages.length - 1) {
+                        // Check if needs are met
+                        if (slot.waterGiven >= slot.waterNeeded && slot.fertilizerGiven >= slot.fertilizerNeeded) {
+                            slot.stage++;
+                            slot.stageStartTime = now;
+                            slot.waterGiven = 0;
+                            slot.fertilizerGiven = 0;
+                            slot.waterNeeded = plantData.waterNeeds[slot.stage] || 0;
+                            slot.fertilizerNeeded = plantData.fertilizerNeeds[slot.stage] || 0;
+                            slot.isWatered = false;
+                            slot.isFertilized = false;
+
+                            // Add experience for growth
+                            Utils.addExperience(10);
+                        }
+                    }
+
+                    // Check if harvest ready
+                    if (slot.stage === plantData.stages.length - 1 && 
+                        slot.waterGiven >= slot.waterNeeded && 
+                        slot.fertilizerGiven >= slot.fertilizerNeeded) {
+                        slot.harvestReady = true;
+                    }
+
+                    return slot;
+                },
+
+                getGrowthProgress: (slot) => {
+                    if (!slot.plant) return 0;
+
+                    const plantData = PLANT_DATA[slot.plant];
+                    if (!plantData) return 0;
+
+                    const now = Date.now();
+                    const timeInStage = now - slot.stageStartTime;
+                    const effectiveGrowthBoost = gameState.growthBoost + gameState.upgrades.fasterGrowth * 0.2;
+                    const stageTime = plantData.stageTimes[slot.stage] / effectiveGrowthBoost;
+
+                    return Math.min(timeInStage / stageTime, 1);
+                },
+
+                getTimeRemaining: (slot) => {
+                    if (!slot.plant) return 0;
+
+                    const plantData = PLANT_DATA[slot.plant];
+                    if (!plantData) return 0;
+
+                    const now = Date.now();
+                    const timeInStage = now - slot.stageStartTime;
+                    const effectiveGrowthBoost = gameState.growthBoost + gameState.upgrades.fasterGrowth * 0.2;
+                    const stageTime = plantData.stageTimes[slot.stage] / effectiveGrowthBoost;
+
+                    return Math.max(stageTime - timeInStage, 0);
+                },
+
+                waterPlant: (slotIndex) => {
+                    const slot = gameState.soilMatrixSlots[slotIndex];
+                    
+                    if (!slot.plant || slot.isWatered || gameState.water <= 0) return false;
+
+                    slot.waterGiven++;
+                    slot.isWatered = true;
+                    gameState.water--;
+
+                    // Add experience
+                    Utils.addExperience(2);
+
+                    return true;
+                },
+
+                fertilizePlant: (slotIndex) => {
+                    const slot = gameState.soilMatrixSlots[slotIndex];
+                    
+                    if (!slot.plant || slot.isFertilized || gameState.fertilizer <= 0) return false;
+
+                    slot.fertilizerGiven++;
+                    slot.isFertilized = true;
+                    gameState.fertilizer--;
+
+                    // Apply growth boost - reduce time by 10% per fertilizer
+                    const plantData = PLANT_DATA[slot.plant];
+                    if (plantData) {
+                        const timeReduction = plantData.stageTimes[slot.stage] * 0.1;
+                        slot.stageStartTime -= timeReduction;
+                    }
+
+                    // Add experience
+                    Utils.addExperience(3);
+
+                    return true;
+                },
+
+                harvestPlant: (slotIndex) => {
+                    const slot = gameState.soilMatrixSlots[slotIndex];
+                    
+                    if (!slot.plant || !slot.harvestReady) return null;
+
+                    const plantType = slot.plant;
+                    const plantData = PLANT_DATA[plantType];
+                    if (!plantData) return null;
+
+                    // Calculate rewards
+                    const baseReward = plantData.harvest.reward || 50;
+                    const bonusMultiplier = 1 + slot.fertilizerGiven * 0.1;
+                    const totalReward = Math.floor(baseReward * bonusMultiplier);
+
+                    // Add rewards
+                    gameState.ecoPoints += totalReward;
+                    gameState.totalHarvested++;
+                    gameState.totalYield += totalReward;
+
+                    // Add experience
+                    Utils.addExperience(20);
+
+                    // Chance to get seed back
+                    const seedReturnChance = 0.3;
+                    const returnedSeed = Math.random() < seedReturnChance;
+                    if (returnedSeed) {
+                        gameState.seeds[plantType]++;
+                    }
+
+                    // Add harvest to recent list
+                    const harvest = {
+                        plant: plantData.name,
+                        item: plantData.harvest.item,
+                        icon: plantData.harvest.icon,
+                        count: plantData.harvest.count,
+                        points: totalReward,
+                        timestamp: Date.now(),
+                        returnedSeed: returnedSeed,
+                    };
+
+                    gameState.recentHarvests.unshift(harvest);
+                    if (gameState.recentHarvests.length > 10) {
+                        gameState.recentHarvests = gameState.recentHarvests.slice(0, 10);
+                    }
+
+                    // Check achievements
+                    if (!gameState.achievements.firstHarvest) {
+                        gameState.achievements.firstHarvest = true;
+                        gameState.ecoPoints += 100;
+                    }
+
+                    // Reset slot
+                    gameState.soilMatrixSlots[slotIndex] = {
+                        plant: null,
+                        stage: 0,
+                        stageStartTime: Date.now(),
+                        waterGiven: 0,
+                        fertilizerGiven: 0,
+                        waterNeeded: 0,
+                        fertilizerNeeded: 0,
+                        isWatered: false,
+                        isFertilized: false,
+                        harvestReady: false,
+                        x: slot.x,
+                        y: slot.y,
+                    };
+
+                    // Show harvest notification
+                    UI.showHarvestNotification(
+                        plantData.name,
+                        plantData.harvest,
+                        totalReward,
+                        returnedSeed
+                    );
+
+                    return harvest;
+                },
+
+                plantSeed: (slotIndex, seedType) => {
+                    if (!seedType || !gameState.seeds[seedType] || gameState.seeds[seedType] <= 0) {
+                        console.error(`No ${seedType} seeds available`);
+                        return false;
+                    }
+
+                    if (slotIndex < 0 || slotIndex >= gameState.soilMatrixSlots.length) {
+                        console.error(`Invalid slot index: ${slotIndex}`);
+                        return false;
+                    }
+
+                    if (gameState.soilMatrixSlots[slotIndex].plant) {
+                        console.error(`Slot ${slotIndex} already has a plant`);
+                        return false;
+                    }
+
+                    const plantData = PLANT_DATA[seedType];
+                    if (!plantData) {
+                        console.error(`No plant data for ${seedType}`);
+                        return false;
+                    }
+
+                    // Create new slot object with plant
+                    gameState.soilMatrixSlots[slotIndex] = {
+                        plant: seedType,
+                        stage: 0,
+                        stageStartTime: Date.now(),
+                        waterGiven: 0,
+                        fertilizerGiven: 0,
+                        waterNeeded: plantData.waterNeeds[0] || 0,
+                        fertilizerNeeded: plantData.fertilizerNeeds[0] || 0,
+                        isWatered: false,
+                        isFertilized: false,
+                        harvestReady: false,
+                        x: gameState.soilMatrixSlots[slotIndex].x,
+                        y: gameState.soilMatrixSlots[slotIndex].y,
+                    };
+
+                    // Deduct seed from inventory
+                    gameState.seeds[seedType]--;
+                    gameState.totalPlanted++;
+
+                    // Clear selection
+                    gameState.selectedSeed = null;
+
+                    return true;
+                },
+            };
+
+            // ===== POPUP SYSTEM =====
+            const PopupSystem = {
+                showWaterFertilizerPopup: (slotIndex) => {
+                    const slot = gameState.soilMatrixSlots[slotIndex];
+                    if (!slot || !slot.plant) return;
+
+                    const plantData = PLANT_DATA[slot.plant];
+                    if (!plantData) return;
+
+                    const popupContent = `
+                        <div class="seed-popup">
+                            <div class="seed-popup-header">
+                                <div style="font-size: 48px; margin-bottom: 10px;">${plantData.harvest.icon}</div>
+                                <div style="font-size: 24px; margin-bottom: 5px;">${plantData.name}</div>
+                                <div style="font-size: 14px; color: #CCCCCC;">Stage: ${plantData.stages[slot.stage]}</div>
+                            </div>
+                            
+                            <div class="seed-resources">
+                                <div class="resource-option ${gameState.water <= 0 || slot.isWatered ? 'disabled' : ''}" 
+                                      data-action="water" data-slot="${slotIndex}">
+                                    <div class="resource-icon">💧</div>
+                                    <div class="resource-name">Water</div>
+                                    <div class="resource-cost">Uses: ${slot.waterGiven}/${slot.waterNeeded}</div>
+                                    <div class="resource-cost">Available: ${gameState.water}</div>
+                                    ${slot.isWatered ? '<div class="resource-cost">✓ Watered</div>' : ''}
+                                </div>
+                                
+                                <div class="resource-option ${gameState.fertilizer <= 0 || slot.isFertilized ? 'disabled' : ''}" 
+                                      data-action="fertilize" data-slot="${slotIndex}">
+                                    <div class="resource-icon">🧴</div>
+                                    <div class="resource-name">Fertilizer</div>
+                                    <div class="resource-cost">Uses: ${slot.fertilizerGiven}/${slot.fertilizerNeeded}</div>
+                                    <div class="resource-cost">Available: ${gameState.fertilizer}</div>
+                                    ${slot.isFertilized ? '<div class="resource-cost">✓ Fertilized</div>' : ''}
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
                                 </div>
                             </div>
                             
                             <div class="seed-popup-actions">
                                 <button class="mc-button" id="closePopupBtn">Close</button>
+<<<<<<< HEAD
                                 <button class="mc-button primary ${
                                   !slot.harvestReady ? "disabled" : ""
                                 }" 
                                         id="harvestPopupBtn" 
                                         ${!slot.harvestReady ? "disabled" : ""}>
+=======
+                                <button class="mc-button primary ${!slot.harvestReady ? 'disabled' : ''}" 
+                                        id="harvestPopupBtn" 
+                                        ${!slot.harvestReady ? 'disabled' : ''}>
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
                                     ⚡ Harvest
                                 </button>
                             </div>
                         </div>
                     `;
 
+<<<<<<< HEAD
             DOM.seedPopupOverlay.innerHTML = popupContent;
             DOM.seedPopupOverlay.classList.add("active");
 
@@ -2551,6 +4850,135 @@
               card.dataset.seedType = type;
 
               card.innerHTML = `
+=======
+                    DOM.seedPopupOverlay.innerHTML = popupContent;
+                    DOM.seedPopupOverlay.classList.add('active');
+
+                    // Add event listeners
+                    const closeBtn = document.getElementById('closePopupBtn');
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', () => {
+                            DOM.seedPopupOverlay.classList.remove('active');
+                        });
+                    }
+
+                    const harvestBtn = document.getElementById('harvestPopupBtn');
+                    if (harvestBtn) {
+                        harvestBtn.addEventListener('click', () => {
+                            if (slot.harvestReady) {
+                                PlantSystem.harvestPlant(slotIndex);
+                                UI.updateAll();
+                                Utils.saveGame();
+                                DOM.seedPopupOverlay.classList.remove('active');
+                            }
+                        });
+                    }
+
+                    // Add water/fertilizer button listeners
+                    DOM.seedPopupOverlay.querySelectorAll('.resource-option:not(.disabled)').forEach(option => {
+                        option.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const action = e.currentTarget.dataset.action;
+                            const slotIndex = parseInt(e.currentTarget.dataset.slot);
+                            
+                            if (action === 'water') {
+                                if (PlantSystem.waterPlant(slotIndex)) {
+                                    UI.updateAll();
+                                    Utils.saveGame();
+                                    // Close and reopen popup to update info
+                                    setTimeout(() => {
+                                        PopupSystem.showWaterFertilizerPopup(slotIndex);
+                                    }, 100);
+                                }
+                            } else if (action === 'fertilize') {
+                                if (PlantSystem.fertilizePlant(slotIndex)) {
+                                    UI.updateAll();
+                                    Utils.saveGame();
+                                    // Close and reopen popup to update info
+                                    setTimeout(() => {
+                                        PopupSystem.showWaterFertilizerPopup(slotIndex);
+                                    }, 100);
+                                }
+                            }
+                        });
+                    });
+
+                    // Close on overlay click
+                    DOM.seedPopupOverlay.addEventListener('click', (e) => {
+                        if (e.target === DOM.seedPopupOverlay) {
+                            DOM.seedPopupOverlay.classList.remove('active');
+                        }
+                    });
+                },
+            };
+
+            // ===== UI FUNCTIONS =====
+            const UI = {
+                updateAll: () => {
+                    UI.updateStats();
+                    UI.updateSeedCards();
+                    UI.updateSoilMatrix();
+                    UI.updateResources();
+                    UI.updateFooter();
+                    Utils.updateProgressBars();
+                    UI.updateSelectedSeedIndicator();
+                },
+
+                updateStats: () => {
+                    // Count active plants in soil matrix
+                    const matrixActive = gameState.soilMatrixSlots.filter(slot => slot.plant).length;
+                    const matrixReady = gameState.soilMatrixSlots.filter(slot => slot.harvestReady).length;
+
+                    // Update header
+                    if (DOM.ecoPoints) DOM.ecoPoints.textContent = gameState.ecoPoints;
+                    if (DOM.waterCount) DOM.waterCount.textContent = gameState.water;
+                    if (DOM.fertilizerCount) DOM.fertilizerCount.textContent = gameState.fertilizer;
+                    if (DOM.levelDisplay) DOM.levelDisplay.textContent = `Level ${gameState.level}`;
+
+                    // Update stats
+                    if (DOM.plantedCount) DOM.plantedCount.textContent = matrixActive;
+                    const effectiveGrowthBoost = gameState.growthBoost + gameState.upgrades.fasterGrowth * 0.2;
+                    if (DOM.growthBoost) DOM.growthBoost.textContent = `${effectiveGrowthBoost.toFixed(1)}x`;
+                    if (DOM.harvestedCount) DOM.harvestedCount.textContent = gameState.totalHarvested;
+                    if (DOM.totalYield) DOM.totalYield.textContent = gameState.totalYield;
+
+                    // Update footer stats
+                    if (DOM.totalPlants) DOM.totalPlants.textContent = gameState.totalPlanted;
+                    if (DOM.activePlants) DOM.activePlants.textContent = matrixActive;
+                    if (DOM.readyPlants) DOM.readyPlants.textContent = matrixReady;
+
+                    // Update badges
+                    const totalSeeds = Object.values(gameState.seeds).reduce((a, b) => a + b, 0);
+                    if (DOM.seedCountBadge) DOM.seedCountBadge.textContent = totalSeeds;
+                    if (DOM.matrixSlotsBadge) DOM.matrixSlotsBadge.textContent = `${matrixActive}/${CONFIG.SOIL_MATRIX_SLOTS}`;
+                },
+
+                updateSeedCards: () => {
+                    if (!DOM.seedCardsContainer) return;
+                    
+                    DOM.seedCardsContainer.innerHTML = "";
+
+                    const totalSeeds = Object.values(gameState.seeds).reduce((a, b) => a + b, 0);
+
+                    if (totalSeeds === 0) {
+                        if (DOM.noSeedsMessage) DOM.noSeedsMessage.style.display = "flex";
+                        return;
+                    }
+
+                    if (DOM.noSeedsMessage) DOM.noSeedsMessage.style.display = "none";
+
+                    Object.entries(gameState.seeds).forEach(([type, count]) => {
+                        if (count <= 0) return;
+
+                        const plantData = PLANT_DATA[type];
+                        if (!plantData) return;
+
+                        const card = document.createElement("div");
+                        card.className = `seed-card ${gameState.selectedSeed === type ? "selected" : ""}`;
+                        card.dataset.seedType = type;
+
+                        card.innerHTML = `
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
                             <div class="seed-count">${count}</div>
                             <div class="seed-icon">${plantData.harvest.icon}</div>
                             <div class="seed-name">${plantData.name}</div>
@@ -2558,6 +4986,7 @@
                             <div class="seed-reward">${plantData.harvest.reward}🌿</div>
                         `;
 
+<<<<<<< HEAD
               card.addEventListener("click", () => {
                 gameState.selectedSeed =
                   gameState.selectedSeed === type ? null : type;
@@ -2610,10 +5039,55 @@
                                     <div class="plant-need need-fertilizer ${
                                       slot.isFertilized ? "need-fulfilled" : ""
                                     }">
+=======
+                        card.addEventListener("click", () => {
+                            gameState.selectedSeed = gameState.selectedSeed === type ? null : type;
+                            UI.updateAll();
+                        });
+
+                        DOM.seedCardsContainer.appendChild(card);
+                    });
+                },
+
+                updateSoilMatrix: () => {
+                    if (!DOM.soilMatrixGrid) return;
+                    
+                    DOM.soilMatrixGrid.innerHTML = "";
+
+                    gameState.soilMatrixSlots.forEach((slot, index) => {
+                        // Update growth
+                        gameState.soilMatrixSlots[index] = PlantSystem.calculateGrowth(slot);
+
+                        const blockElement = document.createElement("div");
+                        blockElement.className = "soil-block";
+                        blockElement.dataset.slotIndex = index;
+
+                        if (!slot.plant) {
+                            blockElement.classList.add("empty");
+                            if (gameState.selectedSeed && gameState.seeds[gameState.selectedSeed] > 0) {
+                                blockElement.classList.add("plantable");
+                            }
+                        } else {
+                            blockElement.classList.add("planted");
+                            const plantData = PLANT_DATA[slot.plant];
+                            if (!plantData) return;
+
+                            const progress = PlantSystem.getGrowthProgress(slot);
+                            
+                            blockElement.innerHTML = `
+                                <div class="plant-icon">${plantData.harvest.icon}</div>
+                                <div class="plant-stage">${plantData.stages[slot.stage]}</div>
+                                <div class="plant-needs">
+                                    <div class="plant-need need-water ${slot.isWatered ? 'need-fulfilled' : ''}">
+                                        ${slot.waterGiven}
+                                    </div>
+                                    <div class="plant-need need-fertilizer ${slot.isFertilized ? 'need-fulfilled' : ''}">
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
                                         ${slot.fertilizerGiven}
                                     </div>
                                 </div>
                             `;
+<<<<<<< HEAD
 
                 blockElement.style.cursor = "pointer";
               }
@@ -2975,6 +5449,396 @@
           const notification = document.createElement("div");
           notification.className = "level-up-notification";
           notification.innerHTML = `
+=======
+                            
+                            // Make planted blocks clickable for water/fertilizer popup
+                            blockElement.style.cursor = 'pointer';
+                        }
+
+                        DOM.soilMatrixGrid.appendChild(blockElement);
+                    });
+
+                    // Add event listeners after rendering
+                    setTimeout(() => UI.addSoilMatrixEventListeners(), 50);
+                },
+
+                addSoilMatrixEventListeners: () => {
+                    // Use touch-friendly event listeners
+                    const eventType = 'ontouchstart' in window ? 'touchstart' : 'click';
+                    
+                    // Plant in empty matrix blocks
+                    document.querySelectorAll('.soil-block.empty.plantable').forEach(block => {
+                        block.addEventListener(eventType, (e) => {
+                            e.preventDefault();
+                            const slotIndex = parseInt(e.currentTarget.dataset.slotIndex);
+                            UI.handlePlantInSlot(slotIndex);
+                        });
+                    });
+
+                    // Click on planted matrix blocks to show water/fertilizer popup
+                    document.querySelectorAll('.soil-block.planted').forEach(block => {
+                        block.addEventListener(eventType, (e) => {
+                            e.preventDefault();
+                            const slotIndex = parseInt(e.currentTarget.dataset.slotIndex);
+                            PopupSystem.showWaterFertilizerPopup(slotIndex);
+                        });
+                    });
+                },
+
+                handlePlantInSlot: (slotIndex) => {
+                    if (!gameState.selectedSeed) {
+                        alert("Please select a seed first!");
+                        return;
+                    }
+
+                    if (gameState.seeds[gameState.selectedSeed] <= 0) {
+                        alert(`You don't have any ${gameState.selectedSeed} seeds!`);
+                        return;
+                    }
+
+                    if (PlantSystem.plantSeed(slotIndex, gameState.selectedSeed)) {
+                        UI.updateAll();
+                        Utils.saveGame();
+                    } else {
+                        alert("Failed to plant seed. Make sure the slot is empty!");
+                    }
+                },
+
+                updateResources: () => {
+                    if (DOM.waterDisplay) DOM.waterDisplay.textContent = `${gameState.water}/50`;
+                    if (DOM.fertilizerDisplay) DOM.fertilizerDisplay.textContent = `${gameState.fertilizer}/30`;
+                    if (DOM.growthLevel) DOM.growthLevel.textContent = `Level ${Math.floor(gameState.growthBoost * 2)}`;
+
+                    // Update resource displays
+                    if (DOM.waterDisplayText) DOM.waterDisplayText.textContent = gameState.water;
+                    if (DOM.fertilizerDisplayText) DOM.fertilizerDisplayText.textContent = gameState.fertilizer;
+
+                    // Update upgrade button cost
+                    const upgradeCost = 100 * Math.floor(gameState.growthBoost * 2);
+                    if (DOM.upgradeGrowthBtn) {
+                        DOM.upgradeGrowthBtn.textContent = `Upgrade (${upgradeCost}🌿)`;
+                        DOM.upgradeGrowthBtn.disabled = gameState.ecoPoints < upgradeCost;
+                    }
+                },
+
+                updateFooter: () => {
+                    if (!DOM.autoWaterBtn || !DOM.harvestAllBtn) return;
+
+                    // Update auto-water button
+                    if (gameState.upgrades.autoWater) {
+                        DOM.autoWaterBtn.innerHTML = "💧 Auto Water (ON)";
+                        DOM.autoWaterBtn.classList.add("active");
+                    } else {
+                        DOM.autoWaterBtn.innerHTML = "💧 Auto Water (OFF)";
+                        DOM.autoWaterBtn.classList.remove("active");
+                    }
+
+                    // Update harvest all button
+                    const matrixReady = gameState.soilMatrixSlots.filter(slot => slot.harvestReady).length;
+                    
+                    DOM.harvestAllBtn.disabled = matrixReady === 0;
+                    DOM.harvestAllBtn.innerHTML = `⚡ Harvest All (${matrixReady})`;
+
+                    if (matrixReady > 0) {
+                        DOM.harvestAllBtn.classList.add("highlight");
+                    } else {
+                        DOM.harvestAllBtn.classList.remove("highlight");
+                    }
+                },
+
+                updateSelectedSeedIndicator: () => {
+                    if (!DOM.selectedSeedIndicator) return;
+
+                    if (gameState.selectedSeed) {
+                        const plantData = PLANT_DATA[gameState.selectedSeed];
+                        if (plantData) {
+                            DOM.selectedSeedIcon.textContent = plantData.harvest.icon;
+                            DOM.selectedSeedName.textContent = `Selected: ${plantData.name}`;
+                            DOM.selectedSeedIndicator.style.display = "block";
+                        }
+                    } else {
+                        DOM.selectedSeedIndicator.style.display = "none";
+                    }
+                },
+
+                showHarvestNotification: (plantName, harvest, points, seedReturned) => {
+                    if (!DOM.harvestNotification || !DOM.harvestRewardText) return;
+
+                    DOM.harvestRewardText.innerHTML = `
+                        <div class="notification-title">Harvest Complete!</div>
+                        <div class="notification-details">
+                            <div class="harvested-plant">${plantName}</div>
+                            <div class="harvest-items">${harvest.icon} ${harvest.count} ${harvest.item}</div>
+                            <div class="points-earned">+${points} Eco-Points</div>
+                            ${seedReturned ? '<div class="seed-bonus">🌱 Bonus Seed Returned!</div>' : ''}
+                        </div>
+                    `;
+
+                    DOM.harvestNotification.classList.add("show");
+
+                    setTimeout(() => {
+                        DOM.harvestNotification.classList.remove("show");
+                    }, 5000);
+                },
+
+                harvestAllReady: () => {
+                    let harvested = 0;
+                    let totalPoints = 0;
+
+                    // Harvest from soil matrix
+                    gameState.soilMatrixSlots.forEach((slot, index) => {
+                        if (slot.harvestReady) {
+                            const result = PlantSystem.harvestPlant(index);
+                            if (result) {
+                                harvested++;
+                                totalPoints += result.points;
+                            }
+                        }
+                    });
+
+                    if (harvested > 0) {
+                        UI.updateAll();
+                        Utils.saveGame();
+
+                        // Show notification
+                        if (DOM.harvestRewardText) {
+                            DOM.harvestRewardText.innerHTML = `
+                                <div class="notification-title">Bulk Harvest!</div>
+                                <div class="notification-details">
+                                    Harvested ${harvested} plants<br>
+                                    Total: +${totalPoints} Points
+                                </div>
+                            `;
+
+                            if (DOM.harvestNotification) {
+                                DOM.harvestNotification.classList.add("show");
+                                setTimeout(() => {
+                                    DOM.harvestNotification.classList.remove("show");
+                                }, 5000);
+                            }
+                        }
+                    }
+                },
+
+                updateProgressBars: () => {
+                    Utils.updateProgressBars();
+                },
+            };
+
+            // ===== EVENT LISTENERS =====
+            // ===== EVENT LISTENERS =====
+            function setupEventListeners() {
+                // Back to game button
+                if (DOM.backToGameBtn) {
+                    DOM.backToGameBtn.addEventListener("click", () => {
+                        // First, transfer seeds back to main game
+                        transferSeedsToMainGame();
+                        
+                        // Save the plant station game state
+                        Utils.saveGame();
+                        
+                        // Try different possible main game URLs
+                        const possibleUrls = [
+                            "index.html",           // Most common
+                            "main.html",           // Alternative name
+                            "game.html",           // Another alternative
+                            "seed-saver.html",     // If that's your main file
+                            "../index.html",       // If plant station is in a subfolder
+                            "/index.html",         // Root path
+                            "..",                  // Go up one directory
+                            "."                    // Current directory (fallback)
+                        ];
+                        
+                        // Check which URL works
+                        function tryRedirect(urls, index = 0) {
+                            if (index >= urls.length) {
+                                // If no URL works, show an alert
+                                alert("Could not find main game file. Please navigate manually.");
+                                console.warn("Could not find main game. Tried:", urls);
+                                return;
+                            }
+                            
+                            const url = urls[index];
+                            console.log(`Trying to redirect to: ${url}`);
+                            
+                            // Create a test link to check if the file exists
+                            const testLink = document.createElement('a');
+                            testLink.href = url;
+                            testLink.style.display = 'none';
+                            document.body.appendChild(testLink);
+                            
+                            // Try to navigate
+                            try {
+                                window.location.href = url;
+                            } catch (error) {
+                                console.error(`Failed to redirect to ${url}:`, error);
+                                // Try next URL
+                                setTimeout(() => tryRedirect(urls, index + 1), 100);
+                            }
+                        }
+                        
+                        // Start trying URLs
+                        tryRedirect(possibleUrls);
+                    });
+                }
+
+                // Clear selection button
+                if (DOM.clearSelectionBtn) {
+                    DOM.clearSelectionBtn.addEventListener("click", () => {
+                        gameState.selectedSeed = null;
+                        UI.updateAll();
+                    });
+                }
+
+                // Collect more seeds button
+                if (DOM.collectMoreBtn) {
+                    DOM.collectMoreBtn.addEventListener("click", () => {
+                        // Same logic as back to game button
+                        transferSeedsToMainGame();
+                        
+                        // Try different possible main game URLs
+                        const possibleUrls = [
+                            "index.html",
+                            "main.html",
+                            "game.html",
+                            "seed-saver.html",
+                            "../index.html",
+                            "/index.html",
+                            "..",
+                            "."
+                        ];
+                        
+                        function tryRedirect(urls, index = 0) {
+                            if (index >= urls.length) {
+                                alert("Could not find main game file. Please navigate manually.");
+                                console.warn("Could not find main game. Tried:", urls);
+                                return;
+                            }
+                            
+                            const url = urls[index];
+                            try {
+                                window.location.href = url;
+                            } catch (error) {
+                                setTimeout(() => tryRedirect(urls, index + 1), 100);
+                            }
+                        }
+                        
+                        tryRedirect(possibleUrls);
+                    });
+                }
+
+                // Resource collection
+                if (DOM.collectWaterBtn) {
+                    DOM.collectWaterBtn.addEventListener("click", () => {
+                        const amount = Utils.getRandomInt(1, 3);
+                        gameState.water += amount;
+                        UI.updateAll();
+                        Utils.saveGame();
+                    });
+                }
+
+                if (DOM.collectFertilizerBtn) {
+                    DOM.collectFertilizerBtn.addEventListener("click", () => {
+                        const amount = Utils.getRandomInt(1, 2);
+                        gameState.fertilizer += amount;
+                        UI.updateAll();
+                        Utils.saveGame();
+                    });
+                }
+
+                // Growth upgrade
+                if (DOM.upgradeGrowthBtn) {
+                    DOM.upgradeGrowthBtn.addEventListener("click", () => {
+                        const cost = 100 * Math.floor(gameState.growthBoost * 2);
+                        if (gameState.ecoPoints >= cost) {
+                            gameState.ecoPoints -= cost;
+                            gameState.growthBoost += 0.5;
+                            UI.updateAll();
+                            Utils.saveGame();
+                        }
+                    });
+                }
+
+                // Footer actions
+                if (DOM.autoWaterBtn) {
+                    DOM.autoWaterBtn.addEventListener("click", () => {
+                        const cost = 500;
+                        if (!gameState.upgrades.autoWater) {
+                            if (gameState.ecoPoints >= cost) {
+                                gameState.ecoPoints -= cost;
+                                gameState.upgrades.autoWater = true;
+                                UI.updateFooter();
+                                Utils.saveGame();
+                            }
+                        } else {
+                            gameState.upgrades.autoWater = false;
+                            UI.updateFooter();
+                            Utils.saveGame();
+                        }
+                    });
+                }
+
+                if (DOM.checkAllBtn) {
+                    DOM.checkAllBtn.addEventListener("click", () => {
+                        gameState.soilMatrixSlots = gameState.soilMatrixSlots.map(slot => PlantSystem.calculateGrowth(slot));
+                        UI.updateAll();
+                        Utils.saveGame();
+                    });
+                }
+
+                if (DOM.harvestAllBtn) {
+                    DOM.harvestAllBtn.addEventListener("click", () => {
+                        UI.harvestAllReady();
+                    });
+                }
+
+                // Load seeds from main game when page loads
+                loadSeedsFromMainGame();
+            }
+
+            // ===== TRANSFER FUNCTIONS =====
+            function loadSeedsFromMainGame() {
+                try {
+                    const plantStationSeeds = localStorage.getItem("plantStationSeeds");
+                    if (plantStationSeeds) {
+                        const seeds = JSON.parse(plantStationSeeds);
+                        Object.keys(seeds).forEach(seedType => {
+                            if (gameState.seeds[seedType] !== undefined) {
+                                gameState.seeds[seedType] += seeds[seedType] || 0;
+                            }
+                        });
+                        localStorage.removeItem("plantStationSeeds");
+                    }
+                } catch (e) {
+                    console.warn("Failed to load seeds from localStorage:", e);
+                }
+            }
+
+            function transferSeedsToMainGame() {
+                try {
+                    const mainGameSave = localStorage.getItem("seedSaverSave");
+                    if (mainGameSave) {
+                        const mainData = JSON.parse(mainGameSave);
+                        if (!mainData.collectedSeeds) mainData.collectedSeeds = {};
+                        
+                        Object.keys(gameState.seeds).forEach(seedType => {
+                            mainData.collectedSeeds[seedType] = (mainData.collectedSeeds[seedType] || 0) + gameState.seeds[seedType];
+                            gameState.seeds[seedType] = 0;
+                        });
+                        
+                        localStorage.setItem("seedSaverSave", JSON.stringify(mainData));
+                    }
+                } catch (e) {
+                    console.warn("Failed to transfer seeds to main game:", e);
+                }
+            }
+
+            // ===== LEVEL UP NOTIFICATION =====
+            function showLevelUpNotification() {
+                const notification = document.createElement("div");
+                notification.className = "level-up-notification";
+                notification.innerHTML = `
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
                     <div style="font-size: 48px; margin-bottom: 20px;">🎉</div>
                     <h2 style="color: #5D4037; margin-bottom: 10px;">Level Up!</h2>
                     <p style="color: #5D4037; margin-bottom: 20px;">You are now Level ${gameState.level}</p>
@@ -2985,6 +5849,7 @@
                     </div>
                 `;
 
+<<<<<<< HEAD
           document.body.appendChild(notification);
 
           setTimeout(() => {
@@ -3055,3 +5920,103 @@
     </script>
   </body>
 </html>
+=======
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(135deg, #FFD700 0%, #FFB300 100%);
+                    padding: 40px;
+                    border-radius: 30px;
+                    text-align: center;
+                    color: #5D4037;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+                    z-index: 2000;
+                    animation: levelUpPop 0.8s ease-out forwards;
+                    border: 3px solid rgba(255,255,255,0.5);
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            // ===== GAME LOOP =====
+            function gameLoop() {
+                // Auto-water if enabled (only run every 5 seconds to prevent spamming)
+                if (gameState.upgrades.autoWater && Math.random() < 0.2) {
+                    let watered = 0;
+                    
+                    // Check soil matrix slots
+                    gameState.soilMatrixSlots.forEach((slot, index) => {
+                        if (slot.plant && !slot.isWatered && gameState.water > 0) {
+                            if (PlantSystem.waterPlant(index)) {
+                                watered++;
+                            }
+                        }
+                    });
+                    
+                    if (watered > 0) {
+                        UI.updateAll();
+                    }
+                }
+
+                // Update visual effects
+                UI.updateAll();
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            // ===== INITIALIZATION =====
+            function init() {
+                // Load saved game
+                Utils.loadGame();
+
+                // Setup event listeners
+                setupEventListeners();
+
+                // Initial UI update
+                UI.updateAll();
+
+                // Start game loop
+                gameLoop();
+
+                // Auto-save every 30 seconds
+                setInterval(() => {
+                    Utils.saveGame();
+                }, 30000);
+            }
+
+            // ===== START GAME =====
+            init();
+
+            // ===== EXPORT FOR MAIN GAME =====
+            window.__PlantStation = {
+                getSeeds: () => ({ ...gameState.seeds }),
+                setSeeds: (seeds) => {
+                    Object.keys(seeds).forEach(key => {
+                        if (gameState.seeds[key] !== undefined) {
+                            gameState.seeds[key] += seeds[key];
+                        }
+                    });
+                    UI.updateAll();
+                },
+                addSeed: (type, count = 1) => {
+                    if (gameState.seeds[type] !== undefined) {
+                        gameState.seeds[type] += count;
+                        UI.updateAll();
+                        return true;
+                    }
+                    return false;
+                },
+                getState: () => ({ ...gameState }),
+                saveGame: Utils.saveGame,
+            };
+        })();
+    </script>
+</body>
+</html>
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179

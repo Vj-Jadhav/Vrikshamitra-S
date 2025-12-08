@@ -7,6 +7,9 @@ import Svg, { Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from '../config/config.js';
 
+// Import the AwarenessPopupScreen
+import AwarenessPopupScreen from './AwarenessPopupScreen'; // Adjust the path as needed
+
 // Imported Images
 import ArVr from '../assets/ArVr.jpg';
 import CommunityWatch from '../assets/CommunityWatch.png';
@@ -23,9 +26,45 @@ const defaultAvatars = [
 export default function HomeScreen({ navigation }) {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAwarenessPopup, setShowAwarenessPopup] = useState(true);
+  const [hasSeenAwarenessPopup, setHasSeenAwarenessPopup] = useState(false);
+
+  const checkAwarenessPopupStatus = async () => {
+    try {
+      // Check if the user has already seen the awareness popup
+      const hasSeen = await AsyncStorage.getItem('hasSeenAwarenessPopup');
+      return hasSeen === 'true';
+    } catch (error) {
+      console.log('Error checking awareness popup status:', error);
+      return false;
+    }
+  };
+
+  const markAwarenessPopupAsSeen = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenAwarenessPopup', 'true');
+    } catch (error) {
+      console.log('Error marking awareness popup as seen:', error);
+    }
+  };
 
   const fetchStudentData = async () => {
     try {
+      // Check awareness popup status first
+      const hasSeenPopup = await checkAwarenessPopupStatus();
+      setHasSeenAwarenessPopup(hasSeenPopup);
+      
+      // If user hasn't seen the popup, show it
+      if (!hasSeenPopup) {
+        setShowAwarenessPopup(true);
+        // Mark as seen after showing
+        setTimeout(async () => {
+          await markAwarenessPopupAsSeen();
+        }, 1000);
+      } else {
+        setShowAwarenessPopup(false);
+      }
+
       // Get student data from AsyncStorage (set during login)
       const studentId = await AsyncStorage.getItem("studentId");
       const studentName = await AsyncStorage.getItem("studentName");
@@ -117,6 +156,10 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const handleAwarenessPopupClose = () => {
+    setShowAwarenessPopup(false);
+  };
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       fetchStudentData();
@@ -138,8 +181,25 @@ export default function HomeScreen({ navigation }) {
     rollNumber: "N/A"
   };
 
+  // Don't render the home screen content while showing the popup
+  if (showAwarenessPopup && !hasSeenAwarenessPopup) {
+    return (
+      <AwarenessPopupScreen
+        visible={true}
+        onClose={handleAwarenessPopupClose}
+        isFullScreen={true}
+      />
+    );
+  }
+
   return (
     <View style={styles.container}>
+      {/* Awareness Popup - will show only once at the beginning */}
+      <AwarenessPopupScreen
+        visible={showAwarenessPopup && !hasSeenAwarenessPopup}
+        onClose={handleAwarenessPopupClose}
+        isFullScreen={true}
+      />
 
       {/* Header */}
       <View style={styles.header}>

@@ -427,19 +427,14 @@ export default function GamesScreen() {
         {/* AQI Game Banner */}
         <View style={[styles.featuredBanner, styles.aqiBanner]}>
           <View style={styles.featuredContent}>
-            <Text style={[styles.featuredTitle, styles.aqiTitle]}>
-              AQI Adventure
-            </Text>
-            <Text style={[styles.featuredSubtitle, styles.aqiSubtitle]}>
-              Air Quality Awareness Game
-            </Text>
+            <Text style={[styles.featuredTitle, styles.aqiTitle]}>AQI Adventure</Text>
+            <Text style={[styles.featuredSubtitle, styles.aqiSubtitle]}>Air Quality Awareness Game</Text>
             <Text style={styles.featuredDescription}>
-              Play an interactive AQI learning game! Identify pollution sources,
-              improve air quality, and discover ways to protect your health.
+              Play an interactive AQI learning game! Identify pollution sources, improve air quality, and discover ways to protect your health.
             </Text>
-            <TouchableOpacity
+            <TouchableOpacity 
               style={[styles.featuredButton, styles.aqiButton]}
-              onPress={() => navigation.navigate("AQIGame")}
+              onPress={() => navigation.navigate('AQIGame')}
             >
               <Text style={styles.featuredButtonText}>Start AQI Mission</Text>
             </TouchableOpacity>
@@ -449,22 +444,17 @@ export default function GamesScreen() {
           </View>
         </View>
 
-        {/* Seed Save Game Banner */}
+        {/* Seed Save Game Banner - ADDED THIS SECTION */}
         <View style={[styles.featuredBanner, styles.seedBanner]}>
           <View style={styles.featuredContent}>
-            <Text style={[styles.featuredTitle, styles.seedTitle]}>
-              Seed Save Game
-            </Text>
-            <Text style={[styles.featuredSubtitle, styles.seedSubtitle]}>
-              Plant Conservation Challenge
-            </Text>
+            <Text style={[styles.featuredTitle, styles.seedTitle]}>Seed Save Game</Text>
+            <Text style={[styles.featuredSubtitle, styles.seedSubtitle]}>Plant Conservation Challenge</Text>
             <Text style={styles.featuredDescription}>
-              Collect and save rare seeds! Learn about plant biodiversity, seed
-              banking, and help preserve endangered plant species.
+              Collect and save rare seeds! Learn about plant biodiversity, seed banking, and help preserve endangered plant species.
             </Text>
-            <TouchableOpacity
+            <TouchableOpacity 
               style={[styles.featuredButton, styles.seedButton]}
-              onPress={() => navigation.navigate("SeedSaveGame")}
+              onPress={() => navigation.navigate('SeedSaveGame')}
             >
               <Text style={styles.featuredButtonText}>Start Seed Saving</Text>
             </TouchableOpacity>
@@ -473,6 +463,7 @@ export default function GamesScreen() {
             <Text style={styles.featuredIconText}>🌱</Text>
           </View>
         </View>
+
       </ScrollView>
       {renderGameModal()}
     </View>
@@ -781,7 +772,17 @@ const styles = StyleSheet.create({
     borderColor: "#91d5ff",
   },
   aqiBanner: {
-    backgroundColor: "#f0f9ff",
+    backgroundColor: '#f0f9ff',
+    borderWidth: 2,
+    borderColor: '#d6e4ff',
+  },
+  seedBanner: {
+    backgroundColor: '#f6ffed',
+    borderWidth: 2,
+    borderColor: '#b7eb8f',
+  },
+  miniGamesBanner: {
+    backgroundColor: '#f0f9ff',
     borderWidth: 2,
     borderColor: "#d6e4ff",
   },
@@ -819,10 +820,13 @@ const styles = StyleSheet.create({
     color: "#1890ff",
   },
   aqiTitle: {
-    color: "#597ef7",
+    color: '#597ef7',
   },
   seedTitle: {
-    color: "#73d13d",
+    color: '#73d13d',
+  },
+  miniGamesTitle: {
+    color: '#52c41a',
   },
   featuredSubtitle: {
     fontSize: 20,
@@ -850,10 +854,13 @@ const styles = StyleSheet.create({
     color: "#096dd9",
   },
   aqiSubtitle: {
-    color: "#2f54eb",
+    color: '#2f54eb',
   },
   seedSubtitle: {
-    color: "#52c41a",
+    color: '#52c41a',
+  },
+  miniGamesSubtitle: {
+    color: '#389e0d',
   },
   featuredDescription: {
     fontSize: 13,
@@ -894,12 +901,16 @@ const styles = StyleSheet.create({
     shadowColor: "#1890ff",
   },
   aqiButton: {
-    backgroundColor: "#597ef7",
-    shadowColor: "#597ef7",
+    backgroundColor: '#597ef7',
+    shadowColor: '#597ef7',
   },
   seedButton: {
-    backgroundColor: "#73d13d",
-    shadowColor: "#73d13d",
+    backgroundColor: '#73d13d',
+    shadowColor: '#73d13d',
+  },
+  miniGamesButton: {
+    backgroundColor: '#52c41a',
+    shadowColor: '#52c41a',
   },
   featuredButtonText: {
     color: "white",

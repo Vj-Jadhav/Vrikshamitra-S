@@ -37,8 +37,11 @@ import RecycleScreen from './screens/RecycleScreen';
 import LearningScreen from './screens/LearningScreen';
 import OceanGameScreen from './screens/OceanGameScreen';
 import AQIGameScreen from './screens/AQIGameScreen';
+<<<<<<< HEAD
 import WasteSorter from './screens/WasteSorter';
 import NatureQuiz from './screens/NatureQuiz';
+=======
+>>>>>>> b726a74d0c4874df43c50293d425584239d94179
 import SeedSaverGameScreen from './screens/SeedSaverGameScreen';
 
 
@@ -98,6 +101,8 @@ export default function AppNavigator() {
         <Stack.Screen name="WasteSorter" component={WasteSorter}/>
         <Stack.Screen name="NatureQuiz" component={NatureQuiz}/>
         <Stack.Screen name="SeedSaverGameScreen" component={SeedSaverGameScreen}/>
+        <Stack.Screen name="SeedSaverGame" component={SeedSaverGameScreen}/>
+
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />

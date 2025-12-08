@@ -12,6 +12,7 @@ export default function SeedSaverGameScreen() {
           Platform.OS === "android"
             ? { uri: "file:///android_asset/SeedSaverGame/index.html" }
             : require("../assets/SeedSaverGame/index.html")
+            : require("../assets/AQIGame/home.html")
         }
 
         allowFileAccess={true}
