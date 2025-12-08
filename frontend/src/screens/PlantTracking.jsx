@@ -91,6 +91,8 @@ export default function PlantTracking({ navigation }) {
         }
     };
 
+    const [analyzing, setAnalyzing] = useState(false);
+
     const handleUploadPhoto = async () => {
         if (!selectedPlant) return;
 
@@ -116,6 +118,7 @@ export default function PlantTracking({ navigation }) {
                     name: asset.fileName || 'photo.jpg',
                 });
 
+                setAnalyzing(true); // Start optimizing
                 try {
                     const res = await fetch(`${BASE_URL}/api/plants/upload/${selectedPlant._id}`, {
                         method: 'POST',
@@ -126,18 +129,33 @@ export default function PlantTracking({ navigation }) {
                     });
 
                     if (res.ok) {
-                        const updatedPlant = await res.json();
+                        const data = await res.json();
+                        const updatedPlant = data; // Backend sends the whole plant back
+
                         // Update local state
                         const updatedPlants = plants.map(p => p._id === updatedPlant._id ? updatedPlant : p);
                         setPlants(updatedPlants);
                         setSelectedPlant(updatedPlant);
-                        Alert.alert("Success", "Photo uploaded and progress updated!");
+
+                        // Show AI Result
+                        if (data.aiAnalysis) {
+                            Alert.alert(
+                                "AI Analysis Complete 🤖",
+                                `Health: ${data.aiAnalysis.health}\nGrowth: +${data.aiAnalysis.growthFactor * 100}%\n\n"${data.aiAnalysis.message}"`,
+                                [{ text: "Awesome!" }]
+                            );
+                        } else {
+                            Alert.alert("Success", "Photo uploaded!");
+                        }
+
                     } else {
                         Alert.alert("Error", "Upload failed");
                     }
                 } catch (error) {
                     console.error("Upload error:", error);
                     Alert.alert("Error", "Server error during upload");
+                } finally {
+                    setAnalyzing(false);
                 }
             }
         });
@@ -223,10 +241,6 @@ export default function PlantTracking({ navigation }) {
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <React.Fragment>
-                    </React.Fragment>
-                }
             >
                 {/* Manual refresh could be added with RefreshControl but using useEffect for now */}
 
@@ -326,12 +340,14 @@ export default function PlantTracking({ navigation }) {
                         <TextInput
                             style={styles.input}
                             placeholder="Plant Name (e.g. My Mango Tree)"
+                            placeholderTextColor="#666"
                             value={newPlantName}
                             onChangeText={setNewPlantName}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Species (e.g. Mangifera indica)"
+                            placeholderTextColor="#666"
                             value={newPlantSpecies}
                             onChangeText={setNewPlantSpecies}
                         />
@@ -364,6 +380,13 @@ export default function PlantTracking({ navigation }) {
                             <Text style={styles.detailsTitle}>{selectedPlant.name}</Text>
                             <View style={{ width: 30 }} />
                         </View>
+
+                        {analyzing && (
+                            <View style={styles.analyzingOverlay}>
+                                <ActivityIndicator size="large" color="#fff" />
+                                <Text style={styles.analyzingText}>AI is analyzing plant health...</Text>
+                            </View>
+                        )}
 
                         <ScrollView contentContainerStyle={{ padding: 20 }}>
 
@@ -408,6 +431,11 @@ export default function PlantTracking({ navigation }) {
                                 <Text style={styles.aiTitle}>✨ Growth Insights</Text>
                                 <Text style={styles.aiText}>
                                     {(() => {
+                                        // Prefer AI Analysis if available
+                                        if (selectedPlant.lastAiAnalysis) {
+                                            return selectedPlant.lastAiAnalysis;
+                                        }
+
                                         const photoCount = selectedPlant.photos ? selectedPlant.photos.length : 0;
                                         const months = getSurvivalDurationMonths(selectedPlant.plantedDate);
                                         const health = selectedPlant.health;
@@ -505,7 +533,7 @@ const styles = StyleSheet.create({
     backButton: { padding: 5 },
     backIcon: { fontSize: 24, color: '#fff' },
     headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-    headerAddIcon: { fontSize: 30, color: '#fff', fontWeight: 'bottom' },
+    headerAddIcon: { fontSize: 30, color: '#fff', fontWeight: 'bold' },
 
     scrollContent: { padding: 20, paddingBottom: 100, minHeight: '100%' },
     emptyState: { alignItems: 'center', marginTop: 50 },
@@ -600,5 +628,14 @@ const styles = StyleSheet.create({
     unlockedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF4E5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, borderWidth: 1, borderColor: '#FFD700' },
     lockedBadge: {},
     badgeIcon: { fontSize: 10, marginRight: 3 },
-    badgeText: { fontSize: 10, fontWeight: 'bold', color: '#D97706' }
+    badgeText: { fontSize: 10, fontWeight: 'bold', color: '#D97706' },
+
+    analyzingOverlay: {
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(58, 147, 34, 0.9)', zIndex: 10,
+        justifyContent: 'center', alignItems: 'center', borderRadius: 0
+    },
+    analyzingText: {
+        color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 20
+    }
 });

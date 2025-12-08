@@ -1,5 +1,6 @@
 import Plant from "../models/Plant.js";
 import Student from "../models/Student.js";
+import { analyzePlantImage } from "../services/aiPlantService.js";
 
 // BASE_URL for images. Assuming backend runs on port 5000 or similar and served via /uploads
 // Actually, better to construct full URL or return relative path. 
@@ -85,17 +86,25 @@ export const uploadPlantPhoto = async (req, res) => {
             date: new Date()
         });
 
-        // Determine growth/progress based on photo count or generic logic
-        // For now simple generic increase if needed, or leave it. 
-        // Logic: Each photo increases confidence/progress slightly? Or just manual.
-        // Let's increment progress by 0.1 (10%) per photo up to 1.
+        // Run AI Analysis (Mock)
+        const analysis = await analyzePlantImage(req.file.path || req.file.filename);
+
+        // Update Plant based on AI
+        plant.health = analysis.health;
+        plant.lastAiAnalysis = analysis.message;
+
+        // Update growth progress
+        // Ensure it doesn't exceed 100%
         if (plant.progress < 1) {
-            plant.progress = Math.min(plant.progress + 0.1, 1);
+            plant.progress = Math.min(plant.progress + analysis.growthFactor, 1);
         }
 
         await plant.save();
 
-        res.status(200).json(plant);
+        res.status(200).json({
+            ...plant.toObject(),
+            aiAnalysis: analysis // Send back the full analysis object for immediate frontend display
+        });
 
     } catch (error) {
         console.error("Error uploading photo:", error);

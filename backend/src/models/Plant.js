@@ -32,6 +32,10 @@ const plantSchema = new mongoose.Schema({
     progress: {
         type: Number,
         default: 0, // 0 to 1
+    },
+    lastAiAnalysis: {
+        type: String, // Store the text feedback from AI
+        default: ""
     }
 }, { timestamps: true });
 

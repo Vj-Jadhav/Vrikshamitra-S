@@ -10,8 +10,8 @@ export default function SeedSaverGameScreen() {
 
         source={
           Platform.OS === "android"
-            ? { uri: "file:///android_asset/SeedSaverGame/index.html" }
-            : require("../assets/SeedSaverGame/index.html")
+            ? { uri: "file:///android_asset/SeedSaverGame/station.html" }
+            : require("../assets/SeedSaverGame/station.html")
         }
 
         allowFileAccess={true}

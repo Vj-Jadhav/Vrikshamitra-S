@@ -214,7 +214,7 @@ export default function GamesScreen() {
                 styles.playButtonText,
                 game.title === "Nature Quiz" && styles.natureQuizButtonText,
                 game.title === "Garbage Sorter" &&
-                  styles.garbageSorterButtonText,
+                styles.garbageSorterButtonText,
                 game.title === "Eco Popup" && styles.ecoPopupButtonText,
               ]}
             >
@@ -233,7 +233,7 @@ export default function GamesScreen() {
                   styles.playIconText,
                   game.title === "Nature Quiz" && styles.natureQuizPlayIconText,
                   game.title === "Garbage Sorter" &&
-                    styles.garbageSorterPlayIconText,
+                  styles.garbageSorterPlayIconText,
                   game.title === "Eco Popup" && styles.ecoPopupPlayIconText,
                 ]}
               >
@@ -324,7 +324,7 @@ export default function GamesScreen() {
               Garbage Sorter Game
             </Text>
             <Text style={styles.featuredDescription}>
-              Master recycling skills! Learn to sort different types of waste into 
+              Master recycling skills! Learn to sort different types of waste into
               proper categories - organic, recyclable, hazardous, and general waste.
             </Text>
             <TouchableOpacity
@@ -351,8 +351,8 @@ export default function GamesScreen() {
               Eco Popup Game
             </Text>
             <Text style={styles.featuredDescription}>
-              Test your eco-knowledge with quick daily challenges! Learn about 
-              environmental facts, conservation tips, and sustainable living in 
+              Test your eco-knowledge with quick daily challenges! Learn about
+              environmental facts, conservation tips, and sustainable living in
               bite-sized interactive sessions.
             </Text>
             <TouchableOpacity
@@ -432,7 +432,7 @@ export default function GamesScreen() {
             <Text style={styles.featuredDescription}>
               Play an interactive AQI learning game! Identify pollution sources, improve air quality, and discover ways to protect your health.
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.featuredButton, styles.aqiButton]}
               onPress={() => navigation.navigate('AQIGame')}
             >
@@ -452,9 +452,9 @@ export default function GamesScreen() {
             <Text style={styles.featuredDescription}>
               Collect and save rare seeds! Learn about plant biodiversity, seed banking, and help preserve endangered plant species.
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.featuredButton, styles.seedButton]}
-              onPress={() => navigation.navigate('SeedSaveGame')}
+              onPress={() => navigation.navigate('SeedSaverGameScreen')}
             >
               <Text style={styles.featuredButtonText}>Start Seed Saving</Text>
             </TouchableOpacity>

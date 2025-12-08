@@ -53,7 +53,7 @@ export default function HomeScreen({ navigation }) {
       // Check awareness popup status first
       const hasSeenPopup = await checkAwarenessPopupStatus();
       setHasSeenAwarenessPopup(hasSeenPopup);
-      
+
       // If user hasn't seen the popup, show it
       if (!hasSeenPopup) {
         setShowAwarenessPopup(true);
@@ -386,15 +386,15 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
 
             <TouchableOpacity
-  style={styles.gameCard}
-  activeOpacity={0.6}
-  onPress={() => navigation.navigate("PlantTracking")}
->
-  <View style={[styles.gameCardInner, { backgroundColor: '#6ECF6E' }]}>
-    <Image source={require('../assets/plant_growth.png')} style={styles.gameImage} />
-    <Text style={styles.gameCardText}>My Journal</Text>
-  </View>
-</TouchableOpacity>
+              style={styles.gameCard}
+              activeOpacity={0.6}
+              onPress={() => navigation.navigate("PlantTracking")}
+            >
+              <View style={[styles.gameCardInner, { backgroundColor: '#6ECF6E' }]}>
+                <Image source={require('../assets/plant_growth.png')} style={styles.gameImage} />
+                <Text style={styles.gameCardText}>My Journal</Text>
+              </View>
+            </TouchableOpacity>
 
 
           </View>

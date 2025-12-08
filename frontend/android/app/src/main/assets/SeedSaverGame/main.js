@@ -190,13 +190,44 @@
   }
 
   // ===== GAME DATA =====
-  const SEED_DATA = {
-    oak: { name: "Oak Acorn", points: 30, assetId: "seed_oak_acorn" },
-    maple: { name: "Maple Key", points: 25, assetId: "seed_maple_key" },
-    pine: { name: "Pine Cone", points: 20, assetId: "seed_pine_cone" },
-    birch: { name: "Birch Seed", points: 35, assetId: "seed_birch" },
-    willow: { name: "Willow Seed", points: 50, assetId: "seed_willow" },
-  };
+const SEED_DATA = {
+  oak: { 
+    name: "Oak Acorn",
+    points: 30,
+    assetId: "seed_oak_acorn",
+    lifespan: "100–300 years",
+    growsIn: "Northern Hemisphere—India (Himalayan region), Europe, North America"
+  },
+  maple: { 
+    name: "Maple Key",
+    points: 25,
+    assetId: "seed_maple_key",
+    lifespan: "80–150 years",
+    growsIn: "Temperate regions—Europe, North America, Northern India (hill regions)"
+  },
+  pine: { 
+    name: "Pine Cone",
+    points: 20,
+    assetId: "seed_pine_cone",
+    lifespan: "100–1000 years (depends on species)",
+    growsIn: "Mountains & cold regions—Himalayas, Europe, North America"
+  },
+  birch: { 
+    name: "Birch Seed",
+    points: 35,
+    assetId: "seed_birch",
+    lifespan: "40–80 years",
+    growsIn: "Cool climates—India (Kashmir & Himachal), Europe, Northern Asia"
+  },
+  willow: { 
+    name: "Willow Seed",
+    points: 50,
+    assetId: "seed_willow",
+    lifespan: "30–50 years",
+    growsIn: "Near water bodies—India, Europe, China, North America"
+  },
+};
+
 
   const TREE_STAGES = ["seedling", "sapling", "young", "mature"];
   const GROWTH_TIMES = [20000, 40000, 60000, 80000];
@@ -716,7 +747,6 @@
     },
   };
 
-<<<<<<< HEAD
   // Helper function to update seed counters in the UI
   function updateSeedCounters() {
     UI.updateSeedInventory();
@@ -1204,114 +1234,6 @@
     if (isRunning && rafId === null) {
       lastTime = performance.now();
       rafId = requestAnimationFrame(gameLoop);
-=======
-  // ===== NAVIGATION TO PLANT STATION =====
-  function navigateToPlantStation() {
-    console.log("Navigating to Plant Station...");
-
-    // Check if we have any seeds
-    const hasSeeds = Object.values(gameState.collectedSeeds).some(
-      (count) => count > 0
-    );
-
-    if (!hasSeeds) {
-      // Show notification if no seeds
-      UI.showNotification(
-        "No seeds available",
-        "Collect seeds while running!",
-        "#e65100",
-        "linear-gradient(90deg,#ffffff,#fff3e0)",
-        "🌱"
-      );
-      return;
-    }
-
-    // Pause the game
-    isRunning = false;
-    isPaused = true;
-
-    // Save current game state
-    const saveData = SaveSystem.save();
-
-    // Pass seeds data to plant station
-    try {
-      // Store seeds in localStorage for plant station to access
-      localStorage.setItem(
-        "plantStationSeeds",
-        JSON.stringify(gameState.collectedSeeds)
-      );
-      localStorage.setItem("plantStationScore", gameState.score.toString());
-      localStorage.setItem(
-        "plantStationDistance",
-        gameState.distance.toString()
-      );
-
-      console.log(
-        "Seeds transferred to plant station:",
-        gameState.collectedSeeds
-      );
-
-      // Clear seeds from main game after transferring
-      Object.keys(gameState.collectedSeeds).forEach((key) => {
-        gameState.collectedSeeds[key] = 0;
-      });
-
-      // Update UI
-      UI.updateSeedInventory();
-      UI.hidePlantStation();
-
-      // Show success message
-      UI.showNotification(
-        "Seeds transferred!",
-        "Taking you to Plant Station...",
-        "#2E7D32",
-        "linear-gradient(90deg,#ffffff,#f0fff4)",
-        "🌿"
-      );
-
-      // Wait a moment for UI updates, then navigate
-      setTimeout(() => {
-        // Try to navigate, fall back to showing seed UI if station.html doesn't exist
-        try {
-          // Check if station.html exists by trying to fetch it
-          fetch("station.html")
-            .then((response) => {
-              if (response.ok) {
-                window.location.href = "station.html";
-              } else {
-                throw new Error("Station page not found");
-              }
-            })
-            .catch((error) => {
-              console.warn(
-                "Station page not found, showing seed UI instead:",
-                error
-              );
-              UI.showSeedCardUI();
-              isRunning = true;
-              isPaused = false;
-            });
-        } catch (e) {
-          console.warn("Navigation failed, showing seed UI:", e);
-          UI.showSeedCardUI();
-          isRunning = true;
-          isPaused = false;
-        }
-      }, 1500);
-    } catch (e) {
-      console.warn("Failed to transfer seeds:", e);
-      // If there's an error, resume the game
-      isRunning = true;
-      isPaused = false;
-
-      UI.showNotification(
-        "Navigation failed",
-        "Please try again",
-        "#d32f2f",
-        "linear-gradient(90deg,#ffebee,#ffcdd2)",
-        "⚠️"
-      );
->>>>>>> b726a74d0c4874df43c50293d425584239d94179
     }
   }
 
@@ -3241,8 +3163,4 @@
     // Show error in console
     console.error("Game initialization failed:", err);
   });
-<<<<<<< HEAD
 })();
-=======
-})();
->>>>>>> b726a74d0c4874df43c50293d425584239d94179

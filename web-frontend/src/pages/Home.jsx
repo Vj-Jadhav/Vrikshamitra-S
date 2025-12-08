@@ -117,9 +117,9 @@ export default function Home() {
       <nav className="relative flex justify-between items-center px-6 md:px-12 py-3 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-green-100">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-            <span className="text-white font-bold text-lg">EQ</span>
+            <span className="text-white font-bold text-lg">VM</span>
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">EcoQuest</h1>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-transparent">Vrikshmitraa</h1>
         </div>
 
         <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export default function Home() {
             <Link to="/register" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform">
               Start Your Journey
             </Link>
-            <button onClick={() => document.getElementById('features')?.scrollIntoView({behavior:'smooth'})} className="border-2 border-green-500 text-green-700 px-6 py-3 rounded-xl hover:bg-green-50 transition-transform">
+            <button onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })} className="border-2 border-green-500 text-green-700 px-6 py-3 rounded-xl hover:bg-green-50 transition-transform">
               Explore Features
             </button>
           </div>
@@ -187,7 +187,7 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="text-center mb-10">
             <h3 className="text-3xl font-bold">Platform Features</h3>
-            <p className="text-gray-600 max-w-2xl mx-auto">Discover how EcoQuest makes environmental education engaging and impactful</p>
+            <p className="text-gray-600 max-w-2xl mx-auto">Discover how Vrikshmitraa makes environmental education engaging and impactful</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -305,9 +305,9 @@ export default function Home() {
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg flex items-center justify-center text-white">EQ</div>
+              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg flex items-center justify-center text-white">VM</div>
               <div>
-                <div className="font-semibold text-white">EcoQuest</div>
+                <div className="font-semibold text-white">Vrikshmitraa</div>
                 <div className="text-xs text-gray-400">Making environmental education engaging</div>
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function Home() {
             <a href="#" className="hover:text-white">Instagram</a>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-500 mt-6">© 2025 EcoQuest</div>
+        <div className="text-center text-xs text-gray-500 mt-6">© 2025 Vrikshmitraa</div>
       </footer>
 
       {/* Challenge modal */}
