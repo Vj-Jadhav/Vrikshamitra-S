@@ -43,6 +43,9 @@ app.use("/api/submissions", submissionsRoutes);
 import facultyRoutes from "./routes/facultyRoutes.js";
 app.use("/api/faculty", facultyRoutes);
 
+import plantRoutes from "./routes/plantRoutes.js";
+app.use("/api/plants", plantRoutes);
+
 // Serve static files
 import path from "path";
 import { fileURLToPath } from "url";

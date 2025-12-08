@@ -332,7 +332,7 @@ export default function HomeScreen({ navigation }) {
 >
   <View style={[styles.gameCardInner, { backgroundColor: '#6ECF6E' }]}>
     <Image source={require('../assets/plant_growth.png')} style={styles.gameImage} />
-    <Text style={styles.gameCardText}>Plant Growth</Text>
+    <Text style={styles.gameCardText}>My Journal</Text>
   </View>
 </TouchableOpacity>
 
