@@ -1,7 +1,7 @@
 /** @format */
 
 // config.js
-export const BASE_URL = "http://localhost:5000";
+export const BASE_URL = "http://172.28.29.25:5000";
 
 export const API_ENDPOINTS = {
   LOGIN: `${BASE_URL}/api/auth/login`,

@@ -16,7 +16,7 @@ import learningModuleRoutes from "./routes/learningModule.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js"; // ADDED
-
+import rewardRoutes from "./rewardRoutes.js";
 const app = express();
 
 // Middlewares
@@ -39,7 +39,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/reports/schedule", scheduleRoutes);
 import submissionsRoutes from "./routes/submissionsRoutes.js";
 app.use("/api/submissions", submissionsRoutes);
-
+app.use("/api/reward",rewardRoutes);
 import facultyRoutes from "./routes/facultyRoutes.js";
 app.use("/api/faculty", facultyRoutes);
 
