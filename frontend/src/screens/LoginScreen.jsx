@@ -29,10 +29,10 @@ export default function LoginScreen({ navigation }) {
 
 
   // Backend API URLs
-  const API_URL = "http://10.162.197.122:5000/api/auth/login";
-  const FORGOT_PASSWORD_URL = "http://192.168.1.9:5000/api/auth/forgot-password";
-  const VERIFY_OTP_URL = "http://192.168.1.9:5000/api/auth/verify-otp";
-  const RESET_PASSWORD_URL = "http://192.168.1.9:5000/api/auth/reset-password";
+  const API_URL = API_ENDPOINTS.LOGIN;
+  const FORGOT_PASSWORD_URL = API_ENDPOINTS.FORGOT_PASSWORD;
+  const VERIFY_OTP_URL = API_ENDPOINTS.VERIFY_OTP;
+  const RESET_PASSWORD_URL = API_ENDPOINTS.RESET_PASSWORD;
 
   // Debug function to check storage
   const checkStorage = async () => {
