@@ -156,6 +156,7 @@ export default function Login() {
         className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl p-10 w-96"
       >
         <h1 className="text-3xl font-extrabold text-center text-green-800 mb-2">
+          Vrikshamitra
         </h1>
         <p className="text-center text-gray-600 mb-8">
           Login to your environmental journey 🌿
