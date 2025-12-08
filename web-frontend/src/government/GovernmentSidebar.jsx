@@ -9,9 +9,9 @@ import {
   LogOut,
   Settings,
   Shield,
-  CheckCircle,
   Clock,
   Crosshair,
+  TreePine  // New icon for plant drives
 } from "lucide-react";
 
 const GovernmentSidebar = ({
@@ -20,16 +20,16 @@ const GovernmentSidebar = ({
   adminData,
   onLogout,
 }) => {
- const menuItems = [
-  { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
-  { id: "institutes", icon: Building, label: "Institute Management" },
-  { id: "users", icon: Users, label: "User Management" },
-  { id: "challenges", icon: Crosshair, label: "Challenge Management" }, // Add this line
-  { id: "registrations", icon: TrendingUp, label: "Registration Analytics" },
-  { id: "reports", icon: FileText, label: "Reports & Exports" },
-  { id: "settings", icon: Settings, label: "System Settings" },
-];
-
+  const menuItems = [
+    { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
+    { id: "institutes", icon: Building, label: "Institute Management" },
+    { id: "users", icon: Users, label: "User Management" },
+    { id: "challenges", icon: Crosshair, label: "Challenge Management" },
+    { id: "plant-drives", icon: TreePine, label: "Plant Drive Management" }, // New item
+    { id: "registrations", icon: TrendingUp, label: "Registration Analytics" },
+    { id: "reports", icon: FileText, label: "Reports & Exports" },
+    { id: "settings", icon: Settings, label: "System Settings" },
+  ];
 
   return (
     <aside className="w-72 bg-white shadow-2xl border-r-2 border-blue-100 flex flex-col sticky top-0 h-screen">
@@ -52,10 +52,10 @@ const GovernmentSidebar = ({
             <span className="font-bold text-blue-600">{adminData.totalInstitutes}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Pending Approvals</span>
+            <span className="text-gray-600">Pending Plant Drives</span>
             <span className="font-bold text-orange-500 flex items-center gap-1">
               <Clock size={14} />
-              {adminData.pendingApprovals}
+              {adminData.pendingPlantDrives || 0}
             </span>
           </div>
         </div>

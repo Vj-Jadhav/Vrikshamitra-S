@@ -2,41 +2,40 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { API } from "../utils/api";
 
 import GovernmentHeader from "../government/GovernmentHeader";
 import GovernmentSidebar from "../government/GovernmentSidebar";
-import OverviewAnalytics from "../government//OverviewAnalytics";
-import InstituteManagement from "../government//InstituteManagement";
+import OverviewAnalytics from "../government/OverviewAnalytics";
+import InstituteManagement from "../government/InstituteManagement";
 import UserManagement from "../government/UserManagement";
 import RegistrationAnalytics from "../government/RegistrationAnalytics";
 import Reports from "../government/Reports";
 import SystemSettings from "../government/SystemSettings";
 import ChallengeManagement from "../government/ChallengeManagement";
+import PlantDriveManagement from "../government/PlantDriveManagement"; // Import the new component
 
 export default function GovernmentDashboard() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
 
-const [decodedToken, setDecodedToken] = useState(null);
-const [token, setToken] = useState(null);
+  const [decodedToken, setDecodedToken] = useState(null);
+  const [token, setToken] = useState(null);
 
-useEffect(() => {
-  const tk = localStorage.getItem("token");
-  setToken(tk);
+  useEffect(() => {
+    const tk = localStorage.getItem("token");
+    setToken(tk);
 
-  if (tk) {
-    try {
-      const payload = JSON.parse(atob(tk.split('.')[1]));
-      console.log("Decoded payload:", payload);
-      setDecodedToken(payload);   // ⬅ Save it for use
-    } catch (err) {
-      console.error("Failed to decode token:", err);
+    if (tk) {
+      try {
+        const payload = JSON.parse(atob(tk.split('.')[1]));
+        console.log("Decoded payload:", payload);
+        setDecodedToken(payload);
+      } catch (err) {
+        console.error("Failed to decode token:", err);
+      }
     }
-  }
-}, []);
-
+  }, []);
 
   const [adminData, setAdminData] = useState({
     name: user?.name || "Government Admin",
@@ -44,6 +43,7 @@ useEffect(() => {
     totalInstitutes: 0,
     totalUsers: 0,
     pendingApprovals: 0,
+    pendingPlantDrives: 0, // Add this field
   });
 
   const [analytics, setAnalytics] = useState(null);
@@ -55,150 +55,70 @@ useEffect(() => {
     navigate("/login");
   };
 
-  // // Fetch admin analytics from backend
-  // const fetchAdminAnalytics = async () => {
-  //   if (!user || !user._id) return;
-  //   try {
-  //     setLoadingAnalytics(true);
-  //     setAnalyticsError(null);
-  //     const res = await API.get(/government/${user._id}/analytics);
-  //     setAnalytics(res.data);
-  //     setAdminData(prev => ({
-  //       ...prev,
-  //       totalInstitutes: res.data.totalInstitutes || 0,
-  //       totalUsers: res.data.totalUsers || 0,
-  //       pendingApprovals: res.data.pendingApprovals || 0,
-  //     }));
-  //   } catch (err) {
-  //     console.error("Error fetching analytics:", err);
-  //     setAnalyticsError(
-  //       err.response?.data?.message || err.message || "Failed to load analytics"
-  //     );
-  //   } finally {
-  //     setLoadingAnalytics(false);
-  //   }
-  // };
+  const fetchAdminAnalytics = async () => {
+    try {
+      setLoadingAnalytics(true);
+      setAnalyticsError(null);
 
-  // Mock analytics loader (replace existing fetchAdminAnalytics)
-const sample = {
-  stats: {
-    totalInstitutes: 12,
-    activeInstitutes: 9,
-    pendingApprovals: 3,
-    totalUsers: 245,
-    growthRate: 8, // just a mock percentage
-    regionalDistribution: [
-      { region: "North", count: 4 },
-      { region: "South", count: 3 },
-      { region: "East", count: 2 },
-      { region: "West", count: 3 },
-    ],
-  },
+      // simulate network delay
+      await new Promise(res => setTimeout(res, 500));
 
-  recentRegistrations: [
-    {
-      name: "Greenwood College",
-      location: "California, USA",
-      status: "approved",
-    },
-    {
-      name: "Bright Future Institute",
-      location: "Texas, USA",
-      status: "pending",
-    },
-    {
-      name: "Riverdale Academy",
-      location: "Florida, USA",
-      status: "rejected",
-    },
-  ],
-};
+      const sampleAnalytics = {
+        stats: {
+          totalInstitutes: 42,
+          activeInstitutes: 34,
+          pendingApprovals: 6,
+          pendingPlantDrives: 8, // Add this
+          totalUsers: 3100,
+          growthRate: 12,
+          regionalDistribution: [
+            { region: "North Region", count: 10 },
+            { region: "South Region", count: 8 },
+            { region: "East Region", count: 14 },
+            { region: "West Region", count: 10 },
+          ],
+        },
 
-
-const fetchAdminAnalytics = async () => {
-  try {
-    setLoadingAnalytics(true);
-    setAnalyticsError(null);
-
-    // simulate network delay
-    await new Promise(res => setTimeout(res, 500));
-
-    const sampleAnalytics = {
-      stats: {
-        totalInstitutes: 42,
-        activeInstitutes: 34,
-        pendingApprovals: 6,
-        totalUsers: 3100,
-        growthRate: 12,
-        regionalDistribution: [
-          { region: "North Region", count: 10 },
-          { region: "South Region", count: 8 },
-          { region: "East Region", count: 14 },
-          { region: "West Region", count: 10 },
+        recentRegistrations: [
+          {
+            name: "Evergreen Technical Institute",
+            location: "California, USA",
+            status: "approved",
+          },
+          {
+            name: "Mountain View Polytechnic",
+            location: "Colorado, USA",
+            status: "pending",
+          },
+          {
+            name: "Riverbend College",
+            location: "Oregon, USA",
+            status: "pending",
+          },
+          {
+            name: "Sunrise Academy",
+            location: "Texas, USA",
+            status: "rejected",
+          },
         ],
-      },
+      };
 
-      recentRegistrations: [
-        {
-          name: "Evergreen Technical Institute",
-          location: "California, USA",
-          status: "approved",
-        },
-        {
-          name: "Mountain View Polytechnic",
-          location: "Colorado, USA",
-          status: "pending",
-        },
-        {
-          name: "Riverbend College",
-          location: "Oregon, USA",
-          status: "pending",
-        },
-        {
-          name: "Sunrise Academy",
-          location: "Texas, USA",
-          status: "rejected",
-        },
-      ],
-    };
+      setAnalytics(sampleAnalytics);
 
-    setAnalytics(sampleAnalytics);
+      setAdminData(prev => ({
+        ...prev,
+        totalInstitutes: sampleAnalytics.stats.totalInstitutes,
+        totalUsers: sampleAnalytics.stats.totalUsers,
+        pendingApprovals: sampleAnalytics.stats.pendingApprovals,
+        pendingPlantDrives: sampleAnalytics.stats.pendingPlantDrives, // Update this
+      }));
 
-    setAdminData(prev => ({
-      ...prev,
-      totalInstitutes: sampleAnalytics.stats.totalInstitutes,
-      totalUsers: sampleAnalytics.stats.totalUsers,
-      pendingApprovals: sampleAnalytics.stats.pendingApprovals,
-    }));
-
-  } catch (err) {
-    setAnalyticsError("Failed to load sample analytics");
-  } finally {
-    setLoadingAnalytics(false);
-  }
-};
-
-
-//     // simulate backend delay
-//     await new Promise(res => setTimeout(res, 600));
-
-//     // set analytics
-//     setAnalytics(sample);
-
-//     // set admin summary
-//     setAdminData(prev => ({
-//       ...prev,
-//       totalInstitutes: sample.totalInstitutes,
-//       totalUsers: sample.totalUsers,
-//       pendingApprovals: sample.pendingApprovals,
-//     }));
-//   } catch (err) {
-//     setAnalyticsError("Failed to load sample analytics");
-//   } finally {
-//     setLoadingAnalytics(false);
-//   }
-// };
-
+    } catch (err) {
+      setAnalyticsError("Failed to load sample analytics");
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   useEffect(() => {
     fetchAdminAnalytics();
@@ -206,42 +126,49 @@ const fetchAdminAnalytics = async () => {
   }, [user?._id]);
 
   const renderContent = () => {
-  switch (activeSection) {
-    case "overview":
-      return (
-        <OverviewAnalytics
-          analytics={analytics}
-          loading={loadingAnalytics}
-          error={analyticsError}
-          refresh={fetchAdminAnalytics}
-        />
-      );
-    case "institutes":
-      return <InstituteManagement />;
-    case "users":
-      return <UserManagement />;
-    case "challenges": // Add this case
-      return <ChallengeManagement  token={token} 
-      adminId={decodedToken?.id} 
-      role={decodedToken?.role} />;
-    case "registrations":
-      return <RegistrationAnalytics />;
-    case "reports":
-      return <Reports adminData={adminData} />;
-    case "settings":
-      return <SystemSettings />;
-    default:
-      return (
-        <OverviewAnalytics
-          analytics={analytics}
-          loading={loadingAnalytics}
-          error={analyticsError}
-          refresh={fetchAdminAnalytics}
-        />
-      );
-  }
-};
-
+    switch (activeSection) {
+      case "overview":
+        return (
+          <OverviewAnalytics
+            analytics={analytics}
+            loading={loadingAnalytics}
+            error={analyticsError}
+            refresh={fetchAdminAnalytics}
+          />
+        );
+      case "institutes":
+        return <InstituteManagement />;
+      case "users":
+        return <UserManagement />;
+      case "challenges":
+        return <ChallengeManagement  
+          token={token} 
+          adminId={decodedToken?.id} 
+          role={decodedToken?.role} 
+        />;
+      case "plant-drives": // Add this case
+        return <PlantDriveManagement  
+          token={token} 
+          adminId={decodedToken?.id} 
+          role={decodedToken?.role} 
+        />;
+      case "registrations":
+        return <RegistrationAnalytics />;
+      case "reports":
+        return <Reports adminData={adminData} />;
+      case "settings":
+        return <SystemSettings />;
+      default:
+        return (
+          <OverviewAnalytics
+            analytics={analytics}
+            loading={loadingAnalytics}
+            error={analyticsError}
+            refresh={fetchAdminAnalytics}
+          />
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">

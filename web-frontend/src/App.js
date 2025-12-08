@@ -13,6 +13,7 @@ import GovernmentDashboard from "./pages/GovernmentDashboard";
 import InstituteRegistration from "./pages/InstituteRegistration";
 import InstituteDashboard from "./pages/InstituteDashboard";
 import LoginDebug from "./components/LoginDebug";
+import PlantDriveManagement from "./government/PlantDriveManagement";
 
 function App() {
   return (
@@ -23,8 +24,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/setup-password" element={<StudentSetup />} />
-          <Route path="/login-debug" element={<LoginDebug/>} />
-
+          <Route path="/login-debug" element={<LoginDebug />} />
 
           <Route
             path="/StudentDashboard"
@@ -46,11 +46,12 @@ function App() {
 
           <Route
             path="/GovernmentDashboard"
-            element={
-            
-                <GovernmentDashboard />
-     
-            }
+            element={<GovernmentDashboard />}
+          />
+
+          <Route
+            path="/plant-drive-management"
+            element={<PlantDriveManagement />}
           />
 
           <Route

@@ -11,7 +11,8 @@ import {
   School,
   Network,
   Target,
-  Send
+  Send,
+  CalendarPlus
 } from "lucide-react";
 
 const InstituteSidebar = ({
@@ -24,15 +25,20 @@ const InstituteSidebar = ({
     { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
     { id: "faculty", icon: Users, label: "Faculty Management" },
     { id: "students", icon: GraduationCap, label: "Student Management" },
-    { id: "challenges", icon: Target, label: "Challenges" }, // NEW
-    { id: "submissions", icon: Send, label: "My Submissions" }, // NEW
+    { id: "challenges", icon: Target, label: "Challenges" },
+
+    // ✅ NEW ENTRY FOR GOVERNMENT PLANT DRIVE
+    { id: "plant_drives", icon: Network, label: "Government Plant Drives" },
+
+    { id: "submissions", icon: Send, label: "My Submissions" },
+    { id: "events", icon: CalendarPlus, label: "Event Creation" },
     { id: "analytics", icon: BarChart3, label: "Analytics" },
     { id: "reports", icon: FileText, label: "Reports" },
     { id: "settings", icon: Settings, label: "Institute Settings" },
   ];
 
   const getInitials = (name) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase();
   };
 
   return (
@@ -75,7 +81,7 @@ const InstituteSidebar = ({
         </div>
       </nav>
 
-      {/* Logout Button */}
+      {/* Logout */}
       <div className="p-4 border-t-2 border-blue-100">
         <button
           onClick={onLogout}

@@ -6,11 +6,13 @@ import { API } from "../utils/api";
 
 import InstituteHeader from "../institute/InstituteHeader";
 import InstituteSidebar from "../institute/InstituteSidebar";
-import InstituteOverview from "../institute/InstituteTypeOverview ";
+import InstituteTypeOverview from "../institute/InstituteTypeOverview ";
 import FacultyManagement from "../institute/FacultyManagement";
 import StudentManagement from "../institute/StudentManagement";
 import ChallengeManagement from "../institute/ChallengeManagement";
 import ChallengeSubmissions from "../institute/ChallengeSubmissions";
+import InstituteEventCreation from "../institute/InstituteEventCreation";
+import InstitutePlantDrive from "../institute/InstitutePlantDrive";
 // import AnalyticsDashboard from "../institute/AnalyticsDashboard";
 // import InstituteSettings from "../institute/InstituteSettings";
 // import Reports from "../institute/Reports";
@@ -29,12 +31,11 @@ export default function InstituteDashboard() {
     website: user?.website || "",
     establishedYear: user?.establishedYear || "",
     totalStudents: user?.totalStudents || 0,
-    // Type-specific data
     schoolLevel: user?.schoolLevel || "",
     grades: user?.grades || [],
     departments: user?.departments || [],
     faculties: user?.faculties || [],
-    programs: user?.programs || []
+    programs: user?.programs || [],
   });
 
   const [stats, setStats] = useState({
@@ -43,7 +44,7 @@ export default function InstituteDashboard() {
     activeUsers: 0,
     totalEcoPoints: 0,
     participationRate: 0,
-    recentActivity: []
+    recentActivity: [],
   });
 
   const [loading, setLoading] = useState(false);
@@ -54,13 +55,15 @@ export default function InstituteDashboard() {
     navigate("/login");
   };
 
-  // Fetch institute statistics
   const fetchInstituteStats = async () => {
     if (!user || !user._id) return;
+
     try {
       setLoading(true);
       setError(null);
-      const res = await API.get(`/institute/${user._id}/stats`);
+
+      const res = await API.get(`/institute/${user._id}/assignment-stats`);
+
       setStats(res.data);
     } catch (err) {
       console.error("Error fetching institute stats:", err);
@@ -70,29 +73,33 @@ export default function InstituteDashboard() {
     }
   };
 
+  // In InstituteDashboard.jsx, add this check:
   useEffect(() => {
-  // Get token from localStorage
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    console.log("Token:", token);
-
-    // If it's a JWT, you can also decode its payload
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log("Decoded payload:", payload);
-      
-    } catch (err) {
-      console.error("Failed to decode token:", err);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
     }
-  } else {
-    console.log("No token found in localStorage");
-  }
-}, []);
+
+    // Better token validation
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) {
+        console.error("Invalid token format");
+        logout();
+        return;
+      }
+      const payload = JSON.parse(atob(parts[1]));
+      console.log("User role:", payload.role);
+      console.log("User ID:", payload.id);
+    } catch (err) {
+      console.error("Invalid token:", err);
+      logout();
+    }
+  }, []);
 
   useEffect(() => {
     fetchInstituteStats();
-    // Initialize institute data from user context
     if (user) {
       setInstituteData({
         name: user.instituteName || "Institute",
@@ -107,7 +114,7 @@ export default function InstituteDashboard() {
         grades: user.grades || [],
         departments: user.departments || [],
         faculties: user.faculties || [],
-        programs: user.programs || []
+        programs: user.programs || [],
       });
     }
   }, [user]);
@@ -116,36 +123,38 @@ export default function InstituteDashboard() {
     switch (activeSection) {
       case "overview":
         return (
-          <InstituteOverview
+          <InstituteTypeOverview // Now using the correct component name
             instituteData={instituteData}
             stats={stats}
             loading={loading}
             error={error}
-            // refresh={fetchInstituteStats}
           />
         );
       case "faculty":
-        return <FacultyManagement instituteId={user?._id} />; 
+        return <FacultyManagement instituteId={user?._id} />;
       case "students":
         return <StudentManagement instituteId={user?._id} />;
-       case "challenges": // NEW
-        return <ChallengeManagement instituteId={user?._id} instituteData={instituteData} />;
-      case "submissions": // NEW
+      case "challenges":
+        return (
+          <ChallengeManagement
+            instituteId={user?._id}
+            instituteData={instituteData}
+          />
+        );
+      case "submissions":
         return <ChallengeSubmissions instituteId={user?._id} />;
-    //   case "analytics":
-    //     return <AnalyticsDashboard instituteData={instituteData} stats={stats} />;
-    //   case "reports":
-    //     return <Reports instituteData={instituteData} />;
-    //   case "settings":
-    //     return <InstituteSettings instituteData={instituteData} />;
+      case "events":
+        return <InstituteEventCreation />;
+      case "plant_drives":
+        return <InstitutePlantDrive instituteId={user?._id} />;
+
       default:
         return (
-          <InstituteOverview
+          <InstituteTypeOverview // Also fixed here
             instituteData={instituteData}
             stats={stats}
             loading={loading}
             error={error}
-            // refresh={fetchInstituteStats}
           />
         );
     }
@@ -154,7 +163,7 @@ export default function InstituteDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
       <InstituteHeader instituteData={instituteData} stats={stats} />
-      
+
       <div className="flex flex-1">
         <InstituteSidebar
           activeSection={activeSection}
@@ -164,9 +173,7 @@ export default function InstituteDashboard() {
         />
 
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          <div className="container mx-auto max-w-7xl">
-            {renderContent()}
-          </div>
+          <div className="container mx-auto max-w-7xl">{renderContent()}</div>
         </main>
       </div>
     </div>

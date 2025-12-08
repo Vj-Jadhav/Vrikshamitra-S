@@ -16,6 +16,7 @@ import learningModuleRoutes from "./routes/learningModule.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import scheduleRoutes from "./routes/scheduleRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js"; // ADDED
+import plantingTargetsRoutes from "./routes/plantingTargetsRoutes.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/api/government", governmentRoutes);
 app.use("/api/institute", instituteRoutes);
 app.use("/api/challenges", challengeRoutes);
 app.use("/api/learningmodules", learningModuleRoutes);
+app.use("/api/planting-targets", plantingTargetsRoutes);
 
 app.use("/api/reports", reportRoutes);
 app.use("/api/reports/schedule", scheduleRoutes);

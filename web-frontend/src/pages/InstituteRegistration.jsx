@@ -1,9 +1,9 @@
 // InstituteRegister.js
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { API, registerInstitute } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, AlertCircle, MapPin, Loader2 } from "lucide-react";
 
 // Import components
 import BasicInfoStep from "../instituteRegistration/BasicInfoStep";
@@ -84,7 +84,105 @@ export default function InstituteRegister() {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeError, setPincodeError] = useState("");
+  const [pincodeSuccess, setPincodeSuccess] = useState(false);
   const navigate = useNavigate();
+  const pincodeDebounceRef = useRef(null);
+
+  // Function to fetch location details from pincode
+  const fetchLocationFromPincode = useCallback(async (pincode) => {
+    // Basic validation
+    if (!/^\d{6}$/.test(pincode)) {
+      setPincodeError("Please enter a valid 6-digit pincode");
+      return;
+    }
+
+    setPincodeLoading(true);
+    setPincodeError("");
+    setPincodeSuccess(false);
+
+    try {
+      // India Post API
+      const response = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+      const data = await response.json();
+
+      if (data?.[0]?.Status === "Success" && data[0].PostOffice?.length > 0) {
+        const office = data[0].PostOffice[0];
+        
+        setForm(prev => ({
+          ...prev,
+          city: office.District || "",
+          state: office.State || "",
+          country: "India",
+          address: prev.address?.trim() ? prev.address : `${office.Name || ""}, ${office.Block || ""}, ${office.District || ""}`.replace(/, ,/g, ",").replace(/,\s*$/, "")
+        }));
+
+        setPincodeSuccess(true);
+        setPincodeError("");
+      } else {
+        setPincodeError("Invalid pincode or not found in our database.");
+        setPincodeSuccess(false);
+      }
+    } catch (err) {
+      console.error("Pincode API error:", err);
+      setPincodeError("Unable to fetch location. Please enter manually.");
+      setPincodeSuccess(false);
+    } finally {
+      setPincodeLoading(false);
+    }
+  }, []);
+
+  // Handle pincode change with debounce
+  const handlePincodeChange = useCallback((value) => {
+    // Update form immediately
+    setForm(prev => ({ ...prev, pincode: value }));
+    
+    // Clear success message when pincode changes
+    if (pincodeSuccess) {
+      setPincodeSuccess(false);
+    }
+    
+    // Clear any existing timeout
+    if (pincodeDebounceRef.current) {
+      clearTimeout(pincodeDebounceRef.current);
+    }
+    
+    // Reset location fields if pincode is cleared or incomplete
+    if (value.length < 6) {
+      setForm(prev => ({
+        ...prev,
+        city: "",
+        state: "",
+        country: "India"
+      }));
+    }
+    
+    // Set new timeout for debounce
+    pincodeDebounceRef.current = setTimeout(() => {
+      if (value && value.length === 6 && /^\d{6}$/.test(value)) {
+        fetchLocationFromPincode(value);
+      } else if (value.length > 0 && value.length < 6) {
+        setPincodeError("Pincode must be 6 digits");
+      }
+    }, 1000); // 1 second debounce
+  }, [fetchLocationFromPincode, pincodeSuccess]);
+
+  // Manual trigger for location fetch
+  const handleManualFetchLocation = useCallback(() => {
+    if (form.pincode && form.pincode.length === 6 && /^\d{6}$/.test(form.pincode)) {
+      fetchLocationFromPincode(form.pincode);
+    }
+  }, [form.pincode, fetchLocationFromPincode]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pincodeDebounceRef.current) {
+        clearTimeout(pincodeDebounceRef.current);
+      }
+    };
+  }, []);
 
   // Validation function
   const validateStep = (currentStep) => {
@@ -247,6 +345,27 @@ export default function InstituteRegister() {
     setErrors({});
   };
 
+  // Handle input change for pincode
+  const handlePincodeInputChange = (e) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6); // Only numbers, max 6 digits
+    handlePincodeChange(value);
+  };
+
+  // Handle input change for other fields
+  const handleInputChange = (field) => (e) => {
+    const value = e.target.value;
+    setForm(prev => ({ ...prev, [field]: value }));
+    
+    // Clear field error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
   const renderInstituteSpecificFields = () => {
     switch (form.instituteType) {
       case "school":
@@ -266,20 +385,263 @@ export default function InstituteRegister() {
 
     switch (step) {
       case 1:
-        return <BasicInfoStep form={currentForm} setForm={setForm} errors={errors} />;
+        return <BasicInfoStep 
+          form={currentForm} 
+          setForm={setForm} 
+          errors={errors} 
+          handleInputChange={handleInputChange}
+        />;
       case 2:
-        return <InstituteTypeStep form={currentForm} setForm={setForm} errors={errors} />;
+        return <InstituteTypeStep 
+          form={currentForm} 
+          setForm={setForm} 
+          errors={errors} 
+          handleInputChange={handleInputChange}
+        />;
       case 3:
         return (
-          <ContactInfoStep
-            form={currentForm}
-            setForm={setForm}
-            errors={errors}
-            renderInstituteSpecificFields={renderInstituteSpecificFields}
-          />
+          <div className="space-y-6">
+            <div className="border-l-4 border-blue-500 pl-4 mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Contact Information</h2>
+              <p className="text-gray-600">Enter your institute's contact details</p>
+            </div>
+
+            {/* Pincode Section for Auto Location */}
+            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="text-blue-600" size={20} />
+                <h3 className="font-semibold text-blue-800">Location via Pincode</h3>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pincode *
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-grow">
+                      <input
+                        type="text"
+                        name="pincode"
+                        value={form.pincode}
+                        onChange={handlePincodeInputChange}
+                        maxLength="6"
+                        placeholder="Enter 6-digit pincode"
+                        className={`w-full px-4 py-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                          errors.pincode ? 'border-red-500' : 'border-gray-300'
+                        } ${pincodeLoading ? 'pr-12' : ''}`}
+                      />
+                      <MapPin className="absolute left-3 top-3.5 text-gray-400" size={18} />
+                      
+                      {pincodeLoading && (
+                        <div className="absolute right-3 top-3.5">
+                          <Loader2 className="animate-spin text-blue-600" size={18} />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={handleManualFetchLocation}
+                      disabled={!form.pincode || form.pincode.length !== 6 || pincodeLoading}
+                      className="px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                    >
+                      Fetch Location
+                    </button>
+                  </div>
+                  
+                  {/* Status Messages */}
+                  {pincodeLoading && (
+                    <p className="mt-2 text-sm text-blue-600 flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={14} />
+                      Fetching location details...
+                    </p>
+                  )}
+                  
+                  {pincodeError && !pincodeLoading && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                      <AlertCircle size={14} />
+                      {pincodeError}
+                    </p>
+                  )}
+                  
+                  {pincodeSuccess && !pincodeLoading && (
+                    <p className="mt-2 text-sm text-green-600 flex items-center gap-2">
+                      <Check size={14} />
+                      Location details fetched successfully!
+                    </p>
+                  )}
+                  
+                  {errors.pincode && (
+                    <p className="mt-2 text-sm text-red-600">{errors.pincode}</p>
+                  )}
+                  
+                  <p className="mt-2 text-xs text-gray-500">
+                    Enter a valid 6-digit Indian pincode to auto-fill city, state, and country details.
+                    The address will be suggested based on the pincode.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Complete Address *
+                </label>
+                <textarea
+                  name="address"
+                  value={form.address}
+                  onChange={handleInputChange('address')}
+                  rows="2"
+                  placeholder="Full address including street, area, landmark"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    errors.address ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City *
+                </label>
+                <input
+                  type="text"
+                  name="city"
+                  value={form.city}
+                  onChange={handleInputChange('city')}
+                  placeholder="City"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    errors.city ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.city && (
+                  <p className="mt-1 text-sm text-red-600">{errors.city}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State *
+                </label>
+                <input
+                  type="text"
+                  name="state"
+                  value={form.state}
+                  onChange={handleInputChange('state')}
+                  placeholder="State"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    errors.state ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.state && (
+                  <p className="mt-1 text-sm text-red-600">{errors.state}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country *
+                </label>
+                <input
+                  type="text"
+                  name="country"
+                  value={form.country}
+                  onChange={handleInputChange('country')}
+                  placeholder="Country"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    errors.country ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.country && (
+                  <p className="mt-1 text-sm text-red-600">{errors.country}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Contact Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Primary Phone *
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleInputChange('phone')}
+                  placeholder="10-digit phone number"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                    errors.phone ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Alternate Phone
+                </label>
+                <input
+                  type="tel"
+                  name="alternatePhone"
+                  value={form.alternatePhone}
+                  onChange={handleInputChange('alternatePhone')}
+                  placeholder="Optional alternate number"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  name="website"
+                  value={form.website}
+                  onChange={handleInputChange('website')}
+                  placeholder="https://www.example.com"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Include http:// or https://
+                </p>
+              </div>
+            </div>
+
+            {/* Institute Specific Fields */}
+            <div className="mt-6">
+              <div className="border-l-4 border-purple-500 pl-4 mb-4">
+                <h3 className="text-lg font-bold text-gray-800">Institute Specific Details</h3>
+                <p className="text-gray-600">Additional information based on institute type</p>
+              </div>
+              
+              {renderInstituteSpecificFields()}
+            </div>
+
+            {/* Helper Text */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">
+                <span className="font-medium">Note:</span> Fields marked with * are required. 
+                Entering a valid 6-digit Indian pincode will automatically fill city, state, country, and suggest an address.
+              </p>
+            </div>
+          </div>
         );
       case 4:
-        return <PrincipalAcademicStep form={currentForm} setForm={setForm} errors={errors} />;
+        return <PrincipalAcademicStep 
+          form={currentForm} 
+          setForm={setForm} 
+          errors={errors} 
+          handleInputChange={handleInputChange}
+        />;
       default:
         return <div>Invalid step</div>;
     }

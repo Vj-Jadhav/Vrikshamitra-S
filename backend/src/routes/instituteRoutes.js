@@ -10,32 +10,73 @@ import {
   getAssignmentStatistics,
   addFaculty,
   getFacultyByInstitute,
+  getInstituteProfile,
   addStudentsBulk,
-  addStudent // ADD THIS IMPORT
+  addStudent,
+  updateStudent,
+  deleteStudent,
+  getInstituteEvents,
+  acceptPlantingDrive,
+  createInstituteEvent
 } from "../controllers/instituteController.js";
+
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
+// Add this ABOVE the /profile route in instituteRoutes.js
+router.get("/test-route", (req, res) => {
+  res.json({
+    message: "Institute routes are working!",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ✅ FIX — Place static routes BEFORE dynamic ones
+router.get("/profile", protect, getInstituteProfile);
+
+
+// --------------------
 // Institute routes
-router.get("/:instituteId", getInstituteById); // Get institute details
+// --------------------
+router.get("/:instituteId", getInstituteById);
+router.get("/:instituteId/events", getInstituteEvents);
+router.post("/plant-drive/accept", protect, acceptPlantingDrive);
+router.post("/events/create", protect, createInstituteEvent);
 
+
+// --------------------
 // Student routes
-router.get("/:instituteId/students", getStudentsByInstituteId); // Get institute students
-router.post("/:instituteId/students", addStudent); // ADD THIS ROUTE - Add single student
-router.post('/:instituteId/students/bulk', addStudentsBulk); // Add students in bulk
+// --------------------
+router.get("/:instituteId/students", getStudentsByInstituteId);
+router.post("/:instituteId/students", addStudent);
+router.post("/:instituteId/students/bulk", addStudentsBulk);
+router.put("/:instituteId/students/:studentId", updateStudent);
+router.delete("/:instituteId/students/:studentId", deleteStudent);
 
+
+// --------------------
 // Faculty routes
-router.post("/:instituteId/faculty", addFaculty); // Add faculty
-router.get("/:instituteId/faculty", getFacultyByInstitute); // Get faculty by institute
+// --------------------
+router.post("/:instituteId/faculty", addFaculty);
+router.get("/:instituteId/faculty", getFacultyByInstitute);
 
+
+// --------------------
 // Assignment routes
-router.post('/:instituteId/assignments', createChallengeAssignment); // Create assignment
-router.get('/:instituteId/assignments', getInstituteAssignments); // Get institute assignments
-router.get('/:instituteId/assignment-stats', getAssignmentStatistics); // Get assignment stats
+// --------------------
+router.post("/:instituteId/assignments", createChallengeAssignment);
+router.get("/:instituteId/assignments", getInstituteAssignments);
+router.get("/:instituteId/assignment-stats", getAssignmentStatistics);
 
-// Specific assignment routes (keep these at bottom to avoid conflict)
-router.get('/assignments/:assignmentId', getAssignmentDetails); // Get assignment details
-router.put('/assignments/:assignmentId/status', updateAssignmentStatus); // Update assignment status
-router.delete('/assignments/:assignmentId', deleteAssignment); // Delete assignment
+
+// --------------------
+// Specific assignment routes
+// --------------------
+router.get("/assignments/:assignmentId", getAssignmentDetails);
+router.put("/assignments/:assignmentId/status", updateAssignmentStatus);
+router.delete("/assignments/:assignmentId", deleteAssignment);
+
+
 
 export default router;
