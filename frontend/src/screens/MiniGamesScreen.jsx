@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 
 const MiniGamesScreen = ({ navigation }) => {
   const games = [
-    { id: 1, name: 'Recycling Sort', emoji: '♻️', color: '#4ECDC4' },
+    { id: 1, name: 'Recycling Sort', emoji: '♻️', color: '#4ECDC4', screen: 'WasteSorter' },
     { id: 2, name: 'Plant Match', emoji: '🌱', color: '#6BCF7F' },
     { id: 3, name: 'Eco Puzzle', emoji: '🧩', color: '#FFD93D' },
     { id: 4, name: 'Water Saver', emoji: '💧', color: '#4D96FF' },
@@ -25,7 +25,11 @@ const MiniGamesScreen = ({ navigation }) => {
           <TouchableOpacity 
             key={game.id}
             style={[styles.gameCard, { backgroundColor: game.color }]}
-            onPress={() => {/* Add game navigation */}}
+            onPress={() =>
+              game.screen 
+                ? navigation.navigate(game.screen)
+                : alert("Game coming soon!")
+            }
           >
             <Text style={styles.gameEmoji}>{game.emoji}</Text>
             <Text style={styles.gameName}>{game.name}</Text>

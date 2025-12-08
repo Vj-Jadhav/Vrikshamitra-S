@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Waste Sorter Challenge</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a3d2e 0%, #1a5c48 100%);
+            color: #e0f7fa;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: pan-y;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 10px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 15px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(to right, #4caf50, #ffc107);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .stat-mini {
+            background: rgba(13, 43, 56, 0.9);
+            border-radius: 12px;
+            padding: 10px 5px;
+            text-align: center;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .stat-mini-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffc107;
+            display: block;
+        }
+
+        .stat-mini-label {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        /* Game Area */
+        .game-container {
+            background: rgba(13, 43, 56, 0.9);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .timer-bar {
+            background: rgba(0, 0, 0, 0.3);
+            height: 40px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #4caf50;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .timer-bar.warning {
+            color: #ff5252;
+            border-color: rgba(255, 82, 82, 0.5);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Conveyor Belt */
+        .conveyor-area {
+            background: linear-gradient(to right, #5a3921, #7a542e);
+            border-radius: 15px;
+            padding: 15px;
+            min-height: 200px;
+            position: relative;
+            margin-bottom: 20px;
+            border: 3px solid #8b4513;
+            overflow: hidden;
+        }
+
+        .conveyor-title {
+            text-align: center;
+            font-size: 1rem;
+            color: #ffc107;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .items-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            min-height: 140px;
+        }
+
+        .waste-item {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .waste-item:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+        }
+
+        .waste-item.dragging {
+            opacity: 0.7;
+            transform: scale(1.2);
+            z-index: 1000;
+            cursor: grabbing;
+        }
+
+        /* Bins */
+        .bins-title {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #8bc34a;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .bins-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .bin {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px 10px;
+            text-align: center;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bin.drag-over {
+            border-color: #4caf50;
+            background: rgba(76, 175, 80, 0.3);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+            transform: scale(1.05);
+        }
+
+        .bin-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .bin-name {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .bin-count {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            touch-action: manipulation;
+            transition: transform 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #4caf50, #8bc34a);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(to right, #2196f3, #03a9f4);
+            color: white;
+        }
+
+        /* Progress */
+        .progress-section {
+            background: rgba(13, 43, 56, 0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .progress-bar {
+            height: 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ff9800, #ffc107);
+            border-radius: 15px;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .progress-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: linear-gradient(135deg, #0c2b3e 0%, #1a4a5a 100%);
+            border-radius: 25px;
+            padding: 30px 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            border: 3px solid #ffc107;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            color: #ffc107;
+            margin-bottom: 15px;
+        }
+
+        .modal-content {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        /* Facts Section */
+        .facts-section {
+            background: rgba(13, 43, 56, 0.9);
+            border-radius: 20px;
+            padding: 20px 15px;
+            margin-bottom: 15px;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .facts-title {
+            font-size: 1.3rem;
+            color: #ff9800;
+            text-align: center;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .fact-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .fact-card h3 {
+            color: #8bc34a;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fact-card p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        /* Animations */
+        @keyframes correct-feedback {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(10deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes wrong-feedback {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .correct-animation {
+            animation: correct-feedback 0.5s ease;
+        }
+
+        .wrong-animation {
+            animation: wrong-feedback 0.5s ease;
+        }
+
+        /* Particles */
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            font-size: 2rem;
+            z-index: 999;
+        }
+
+        /* Landscape warning */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .landscape-warning {
+                display: flex;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.95);
+                z-index: 10000;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                padding: 20px;
+            }
+            
+            .landscape-warning-text {
+                font-size: 1.5rem;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Tablet adjustments */
+        @media (min-width: 768px) {
+            .container {
+                padding: 20px;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-bar {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+            }
+
+            .bins-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .waste-item {
+                width: 80px;
+                height: 80px;
+                font-size: 3rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .bins-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1><i class="fas fa-recycle"></i> Waste Sorter</h1>
+            <p class="subtitle">Sort waste correctly to save our planet! 🌍</p>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-mini">
+                <span class="stat-mini-value" id="score">0</span>
+                <span class="stat-mini-label">Points</span>
+            </div>
+            <div class="stat-mini">
+                <span class="stat-mini-value" id="level">1</span>
+                <span class="stat-mini-label">Level</span>
+            </div>
+            <div class="stat-mini">
+                <span class="stat-mini-value" id="correct">0</span>
+                <span class="stat-mini-label">Correct</span>
+            </div>
+            <div class="stat-mini">
+                <span class="stat-mini-value" id="streak">0</span>
+                <span class="stat-mini-label">Streak</span>
+            </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-bar" id="timerBar">
+            <i class="fas fa-clock"></i> <span id="timer">60</span>s
+        </div>
+
+        <!-- Game Container -->
+        <div class="game-container">
+            <!-- Conveyor Belt Area -->
+            <div class="conveyor-area">
+                <div class="conveyor-title">
+                    <i class="fas fa-hand-pointer"></i> Drag items to correct bins
+                </div>
+                <div class="items-container" id="itemsContainer">
+                    <!-- Items will be added here -->
+                </div>
+            </div>
+
+            <!-- Bins -->
+            <div class="bins-title">
+                <i class="fas fa-trash-alt"></i> Select Correct Bin
+            </div>
+            <div class="bins-grid" id="binsGrid">
+                <!-- Bins will be added here -->
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn">
+                <i class="fas fa-play"></i> Start Game
+            </button>
+            <button class="btn btn-secondary" id="resetBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="progress-section">
+            <div class="progress-label">Level Progress</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0%</div>
+            </div>
+            <div class="progress-label">Pollution Reduced: <span id="pollutionPercent">0%</span></div>
+        </div>
+
+        <!-- Facts Section -->
+        <div class="facts-section">
+            <h2 class="facts-title">
+                <i class="fas fa-lightbulb"></i> Quick Facts
+            </h2>
+            <div class="fact-card">
+                <h3><i class="fas fa-recycle"></i> Recycling</h3>
+                <p>Recycling one ton of paper saves 17 trees and 7,000 gallons of water!</p>
+            </div>
+            <div class="fact-card">
+                <h3><i class="fas fa-leaf"></i> Composting</h3>
+                <p>Food waste in landfills creates harmful methane gas. Composting helps reduce it!</p>
+            </div>
+            <div class="fact-card">
+                <h3><i class="fas fa-battery-full"></i> E-Waste</h3>
+                <p>Recycling 1 million laptops saves energy equal to powering 3,657 homes for a year!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-icon" id="modalIcon">🎮</div>
+            <h2 class="modal-title" id="modalTitle">Welcome!</h2>
+            <p class="modal-content" id="modalContent">Tap to start sorting waste</p>
+            <button class="btn btn-primary" id="modalBtn" style="margin: 0 auto;">
+                <i class="fas fa-check"></i> Got it!
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration
+        const wasteItems = [
+            { id: 'apple', emoji: '🍎', type: 'organic', color: '#8BC34A', name: 'Apple Core' },
+            { id: 'banana', emoji: '🍌', type: 'organic', color: '#FFC107', name: 'Banana Peel' },
+            { id: 'leaf', emoji: '🍃', type: 'organic', color: '#4CAF50', name: 'Leaves' },
+            { id: 'bottle', emoji: '🧴', type: 'plastic', color: '#2196F3', name: 'Plastic Bottle' },
+            { id: 'bag', emoji: '🛍️', type: 'plastic', color: '#FF9800', name: 'Plastic Bag' },
+            { id: 'straw', emoji: '🥤', type: 'plastic', color: '#00BCD4', name: 'Straw' },
+            { id: 'newspaper', emoji: '📰', type: 'paper', color: '#795548', name: 'Newspaper' },
+            { id: 'cardboard', emoji: '📦', type: 'paper', color: '#8D6E63', name: 'Cardboard' },
+            { id: 'jar', emoji: '🫙', type: 'glass', color: '#4CAF50', name: 'Glass Jar' },
+            { id: 'wine', emoji: '🍷', type: 'glass', color: '#F44336', name: 'Glass Bottle' },
+            { id: 'can', emoji: '🥫', type: 'metal', color: '#9E9E9E', name: 'Metal Can' },
+            { id: 'battery', emoji: '🔋', type: 'hazardous', color: '#FF5722', name: 'Battery' }
+        ];
+
+        const bins = [
+            { id: 'organic', emoji: '🍂', color: '#8BC34A', name: 'Organic' },
+            { id: 'plastic', emoji: '🧴', color: '#2196F3', name: 'Plastic' },
+            { id: 'paper', emoji: '📄', color: '#FF9800', name: 'Paper' },
+            { id: 'glass', emoji: '🥃', color: '#4CAF50', name: 'Glass' },
+            { id: 'metal', emoji: '🥫', color: '#9E9E9E', name: 'Metal' },
+            { id: 'hazardous', emoji: '⚠️', color: '#F44336', name: 'Hazard' }
+        ];
+
+        // Game state
+        let score = 0;
+        let level = 1;
+        let correctCount = 0;
+        let streak = 0;
+        let gameActive = false;
+        let timer = 60;
+        let timerInterval;
+        let currentItems = [];
+        let itemsSorted = 0;
+        let itemsPerLevel = 8;
+        let binCounts = {};
+        let draggedItem = null;
+
+        // DOM elements
+        const itemsContainer = document.getElementById('itemsContainer');
+        const binsGrid = document.getElementById('binsGrid');
+        const scoreEl = document.getElementById('score');
+        const levelEl = document.getElementById('level');
+        const correctEl = document.getElementById('correct');
+        const streakEl = document.getElementById('streak');
+        const timerEl = document.getElementById('timer');
+        const timerBar = document.getElementById('timerBar');
+        const progressFill = document.getElementById('progressFill');
+        const pollutionPercent = document.getElementById('pollutionPercent');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const modalBtn = document.getElementById('modalBtn');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Initialize
+        function init() {
+            createBins();
+            updateStats();
+            showModal('Welcome! 🎮', 'Drag waste items to the correct bins to sort them. Let\'s save the planet!', '♻️');
+        }
+
+        // Create bins
+        function createBins() {
+            binsGrid.innerHTML = '';
+            bins.forEach(bin => {
+                binCounts[bin.id] = 0;
+                const binEl = document.createElement('div');
+                binEl.className = 'bin';
+                binEl.dataset.type = bin.id;
+                binEl.innerHTML = `
+                    <div class="bin-icon" style="color: ${bin.color}">${bin.emoji}</div>
+                    <div class="bin-name">${bin.name}</div>
+                    <div class="bin-count" id="count-${bin.id}">0</div>
+                `;
+                
+                // Drag and drop events
+                binEl.addEventListener('dragover', handleDragOver);
+                binEl.addEventListener('dragenter', handleDragEnter);
+                binEl.addEventListener('dragleave', handleDragLeave);
+                binEl.addEventListener('drop', handleDrop);
+                
+                // Touch events for mobile
+                binEl.addEventListener('touchmove', handleTouchMove);
+                binEl.addEventListener('touchend', handleTouchEnd);
+                
+                binsGrid.appendChild(binEl);
+            });
+        }
+
+        // Start game
+        function startGame() {
+            if (gameActive) {
+                pauseGame();
+                return;
+            }
+
+            gameActive = true;
+            startBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+            modalOverlay.classList.remove('active');
+            
+            generateItems();
+            startTimer();
+        }
+
+        // Pause game
+        function pauseGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+            showModal('Paused', 'Take a break! Tap Resume when ready.', '⏸️');
+        }
+
+        // Reset game
+        function resetGame() {
+            if (confirm('Reset game? All progress will be lost.')) {
+                gameActive = false;
+                clearInterval(timerInterval);
+                score = 0;
+                level = 1;
+                correctCount = 0;
+                streak = 0;
+                timer = 60;
+                itemsSorted = 0;
+                selectedItem = null;
+                
+                bins.forEach(bin => binCounts[bin.id] = 0);
+                itemsContainer.innerHTML = '';
+                startBtn.innerHTML = '<i class="fas fa-play"></i> Start Game';
+                updateStats();
+                createBins();
+                modalOverlay.classList.remove('active');
+            }
+        }
+
+        // Generate items
+        function generateItems() {
+            itemsContainer.innerHTML = '';
+            currentItems = [];
+            itemsSorted = 0;
+            const itemCount = itemsPerLevel + level;
+
+            for (let i = 0; i < itemCount; i++) {
+                const item = wasteItems[Math.floor(Math.random() * wasteItems.length)];
+                currentItems.push(item);
+                
+                const itemEl = document.createElement('div');
+                itemEl.className = 'waste-item';
+                itemEl.dataset.type = item.type;
+                itemEl.dataset.name = item.name;
+                itemEl.dataset.id = `item-${i}`;
+                itemEl.style.background = item.color;
+                itemEl.innerHTML = item.emoji;
+                itemEl.draggable = true;
+                
+                // Desktop drag events
+                itemEl.addEventListener('dragstart', handleDragStart);
+                itemEl.addEventListener('dragend', handleDragEnd);
+                
+                // Mobile touch events
+                itemEl.addEventListener('touchstart', handleTouchStart);
+                itemEl.addEventListener('touchmove', handleTouchMove);
+                itemEl.addEventListener('touchend', handleTouchEnd);
+                
+                itemsContainer.appendChild(itemEl);
+            }
+        }
+
+        // Desktop drag handlers
+        function handleDragStart(e) {
+            if (!gameActive) {
+                e.preventDefault();
+                return;
+            }
+            draggedItem = {
+                element: e.target,
+                type: e.target.dataset.type,
+                name: e.target.dataset.name
+            };
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            draggedItem = null;
+        }
+
+        function handleDragOver(e) {
+            if (!gameActive || !draggedItem) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            if (!gameActive || !draggedItem) return;
+            if (e.target.classList.contains('bin') || e.target.closest('.bin')) {
+                const bin = e.target.classList.contains('bin') ? e.target : e.target.closest('.bin');
+                bin.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('bin') || e.target.closest('.bin')) {
+                const bin = e.target.classList.contains('bin') ? e.target : e.target.closest('.bin');
+                bin.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            if (!gameActive || !draggedItem) return;
+            e.preventDefault();
+            
+            const bin = e.target.classList.contains('bin') ? e.target : e.target.closest('.bin');
+            if (!bin) return;
+            
+            bin.classList.remove('drag-over');
+            const binType = bin.dataset.type;
+            processSorting(draggedItem, binType, bin);
+        }
+
+        // Mobile touch handlers
+        let touchStartPos = { x: 0, y: 0 };
+        let isDragging = false;
+        let clonedElement = null;
+
+        function handleTouchStart(e) {
+            if (!gameActive) return;
+            
+            const touch = e.touches[0];
+            touchStartPos = { x: touch.clientX, y: touch.clientY };
+            
+            draggedItem = {
+                element: e.target,
+                type: e.target.dataset.type,
+                name: e.target.dataset.name
+            };
+            
+            // Create clone for dragging
+            clonedElement = e.target.cloneNode(true);
+            clonedElement.style.position = 'fixed';
+            clonedElement.style.zIndex = '1000';
+            clonedElement.style.pointerEvents = 'none';
+            clonedElement.style.left = touch.clientX - 35 + 'px';
+            clonedElement.style.top = touch.clientY - 35 + 'px';
+            clonedElement.classList.add('dragging');
+            document.body.appendChild(clonedElement);
+            
+            e.target.style.opacity = '0.3';
+            isDragging = true;
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging || !clonedElement) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            clonedElement.style.left = touch.clientX - 35 + 'px';
+            clonedElement.style.top = touch.clientY - 35 + 'px';
+            
+            // Highlight bins when hovering
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            document.querySelectorAll('.bin').forEach(b => b.classList.remove('drag-over'));
+            
+            if (element) {
+                const bin = element.classList.contains('bin') ? element : element.closest('.bin');
+                if (bin) {
+                    bin.classList.add('drag-over');
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (!isDragging || !draggedItem) return;
+            
+            const touch = e.changedTouches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            const bin = element?.classList.contains('bin') ? element : element?.closest('.bin');
+            
+            // Clean up
+            if (clonedElement) {
+                clonedElement.remove();
+                clonedElement = null;
+            }
+            
+            if (draggedItem.element) {
+                draggedItem.element.style.opacity = '1';
+            }
+            
+            document.querySelectorAll('.bin').forEach(b => b.classList.remove('drag-over'));
+            
+            if (bin && gameActive) {
+                const binType = bin.dataset.type;
+                processSorting(draggedItem, binType, bin);
+            }
+            
+            draggedItem = null;
+            isDragging = false;
+        }
+
+        // Process the sorting logic
+        function processSorting(item, binType, binElement) {
+            const isCorrect = item.type === binType;
+
+            if (isCorrect) {
+                // Correct
+                score += (10 * level) + (streak * 2);
+                correctCount++;
+                streak++;
+                itemsSorted++;
+                binCounts[binType]++;
+
+                item.element.remove();
+                createParticles('✅', '#4CAF50');
+                binElement.classList.add('correct-animation');
+                setTimeout(() => binElement.classList.remove('correct-animation'), 500);
+
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            } else {
+                // Wrong
+                score = Math.max(0, score - 5);
+                streak = 0;
+                
+                const correctBin = bins.find(b => b.id === item.type);
+                showModal('Oops! ❌', `${item.name} goes in ${correctBin.name} bin (${correctBin.emoji})`, '🤔');
+                
+                binElement.classList.add('wrong-animation');
+                setTimeout(() => binElement.classList.remove('wrong-animation'), 500);
+
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            }
+
+            updateStats();
+
+            // Check level complete
+            if (itemsSorted >= currentItems.length) {
+                endGame(true);
+            }
+        }
+
+        // Start timer
+        function startTimer() {
+            timer = Math.max(30, 60 - (level * 5));
+            timerEl.textContent = timer;
+            timerBar.classList.remove('warning');
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!gameActive) return;
+                
+                timer--;
+                timerEl.textContent = timer;
+
+                if (timer <= 10) {
+                    timerBar.classList.add('warning');
+                }
+
+                if (timer <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        // End game
+        function endGame(isWin) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            startBtn.innerHTML = '<i class="fas fa-play"></i> Start Game';
+
+            if (isWin) {
+                showModal('Level Complete! 🏆', `Great job! You sorted ${itemsSorted} items and earned ${score} points. Ready for level ${level + 1}?`, '🎉');
+                modalBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Next Level';
+                modalBtn.onclick = nextLevel;
+            } else {
+                showModal('Time\'s Up! ⏰', `You sorted ${itemsSorted}/${currentItems.length} items. Try again!`, '😅');
+                modalBtn.innerHTML = '<i class="fas fa-redo"></i> Try Again';
+                modalBtn.onclick = () => {
+                    modalOverlay.classList.remove('active');
+                    startGame();
+                };
+            }
+        }
+
+        // Next level
+        function nextLevel() {
+            level++;
+            itemsSorted = 0;
+            itemsPerLevel = Math.min(12, 8 + level);
+            bins.forEach(bin => binCounts[bin.id] = 0);
+            createBins();
+            modalOverlay.classList.remove('active');
+            updateStats();
+            generateItems();
+            startTimer();
+            gameActive = true;
+            startBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+        }
+
+        // Update stats
+        function updateStats() {
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+            correctEl.textContent = correctCount;
+            streakEl.textContent = streak;
+
+            // Update progress
+            const progress = currentItems.length > 0 ? (itemsSorted / currentItems.length) * 100 : 0;
+            progressFill.style.width = `${progress}%`;
+            progressFill.textContent = `${Math.round(progress)}%`;
+
+            // Update pollution
+            const pollution = Math.min(100, correctCount * 5);
+            pollutionPercent.textContent = `${pollution}%`;
+
+            // Update bin counts
+            bins.forEach(bin => {
+                const countEl = document.getElementById(`count-${bin.id}`);
+                if (countEl) countEl.textContent = binCounts[bin.id];
+            });
+        }
+
+        // Show modal
+        function showModal(title, content, icon) {
+            modalTitle.textContent = title;
+            modalContent.textContent = content;
+            modalIcon.textContent = icon;
+            modalOverlay.classList.add('active');
+        }
+
+        // Create particles
+        function createParticles(emoji, color) {
+            for (let i = 0; i < 5; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.textContent = emoji;
+                particle.style.color = color;
+                particle.style.left = '50%';
+                particle.style.top = '50%';
+                document.body.appendChild(particle);
+
+                const angle = (Math.PI * 2 * i) / 5;
+                const speed = 100;
+                let opacity = 1;
+                let x = 0, y = 0;
+
+                const animate = () => {
+                    opacity -= 0.02;
+                    x += Math.cos(angle) * 3;
+                    y += Math.sin(angle) * 3;
+                    particle.style.opacity = opacity;
+                    particle.style.transform = `translate(${x}px, ${y}px)`;
+
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        particle.remove();
+                    }
+                };
+                animate();
+            }
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        resetBtn.addEventListener('click', resetGame);
+        modalBtn.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
