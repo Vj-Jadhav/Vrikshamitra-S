@@ -32,4 +32,5 @@ export const analyzePlantImage = async (imagePath) => {
             confidence: 0.85
         };
     }
-};
+};;
+

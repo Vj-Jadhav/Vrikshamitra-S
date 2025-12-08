@@ -49,7 +49,7 @@ export default function Register() {
         transition={{ duration: 0.6 }}
         className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl p-10 w-96"
       >
-        <h1 className="text-3xl font-extrabold text-center text-green-800 mb-2">Vrikshmitraa</h1>
+        <h1 className="text-3xl font-extrabold text-center text-green-800 mb-2">EcoQuest</h1>
         <p className="text-center text-gray-600 mb-8">
           Create your account and join the green journey 🌿
         </p>
