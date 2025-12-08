@@ -40,7 +40,7 @@ import AQIGameScreen from './screens/AQIGameScreen';
 import WasteSorter from './screens/WasteSorter';
 import NatureQuiz from './screens/NatureQuiz';
 import SeedSaverGameScreen from './screens/SeedSaverGameScreen';
-
+import Rewards from './screens/Rewards';
 
 import GarbageReport from './screens/GarbageReport';
 import GarbageParticipate from './screens/GarbageParticipate';
@@ -76,7 +76,7 @@ export default function AppNavigator() {
         <Stack.Screen name="HelpSupportScreen" component={HelpSupportScreen} />
         <Stack.Screen name="AboutScreen" component={AboutScreen} />
         <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen} />
-
+        <Stack.Screen name="Rewards" component={Rewards} />
 
 
 
