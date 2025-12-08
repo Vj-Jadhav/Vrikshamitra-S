@@ -65,6 +65,33 @@ const reportSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  cleanupSubmissions: [{
+    user: {
+      userType: {
+        type: String,
+        enum: ['Student', 'Faculty', 'User'],
+        required: true
+      },
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        refPath: 'cleanupSubmissions.user.userType'
+      },
+      name: String
+    },
+    imageUrl: { type: String, required: true },
+    cloudinaryId: { type: String, required: true },
+    description: String,
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    submittedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

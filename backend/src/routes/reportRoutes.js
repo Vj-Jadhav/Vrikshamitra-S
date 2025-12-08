@@ -1,9 +1,8 @@
 // routes/reportRoutes.js
 import express from "express";
 import multer from "multer";
-import { createReport, getReports, getReport, getStats } from "../controllers/reportController.js";
-
-// const { protect, authorize } = require('../middleware/auth'); // If you add auth later
+import { createReport, getReports, getReport, getStats, getMyReports, submitCleanup, approveCleanup, rejectCleanup } from "../controllers/reportController.js";
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -23,10 +22,17 @@ const upload = multer({
 });
 
 // Public routes
-router.post('/', upload.single('image'),createReport);
+router.post('/', upload.single('image'), createReport);
 router.get('/', getReports);
-router.get('/:id', getReport);
 router.get('/stats', getStats);
+
+// Protected routes
+router.get('/my-reports', protect, getMyReports); // Must be before /:id
+router.post('/:id/cleanup', protect, upload.single('image'), submitCleanup);
+router.post('/:id/cleanup/:submissionId/approve', protect, approveCleanup);
+router.post('/:id/cleanup/:submissionId/reject', protect, rejectCleanup);
+
+router.get('/:id', getReport);
 
 // Protected routes (add these middleware when you implement auth)
 // router.put('/:id/status', protect, authorize('admin', 'collector'), reportController.updateReportStatus);

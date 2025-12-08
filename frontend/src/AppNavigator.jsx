@@ -48,6 +48,7 @@ import GarbageReport from './screens/GarbageReport';
 import GarbageParticipate from './screens/GarbageParticipate';
 import PlantTracking from './screens/PlantTracking';
 import AwarenessPopupScreen from './screens/AwarenessPopupScreen';
+import GarbageHub from './screens/GarbageHub';
 import CategoryJourneyScreen from './screens/CategoryJourneyScreen';
 
 const Stack = createNativeStackNavigator();
@@ -110,6 +111,7 @@ export default function AppNavigator() {
 
         <Stack.Screen name="GarbageReport" component={GarbageReport} />
         <Stack.Screen name="GarbageParticipate" component={GarbageParticipate} />
+        <Stack.Screen name="GarbageHub" component={GarbageHub} />
         <Stack.Screen name="PlantTracking" component={PlantTracking} />
         <Stack.Screen name="CategoryJourneyScreen" component={CategoryJourneyScreen} />
 

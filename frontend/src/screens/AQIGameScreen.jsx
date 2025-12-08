@@ -10,8 +10,8 @@ export default function AQIGameScreen() {
 
         source={
           Platform.OS === "android"
-            ? { uri: "file:///android_asset/AQIGame/index.html" }
-            : require("../assets/AQIGame/index.html")
+            ? { uri: "file:///android_asset/AQIGame/home.html" }
+            : require("../assets/AQIGame/home.html")
         }
 
         allowFileAccess={true}

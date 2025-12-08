@@ -1,25 +1,25 @@
 // controllers/reportController.js
 import Report from "../models/Report.js";
 import cloudinaryUtils from "../utils/cloudinary.js";
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js'; // You need a User model
+import Student from "../models/Student.js";
+import Faculty from "../models/Faculty.js";
 
 const { uploadToCloudinary, deleteFromCloudinary } = cloudinaryUtils;
 
 // @desc    Create a new garbage report
 // @route   POST /api/reports
 // @access  Public/Private
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js'; // You need a User model
-import Student from "../models/Student.js";
-
 export const createReport = async (req, res) => {
   try {
-    const { 
-      description, 
-      latitude, 
-      longitude, 
-      address, 
-      accuracy, 
-      category, 
+    const {
+      description,
+      latitude,
+      longitude,
+      address,
+      accuracy,
+      category,
       severity,
       tags,
       userId // From frontend (optional, for guest users)
@@ -127,20 +127,20 @@ export const createReport = async (req, res) => {
     if (userId && userId !== 'guest') {
       try {
         const user = await Student.findById(userId);
-                if (user) {
-            reportedBy = {
+        if (user) {
+          reportedBy = {
             userType: "Student",
             userId: user._id
-            };
+          };
         } else {
-            user = await Faculty.findById(userId);
+          const faculty = await Faculty.findById(userId);
 
-            if (user) {
+          if (faculty) {
             reportedBy = {
-                userType: "Faculty",
-                userId: user._id
+              userType: "Faculty",
+              userId: faculty._id
             };
-            }
+          }
         }
 
       } catch (error) {
@@ -194,7 +194,7 @@ export const createReport = async (req, res) => {
 
   } catch (error) {
     console.error('Error creating report:', error);
-    
+
     // Handle validation errors
     if (error.name === 'ValidationError') {
       return res.status(400).json({
@@ -284,14 +284,14 @@ export const getReports = async (req, res) => {
 
     // Execute query
     const reports = await Report.find(query)
-  .sort({ createdAt: -1 })
-  .skip(skip)
-  .limit(limitNum)
-  .populate({
-    path: 'reportedBy.userId',
-    select: 'name email'  // works for Student, Faculty, User models
-  })
-  .populate('assignedTo', 'name email');
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate({
+        path: 'reportedBy.userId',
+        select: 'name email'  // works for Student, Faculty, User models
+      })
+      .populate('assignedTo', 'name email');
 
     const total = await Report.countDocuments(query);
 
@@ -311,6 +311,60 @@ export const getReports = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+};
+
+// @desc    Get logged-in user's reports
+// @route   GET /api/reports/my-reports
+// @access  Private
+export const getMyReports = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const {
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    // Pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Query reports where reportedBy.userId matches user's ID
+    const query = {
+      'reportedBy.userId': userId
+    };
+
+    const reports = await Report.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate({
+        path: 'reportedBy.userId',
+        select: 'name email'
+      })
+      .populate('assignedTo', 'name email');
+
+    const total = await Report.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: reports,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error getting my reports:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
     });
   }
 };
@@ -362,7 +416,7 @@ export const updateReportStatus = async (req, res) => {
 
     // Update status
     report.status = status || report.status;
-    
+
     // If status is resolved, set resolvedAt
     if (status === 'resolved') {
       report.resolvedAt = new Date();
@@ -436,7 +490,7 @@ export const getStats = async (req, res) => {
     const totalReports = await Report.countDocuments();
     const pendingReports = await Report.countDocuments({ status: 'pending' });
     const resolvedReports = await Report.countDocuments({ status: 'resolved' });
-    
+
     const reportsByCategory = await Report.aggregate([
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
@@ -468,5 +522,118 @@ export const getStats = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// @desc    Submit cleanup evidence
+// @route   POST /api/reports/:id/cleanup
+// @access  Private
+export const submitCleanup = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please upload an image' });
+    }
+
+    const report = await Report.findById(req.params.id);
+    if (!report) {
+      return res.status(404).json({ success: false, message: 'Report not found' });
+    }
+
+    // Upload image
+    const uploadResult = await uploadToCloudinary(req.file.buffer, {
+      folder: 'cleanups',
+      transformation: [{ width: 1200, height: 800, crop: 'limit' }, { quality: 'auto:good' }]
+    });
+
+    // Map role to Schema userType
+    const userRoleMap = {
+      'student': 'Student',
+      'faculty': 'Faculty',
+      'user': 'User'
+    };
+    const userType = userRoleMap[req.userRole] || 'User';
+
+    const submission = {
+      user: {
+        userType: userType,
+        userId: req.user._id,
+        name: req.user.name
+      },
+      imageUrl: uploadResult.secure_url,
+      cloudinaryId: uploadResult.public_id,
+      description: req.body.description || '',
+      status: 'pending'
+    };
+
+    report.cleanupSubmissions.push(submission);
+
+    await report.save();
+
+    res.json({
+      success: true,
+      message: 'Cleanup evidence submitted successfully',
+      data: report
+    });
+
+  } catch (error) {
+    console.error('Error submitting cleanup:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Approve cleanup submission
+// @route   POST /api/reports/:id/cleanup/:submissionId/approve
+// @access  Private (Reporter only)
+export const approveCleanup = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
+
+    // Verify reporter
+    if (report.reportedBy.userId && report.reportedBy.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to approve this report' });
+    }
+
+    const submission = report.cleanupSubmissions.id(req.params.submissionId);
+    if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
+
+    submission.status = 'approved';
+    report.status = 'resolved';
+    report.resolvedAt = new Date();
+
+    await report.save();
+
+    res.json({ success: true, message: 'Cleanup approved', data: report });
+
+  } catch (error) {
+    console.error('Error approving cleanup:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Reject cleanup submission
+// @route   POST /api/reports/:id/cleanup/:submissionId/reject
+// @access  Private (Reporter only)
+export const rejectCleanup = async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
+
+    if (report.reportedBy.userId && report.reportedBy.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to reject this report' });
+    }
+
+    const submission = report.cleanupSubmissions.id(req.params.submissionId);
+    if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
+
+    submission.status = 'rejected';
+
+    await report.save();
+
+    res.json({ success: true, message: 'Cleanup rejected', data: report });
+
+  } catch (error) {
+    console.error('Error rejecting cleanup:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

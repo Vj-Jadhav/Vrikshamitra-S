@@ -379,7 +379,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity
               style={styles.gameCard}
               activeOpacity={0.6}
-              onPress={() => navigation.navigate("GarbageParticipate")}
+              onPress={() => navigation.navigate("GarbageHub")}
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#7FBF7F' }]}>
                 <Image source={EarthHeroes} style={styles.gameImage} />
