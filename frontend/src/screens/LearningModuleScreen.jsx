@@ -1,5 +1,3 @@
-// frontend/src/screens/LearningModuleScreen.jsx
-
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   View,
@@ -14,19 +12,24 @@ import {
   Animated,
   Dimensions,
   Modal,
+  RefreshControl,
+  Platform,
+  Linking
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import YoutubePlayer from "react-native-youtube-iframe";
 import { API_ENDPOINTS } from '../config/config.js';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function LearningModuleScreen({ navigation }) {
+export default function LearningModuleScreen({ navigation, route }) {
   const [allLessons, setAllLessons] = useState([]);
   const [completedLessons, setCompletedLessons] = useState([]);
   const [progressPercentage, setProgressPercentage] = useState(0);
-  const [loadingLessons, setLoadingLessons] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -36,24 +39,40 @@ export default function LearningModuleScreen({ navigation }) {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [quizScore, setQuizScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const [videoLoading, setVideoLoading] = useState(false);
-  const [userStats, setUserStats] = useState({
-    completed: 0,
-    inProgress: 0,
-    totalPoints: 0,
-    streak: 3
-  });
-
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [videoError, setVideoError] = useState(null);
+  
   // Animation values
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
 
-  // 🚀 1. FETCH ALL MODULES FROM DATABASE
   const BACKEND_URL = API_ENDPOINTS.LEARNING_MODULES;
 
+  // User stats
+  const [userStats, setUserStats] = useState({
+    completed: 0,
+    inProgress: 0,
+    totalPoints: 0,
+    streak: 0,
+    level: 1
+  });
+
+  // Categories
+  const categories = [
+    { id: 'all', name: 'All', icon: 'earth', color: '#667eea' },
+    { id: 'climate', name: 'Climate', icon: 'thermometer', color: '#ff6b6b' },
+    { id: 'biodiversity', name: 'Biodiversity', icon: 'butterfly', color: '#4ecdc4' },
+    { id: 'pollution', name: 'Pollution', icon: 'factory', color: '#ff9ff3' },
+    { id: 'conservation', name: 'Conservation', icon: 'recycle', color: '#feca57' },
+    { id: 'sustainability', name: 'Sustainability', icon: 'leaf', color: '#1dd1a1' },
+    { id: 'water', name: 'Water', icon: 'water', color: '#54a0ff' },
+    { id: 'forest', name: 'Forest', icon: 'tree', color: '#00b894' },
+  ];
+
+  // Animation on mount
   useEffect(() => {
-    // Animate on mount
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -68,119 +87,195 @@ export default function LearningModuleScreen({ navigation }) {
     ]).start();
   }, []);
 
-  useEffect(() => {
-    const fetchModules = async () => {
-      try {
-        setLoadingLessons(true);
-        const res = await axios.get(BACKEND_URL);
-        setAllLessons(res.data); // Array of lessons from DB
-      } catch (err) {
-        console.log(err);
-        Alert.alert("Error", "Failed to load learning modules.");
-      } finally {
-        setLoadingLessons(false);
-      }
-    };
-
-    fetchModules();
+  // Get streak count
+  const getStreakCount = useCallback(async () => {
+    try {
+      const lastCompletion = await AsyncStorage.getItem("lastCompletionDate");
+      if (!lastCompletion) return 0;
+      
+      const lastDate = new Date(lastCompletion);
+      const today = new Date();
+      const diffTime = Math.abs(today - lastDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays <= 1 ? 3 : 0;
+    } catch (error) {
+      console.error("Error getting streak:", error);
+      return 0;
+    }
   }, []);
 
-  // 🚀 2. LOAD COMPLETED MODULES FROM LOCAL STORAGE
-  useEffect(() => {
-    const loadCompletedModules = async () => {
-      try {
-        const data = await AsyncStorage.getItem("completedLessons");
-        const completed = data ? JSON.parse(data) : [];
-        setCompletedLessons(completed);
+  // Load completed modules from local storage
+  const loadCompletedModules = useCallback(async () => {
+    try {
+      const data = await AsyncStorage.getItem("completedLessons");
+      const completed = data ? JSON.parse(data) : [];
+      setCompletedLessons(completed);
+      
+      // Update user stats
+      const totalPoints = allLessons.reduce((sum, lesson) => {
+        return completed.includes(lesson.id) ? sum + (lesson.points || 0) : sum;
+      }, 0);
+      
+      const streak = await getStreakCount();
+      
+      setUserStats(prev => ({
+        ...prev,
+        completed: completed.length,
+        totalPoints,
+        inProgress: Math.max(0, allLessons.length - completed.length),
+        streak: streak,
+        level: Math.floor(totalPoints / 100) + 1
+      }));
+    } catch (error) {
+      console.error("Error loading completed lessons:", error);
+    }
+  }, [allLessons, getStreakCount]);
 
-        // Update user stats
-        setUserStats(prev => ({
-          ...prev,
-          completed: completed.length,
-        }));
-      } catch (error) {
-        console.error("Error loading completed lessons:", error);
+  // Fetch modules from backend
+  const fetchModules = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const res = await axios.get(BACKEND_URL);
+      
+      if (res.data.success) {
+        setAllLessons(res.data.data || []);
+      } else {
+        setAllLessons([]);
       }
-    };
-    loadCompletedModules();
+    } catch (err) {
+      console.error("Error fetching modules:", err);
+      setError("Failed to load learning modules. Please check your connection.");
+      Alert.alert("Error", "Failed to load learning modules.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [BACKEND_URL]);
+
+  // Extract YouTube ID from various formats
+  const extractYouTubeId = useCallback((url) => {
+    if (!url) return null;
+    
+    // If it's already a video ID (11 characters)
+    if (url.length === 11 && !url.includes('/') && !url.includes('?')) {
+      return url;
+    }
+    
+    // Extract from various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([^&?\n]+)/,
+      /^([a-zA-Z0-9_-]{11})$/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return null;
   }, []);
 
-  // 🚀 3. CALCULATE PROGRESS
+  // Initial load
+  useEffect(() => {
+    const init = async () => {
+      await fetchModules();
+    };
+    init();
+  }, [fetchModules]);
+
+  // Update stats when lessons or completed lessons change
+  useEffect(() => {
+    if (allLessons.length > 0) {
+      loadCompletedModules();
+    }
+  }, [allLessons, loadCompletedModules]);
+
+  // Calculate progress percentage
   useEffect(() => {
     if (allLessons.length === 0) return;
-
+    
     const percent = (completedLessons.length / allLessons.length) * 100;
     setProgressPercentage(Math.min(percent.toFixed(1), 100));
-
-    // Calculate total points
-    const totalPoints = completedLessons.reduce((sum, lessonId) => {
-      const lesson = allLessons.find(l => l.id === lessonId);
-      return sum + (lesson?.points || 0);
-    }, 0);
-
-    setUserStats(prev => ({
-      ...prev,
-      totalPoints,
-      completed: completedLessons.length,
-    }));
   }, [allLessons, completedLessons]);
 
-  // Learning Categories
-  const categories = [
-    { id: 'all', name: 'All', icon: '🌍', color: '#667eea' },
-    { id: 'climate', name: 'Climate', icon: '🌡', color: '#ff6b6b' },
-    { id: 'biodiversity', name: 'Biodiversity', icon: '🦋', color: '#4ecdc4' },
-    { id: 'pollution', name: 'Pollution', icon: '🏭', color: '#ff9ff3' },
-    { id: 'conservation', name: 'Conservation', icon: '♻', color: '#feca57' },
-  ];
-
-  // Filter and search lessons
+  // Filter lessons based on category and search
   const filteredLessons = useMemo(() => {
-    let filtered = activeCategory === 'all'
-      ? allLessons
+    let filtered = activeCategory === 'all' 
+      ? allLessons 
       : allLessons.filter(lesson => lesson.category === activeCategory);
 
-    if (searchQuery) {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(lesson =>
-        lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (lesson.subtitle && lesson.subtitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (lesson.description && lesson.description.toLowerCase().includes(searchQuery.toLowerCase()))
+        lesson.title.toLowerCase().includes(query) ||
+        (lesson.subtitle && lesson.subtitle.toLowerCase().includes(query)) ||
+        (lesson.description && lesson.description.toLowerCase().includes(query)) ||
+        (lesson.tags && lesson.tags.some(tag => tag.toLowerCase().includes(query)))
       );
     }
 
     return filtered;
   }, [activeCategory, searchQuery, allLessons]);
 
-  // Calculate progress for each lesson
+  // Pull to refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchModules();
+  }, [fetchModules]);
+
+  // Lesson progress helper
   const getLessonProgress = useCallback((lessonId) => {
     return completedLessons.includes(lessonId) ? 100 : 0;
   }, [completedLessons]);
 
-  // 🚀 4. GO TO MODULE
+  // Handle module press
   const handleModulePress = (lesson) => {
-    // Check if lesson has video (youtubeId) - open modal
     if (lesson.youtubeId) {
-      openLesson(lesson);
+      setSelectedLesson(lesson);
+      setVideoError(null);
+      setVideoLoading(true);
     } else {
-      // Legacy navigation for lessons without video
-      navigation.navigate("LearningScreen", {
-        moduleDetails: lesson,
+      navigation.navigate("LearningDetailScreen", {
+        module: lesson,
         onComplete: async () => {
-          const updated = [...new Set([...completedLessons, lesson.id])];
-          setCompletedLessons(updated);
-          await AsyncStorage.setItem(
-            "completedLessons",
-            JSON.stringify(updated)
-          );
+          await markLessonComplete(lesson.id);
         },
       });
     }
   };
 
-  // 🚀 5. CONTINUE BUTTON
+  // Mark lesson as complete
+  const markLessonComplete = async (lessonId) => {
+    if (!completedLessons.includes(lessonId)) {
+      const updated = [...new Set([...completedLessons, lessonId])];
+      setCompletedLessons(updated);
+      await AsyncStorage.setItem("completedLessons", JSON.stringify(updated));
+      await AsyncStorage.setItem("lastCompletionDate", new Date().toISOString());
+      
+      const lesson = allLessons.find(l => l.id === lessonId);
+      if (lesson) {
+        setUserStats(prev => ({
+          ...prev,
+          completed: prev.completed + 1,
+          totalPoints: prev.totalPoints + (lesson.points || 0),
+          inProgress: Math.max(0, prev.inProgress - 1),
+          level: Math.floor((prev.totalPoints + (lesson.points || 0)) / 100) + 1
+        }));
+      }
+      
+      Alert.alert("🎉 Lesson Complete!", `You earned ${lesson?.points || 0} points!`);
+    }
+  };
+
+  // Continue button handler
   const handleContinue = () => {
     const nextModule = allLessons.find((lesson) => !completedLessons.includes(lesson.id));
-
+    
     if (nextModule) {
       handleModulePress(nextModule);
     } else {
@@ -188,25 +283,48 @@ export default function LearningModuleScreen({ navigation }) {
     }
   };
 
-  // Handle video state change
+  // Video state change handler
   const handleVideoStateChange = useCallback((state) => {
+    console.log('Video state:', state);
+    
     if (state === 'ended') {
       setIsVideoPlaying(false);
       setVideoLoading(false);
       handleVideoComplete();
     } else if (state === 'playing') {
       setVideoLoading(false);
+      setVideoError(null);
+    } else if (state === 'paused') {
+      setIsVideoPlaying(false);
+      setVideoLoading(false);
     } else if (state === 'buffering') {
+      setVideoLoading(true);
+    } else if (state === 'unstarted') {
       setVideoLoading(true);
     }
   }, []);
 
-  // Handle video completion
+  // Video error handler
+  const handleVideoError = useCallback((error) => {
+    console.error('YouTube player error:', error);
+    setVideoError("Failed to load video. Please check your internet connection or try opening in YouTube app.");
+    setVideoLoading(false);
+  }, []);
+
+  // Open video in YouTube app
+  const openInYouTube = useCallback((videoId) => {
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    Linking.openURL(url).catch(err => {
+      console.error('Failed to open YouTube:', err);
+      Alert.alert("Error", "Could not open YouTube. Please install YouTube app.");
+    });
+  }, []);
+
+  // Video complete handler
   const handleVideoComplete = useCallback(() => {
     if (selectedLesson && selectedLesson.quiz && selectedLesson.quiz.length > 0) {
       setShowQuiz(true);
     } else {
-      // If no quiz, mark as complete
       handleLessonCompleteNoQuiz();
     }
   }, [selectedLesson]);
@@ -236,24 +354,12 @@ export default function LearningModuleScreen({ navigation }) {
     }
   }, [selectedAnswer, currentQuestionIndex, selectedLesson]);
 
-  // Handle lesson completion (with quiz)
+  // Handle lesson completion with quiz
   const handleLessonComplete = useCallback(async () => {
     const passingScore = Math.ceil(selectedLesson.quiz.length * 0.6);
 
     if (quizScore >= passingScore) {
-      if (!completedLessons.includes(selectedLesson.id)) {
-        const updated = [...new Set([...completedLessons, selectedLesson.id])];
-        setCompletedLessons(updated);
-        await AsyncStorage.setItem("completedLessons", JSON.stringify(updated));
-
-        setUserStats(prev => ({
-          ...prev,
-          completed: prev.completed + 1,
-          inProgress: prev.inProgress > 0 ? prev.inProgress - 1 : 0,
-          totalPoints: prev.totalPoints + selectedLesson.points,
-          streak: prev.streak + 1
-        }));
-      }
+      await markLessonComplete(selectedLesson.id);
       Alert.alert(
         '🎉 Congratulations!',
         `You passed with ${quizScore}/${selectedLesson.quiz.length} correct answers!\n\nYou earned ${selectedLesson.points} points!`,
@@ -269,27 +375,17 @@ export default function LearningModuleScreen({ navigation }) {
         ]
       );
     }
-  }, [selectedLesson, quizScore, completedLessons]);
+  }, [selectedLesson, quizScore]);
 
-  // Handle lesson completion (no quiz)
+  // Handle lesson completion without quiz
   const handleLessonCompleteNoQuiz = useCallback(async () => {
-    if (!completedLessons.includes(selectedLesson.id)) {
-      const updated = [...new Set([...completedLessons, selectedLesson.id])];
-      setCompletedLessons(updated);
-      await AsyncStorage.setItem("completedLessons", JSON.stringify(updated));
-
-      setUserStats(prev => ({
-        ...prev,
-        completed: prev.completed + 1,
-        totalPoints: prev.totalPoints + selectedLesson.points,
-      }));
-    }
+    await markLessonComplete(selectedLesson.id);
     Alert.alert(
       '🎉 Lesson Complete!',
       `You earned ${selectedLesson.points} points!`,
       [{ text: 'OK', onPress: closeLesson }]
     );
-  }, [selectedLesson, completedLessons]);
+  }, [selectedLesson]);
 
   // Reset quiz
   const resetQuiz = useCallback(() => {
@@ -298,9 +394,10 @@ export default function LearningModuleScreen({ navigation }) {
     setQuizScore(0);
     setShowResults(false);
     setShowQuiz(false);
+    setIsVideoPlaying(true);
   }, []);
 
-  // Close lesson
+  // Close lesson modal
   const closeLesson = useCallback(() => {
     setSelectedLesson(null);
     setShowQuiz(false);
@@ -309,19 +406,9 @@ export default function LearningModuleScreen({ navigation }) {
     setQuizScore(0);
     setShowResults(false);
     setIsVideoPlaying(false);
-    setVideoLoading(false);
+    setVideoLoading(true);
+    setVideoError(null);
   }, []);
-
-  // Open lesson
-  const openLesson = useCallback((lesson) => {
-    setSelectedLesson(lesson);
-    if (!completedLessons.includes(lesson.id)) {
-      setUserStats(prev => ({
-        ...prev,
-        inProgress: prev.inProgress + (getLessonProgress(lesson.id) === 0 ? 1 : 0)
-      }));
-    }
-  }, [completedLessons, getLessonProgress]);
 
   // Get active category color
   const getActiveCategoryColor = () => {
@@ -329,145 +416,26 @@ export default function LearningModuleScreen({ navigation }) {
     return category ? category.color : '#667eea';
   };
 
-  const renderSearchBar = () => (
-    <View style={styles.searchContainer}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search lessons..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholderTextColor="#999"
-      />
-      <TouchableOpacity
-        style={styles.searchClose}
-        onPress={() => {
-          setShowSearch(false);
-          setSearchQuery('');
-        }}
-      >
-        <Text style={styles.searchCloseText}>✕</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderLessonCard = (lesson, index) => {
-    const progress = getLessonProgress(lesson.id);
-    const isCompleted = completedLessons.includes(lesson.id);
-    const category = categories.find(cat => cat.id === lesson.category);
-    const lessonColor = lesson.color || '#667eea';
-
-    return (
-      <Animated.View
-        key={lesson.id}
-        style={[
-          styles.lessonCard,
-          {
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }
-        ]}
-      >
-        <TouchableOpacity onPress={() => handleModulePress(lesson)} activeOpacity={0.9}>
-          <View style={[styles.lessonThumbnail, { backgroundColor: lessonColor }]}>
-            <View style={styles.videoPlaceholder}>
-              {lesson.imageUrl ? (
-                <Image
-                  source={{ uri: lesson.imageUrl }}
-                  style={styles.thumbnailImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <>
-                  <Text style={styles.playIcon}>▶</Text>
-                  <Text style={styles.videoText}>Watch Video</Text>
-                </>
-              )}
-            </View>
-
-            <View style={styles.lessonHeaderOverlay}>
-              {category && (
-                <View style={[styles.categoryTag, { backgroundColor: category.color }]}>
-                  <Text style={styles.categoryTagText}>{category.name}</Text>
-                </View>
-              )}
-              {isCompleted && (
-                <View style={styles.completedBadge}>
-                  <Text style={styles.completedBadgeText}>✓</Text>
-                </View>
-              )}
-            </View>
-
-            {progress > 0 && !isCompleted && (
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { width: `${progress}%` }
-                  ]}
-                />
-              </View>
-            )}
-          </View>
-
-          <View style={styles.lessonContent}>
-            <Text style={styles.lessonTitle}>{lesson.title}</Text>
-            {lesson.subtitle && (
-              <Text style={styles.lessonSubtitle}>{lesson.subtitle}</Text>
-            )}
-
-            <View style={styles.lessonMeta}>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaIcon}>⏱</Text>
-                <Text style={styles.metaText}>{lesson.duration}</Text>
-              </View>
-              <View style={styles.metaItem}>
-                <Text style={styles.metaIcon}>🪙</Text>
-                <Text style={styles.metaText}>{lesson.points} Points</Text>
-              </View>
-            </View>
-
-            {lesson.difficulty && (
-              <View style={styles.difficultyContainer}>
-                <View style={[
-                  styles.difficultyBadge,
-                  { backgroundColor: lesson.difficulty === 'Beginner' ? '#E8F5E9' : '#FFF3E0' }
-                ]}>
-                  <Text style={[
-                    styles.difficultyText,
-                    { color: lesson.difficulty === 'Beginner' ? '#4CAF50' : '#FF9800' }
-                  ]}>
-                    {lesson.difficulty}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {isCompleted ? (
-              <View style={styles.completedButton}>
-                <Text style={styles.completedButtonText}>✓ Completed</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={() => handleModulePress(lesson)}
-              >
-                <Text style={styles.startButtonText}>
-                  {progress > 0 ? 'Continue Learning →' : 'Start Learning →'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </TouchableOpacity>
-      </Animated.View>
-    );
-  };
-
-  // 🚀 SHOW LOADER WHILE FETCHING FROM DATABASE
-  if (loadingLessons) {
+  // Render loading state
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#3a9322" />
         <Text style={styles.loadingText}>Loading learning modules...</Text>
+      </View>
+    );
+  }
+
+  // Render error state
+  if (error && !loading) {
+    return (
+      <View style={styles.errorContainer}>
+        <Icon name="alert-circle-outline" size={60} color="#ff6b6b" />
+        <Text style={styles.errorTitle}>Unable to Load Modules</Text>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchModules}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -480,33 +448,54 @@ export default function LearningModuleScreen({ navigation }) {
           style={styles.backButton}
           onPress={() => navigation?.goBack?.()}
         >
-          <Text style={styles.backIcon}>←</Text>
+          <Icon name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Learning Module</Text>
+        <Text style={styles.headerTitle}>Learning Modules</Text>
 
         <TouchableOpacity
           style={styles.searchButton}
           onPress={() => setShowSearch(!showSearch)}
         >
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Icon name="magnify" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {showSearch && renderSearchBar()}
+      {/* Search Bar */}
+      {showSearch && (
+        <Animated.View style={[styles.searchContainer, { opacity: fadeAnim }]}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search lessons..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+          />
+          <TouchableOpacity
+            onPress={() => {
+              setSearchQuery('');
+              setShowSearch(false);
+            }}
+            style={styles.searchClose}
+          >
+            <Icon name="close" size={20} color="#666" />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {/* User Progress Card */}
+        {/* Progress Card */}
         <Animated.View
           style={[
             styles.progressCard,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
           ]}
         >
           <View style={styles.progressContent}>
@@ -528,18 +517,27 @@ export default function LearningModuleScreen({ navigation }) {
                   <Text style={styles.statLabel}>Day Streak</Text>
                 </View>
               </View>
+              <View style={styles.levelContainer}>
+                <Text style={styles.levelLabel}>Level {userStats.level}</Text>
+                <View style={styles.levelBar}>
+                  <View 
+                    style={[
+                      styles.levelProgress, 
+                      { width: `${(userStats.totalPoints % 100) || 0}%` }
+                    ]} 
+                  />
+                </View>
+                <Text style={styles.pointsLabel}>{userStats.totalPoints} points</Text>
+              </View>
             </View>
             <View style={styles.progressRight}>
-              <Text style={styles.treeEmoji}>🌳</Text>
-              <Text style={styles.pointsText}>+{userStats.totalPoints} pts</Text>
+              <Icon name="trophy" size={40} color="#fff" />
+              <Text style={styles.pointsText}>+{userStats.totalPoints}</Text>
             </View>
           </View>
 
           {/* Continue Button */}
-          <TouchableOpacity
-            onPress={handleContinue}
-            style={styles.continueButton}
-          >
+          <TouchableOpacity onPress={handleContinue} style={styles.continueButton}>
             <Text style={styles.continueButtonText}>
               Continue Learning →
             </Text>
@@ -565,10 +563,17 @@ export default function LearningModuleScreen({ navigation }) {
                 ]}
                 onPress={() => setActiveCategory(category.id)}
               >
-                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                <Icon 
+                  name={category.icon} 
+                  size={18} 
+                  color={activeCategory === category.id ? category.color : '#666'} 
+                />
                 <Text style={[
                   styles.categoryText,
-                  activeCategory === category.id && styles.categoryTextActive
+                  activeCategory === category.id && [
+                    styles.categoryTextActive,
+                    { color: category.color }
+                  ]
                 ]}>
                   {category.name}
                 </Text>
@@ -580,48 +585,35 @@ export default function LearningModuleScreen({ navigation }) {
         {/* Lessons List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>📚 Available Lessons</Text>
+            <Text style={styles.sectionTitle}>Available Lessons</Text>
             <Text style={styles.lessonCount}>{filteredLessons.length} lessons</Text>
           </View>
 
           {filteredLessons.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateIcon}>🔍</Text>
+              <Icon name="book-search-outline" size={50} color="#999" />
               <Text style={styles.emptyStateTitle}>No lessons found</Text>
               <Text style={styles.emptyStateText}>
-                Try adjusting your search or filter criteria
+                {searchQuery ? 'Try a different search term' : 'Try selecting a different category'}
               </Text>
             </View>
           ) : (
-            filteredLessons.map((lesson, index) =>
-              renderLessonCard(lesson, index)
-            )
+            filteredLessons.map((lesson, index) => (
+              <LessonCard
+                key={lesson.id || index}
+                lesson={lesson}
+                isCompleted={completedLessons.includes(lesson.id)}
+                progress={getLessonProgress(lesson.id)}
+                onPress={() => handleModulePress(lesson)}
+                categories={categories}
+                fadeAnim={fadeAnim}
+                slideAnim={slideAnim}
+              />
+            ))
           )}
         </View>
 
-        {/* Achievement Banner */}
-        <Animated.View
-          style={[
-            styles.achievementBanner,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            }
-          ]}
-        >
-          <View style={styles.achievementContent}>
-            <View style={styles.achievementLeft}>
-              <Text style={styles.achievementIcon}>🏆</Text>
-            </View>
-            <View style={styles.achievementRight}>
-              <Text style={styles.achievementTitle}>Unlock Achievements!</Text>
-              <Text style={styles.achievementText}>
-                Complete 5 lessons to earn the "Eco Warrior" badge
-              </Text>
-            </View>
-          </View>
-        </Animated.View>
-
+        {/* Footer Spacer */}
         <View style={{ height: 100 }} />
       </ScrollView>
 
@@ -630,197 +622,442 @@ export default function LearningModuleScreen({ navigation }) {
         visible={selectedLesson !== null}
         animationType="slide"
         onRequestClose={closeLesson}
+        statusBarTranslucent
       >
         {selectedLesson && (
-          <View style={styles.modalContainer}>
-            <View style={[styles.modalHeader, { backgroundColor: getActiveCategoryColor() }]}>
-              <TouchableOpacity onPress={closeLesson} style={styles.closeButton}>
-                <Text style={styles.closeIcon}>✕</Text>
-              </TouchableOpacity>
-              <Text style={styles.modalTitle} numberOfLines={2}>
-                {selectedLesson.title}
-              </Text>
-              <View style={{ width: 40 }} />
-            </View>
-
-            {!showQuiz ? (
-              <ScrollView style={styles.modalContent}>
-                {selectedLesson.youtubeId ? (
-                  <>
-                    <View style={styles.videoContainer}>
-                      {videoLoading && (
-                        <View style={styles.videoLoader}>
-                          <ActivityIndicator size="large" color="#3a9322" />
-                          <Text style={styles.loadingText}>Loading video...</Text>
-                        </View>
-                      )}
-                      <YoutubePlayer
-                        height={300}
-                        play={isVideoPlaying}
-                        videoId={selectedLesson.youtubeId}
-                        onChangeState={handleVideoStateChange}
-                        onError={(error) => {
-                          console.log('YouTube player error:', error);
-                          setVideoLoading(false);
-                          Alert.alert('Error', 'Failed to load video. Please check your connection.');
-                        }}
-                      />
-                    </View>
-
-                    <View style={styles.lessonInfo}>
-                      <Text style={styles.lessonInfoTitle}>About this lesson</Text>
-                      <Text style={styles.lessonInfoText}>
-                        {selectedLesson.description || 'Watch the video to learn more about this topic.'}
-                      </Text>
-
-                      <View style={styles.lessonInfoMeta}>
-                        <View style={styles.infoMetaItem}>
-                          <Text style={styles.infoMetaLabel}>Duration:</Text>
-                          <Text style={styles.infoMetaValue}>{selectedLesson.duration}</Text>
-                        </View>
-                        {selectedLesson.difficulty && (
-                          <View style={styles.infoMetaItem}>
-                            <Text style={styles.infoMetaLabel}>Difficulty:</Text>
-                            <Text style={styles.infoMetaValue}>{selectedLesson.difficulty}</Text>
-                          </View>
-                        )}
-                        <View style={styles.infoMetaItem}>
-                          <Text style={styles.infoMetaLabel}>Points:</Text>
-                          <Text style={styles.infoMetaValue}>{selectedLesson.points}</Text>
-                        </View>
-                      </View>
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.completeVideoButton}
-                      onPress={handleVideoComplete}
-                    >
-                      <Text style={styles.completeVideoButtonText}>
-                        {selectedLesson.quiz && selectedLesson.quiz.length > 0
-                          ? "I've Watched the Video - Take Quiz →"
-                          : "Complete Lesson →"}
-                      </Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <View style={styles.noVideoContainer}>
-                    <Text style={styles.noVideoText}>
-                      No video available for this lesson. Please check back later.
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.completeVideoButton}
-                      onPress={closeLesson}
-                    >
-                      <Text style={styles.completeVideoButtonText}>Close</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </ScrollView>
-            ) : !showResults ? (
-              <View style={styles.quizContainer}>
-                <View style={styles.quizProgress}>
-                  <Text style={styles.quizProgressText}>
-                    Question {currentQuestionIndex + 1} of {selectedLesson.quiz.length}
-                  </Text>
-                  <View style={styles.quizProgressBar}>
-                    <View
-                      style={[
-                        styles.quizProgressFill,
-                        { width: `${((currentQuestionIndex + 1) / selectedLesson.quiz.length) * 100}%` }
-                      ]}
-                    />
-                  </View>
-                </View>
-
-                <Text style={styles.quizQuestion}>
-                  {selectedLesson.quiz[currentQuestionIndex].question}
-                </Text>
-
-                <ScrollView
-                  style={styles.answersScroll}
-                  showsVerticalScrollIndicator={false}
-                >
-                  <View style={styles.answersContainer}>
-                    {selectedLesson.quiz[currentQuestionIndex].options.map((option, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={[
-                          styles.answerOption,
-                          selectedAnswer === index && styles.answerOptionSelected
-                        ]}
-                        onPress={() => handleAnswerSelect(index)}
-                      >
-                        <View style={styles.answerRadio}>
-                          {selectedAnswer === index && <View style={styles.answerRadioSelected} />}
-                        </View>
-                        <Text style={[
-                          styles.answerText,
-                          selectedAnswer === index && styles.answerTextSelected
-                        ]}>
-                          {option}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
-
-                <TouchableOpacity
-                  style={[
-                    styles.nextButton,
-                    selectedAnswer === null && styles.nextButtonDisabled
-                  ]}
-                  onPress={handleNextQuestion}
-                  disabled={selectedAnswer === null}
-                >
-                  <Text style={styles.nextButtonText}>
-                    {currentQuestionIndex < selectedLesson.quiz.length - 1 ? 'Next Question →' : 'Submit Quiz'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.resultsContainer}>
-                <Text style={styles.resultsIcon}>
-                  {quizScore >= Math.ceil(selectedLesson.quiz.length * 0.6) ? '🎉' : '📚'}
-                </Text>
-                <Text style={styles.resultsTitle}>Quiz Completed!</Text>
-                <Text style={styles.resultsScore}>
-                  You scored {quizScore} out of {selectedLesson.quiz.length}
-                </Text>
-                <Text style={styles.resultsPercentage}>
-                  {Math.round((quizScore / selectedLesson.quiz.length) * 100)}%
-                </Text>
-
-                {quizScore >= Math.ceil(selectedLesson.quiz.length * 0.6) ? (
-                  <View style={styles.passedContainer}>
-                    <Text style={styles.passedText}>✓ Passed!</Text>
-                    <Text style={styles.pointsEarned}>+{selectedLesson.points} points earned</Text>
-                  </View>
-                ) : (
-                  <View style={styles.failedContainer}>
-                    <Text style={styles.failedText}>Keep Learning!</Text>
-                    <Text style={styles.failedSubtext}>
-                      You need {Math.ceil(selectedLesson.quiz.length * 0.6)} correct answers to pass
-                    </Text>
-                  </View>
-                )}
-
-                <TouchableOpacity
-                  style={styles.finishButton}
-                  onPress={handleLessonComplete}
-                >
-                  <Text style={styles.finishButtonText}>
-                    {quizScore >= Math.ceil(selectedLesson.quiz.length * 0.6) ? 'Continue Learning' : 'Try Again'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
+          <LessonModal
+            lesson={selectedLesson}
+            showQuiz={showQuiz}
+            showResults={showResults}
+            currentQuestionIndex={currentQuestionIndex}
+            selectedAnswer={selectedAnswer}
+            quizScore={quizScore}
+            isVideoPlaying={isVideoPlaying}
+            videoLoading={videoLoading}
+            videoError={videoError}
+            onClose={closeLesson}
+            onVideoStateChange={handleVideoStateChange}
+            onVideoError={handleVideoError}
+            onAnswerSelect={handleAnswerSelect}
+            onNextQuestion={handleNextQuestion}
+            onLessonComplete={handleLessonComplete}
+            onVideoComplete={handleVideoComplete}
+            onResetQuiz={resetQuiz}
+            onOpenInYouTube={openInYouTube}
+            extractYouTubeId={extractYouTubeId}
+            activeCategoryColor={getActiveCategoryColor()}
+          />
         )}
       </Modal>
     </View>
   );
 }
 
+// Lesson Card Component
+const LessonCard = React.memo(({ lesson, isCompleted, progress, onPress, categories, fadeAnim, slideAnim }) => {
+  const category = categories.find(cat => cat.id === lesson.category);
+  const lessonColor = lesson.color || '#667eea';
+
+  return (
+    <Animated.View
+      style={[
+        styles.lessonCard,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }
+      ]}
+    >
+      <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+        <View style={[styles.lessonThumbnail, { backgroundColor: lessonColor }]}>
+          <View style={styles.videoPlaceholder}>
+            {lesson.imageUrl ? (
+              <Image
+                source={{ uri: lesson.imageUrl }}
+                style={styles.thumbnailImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <>
+                <Icon name="play-circle-outline" size={50} color="#fff" />
+                <Text style={styles.videoText}>Watch Video</Text>
+              </>
+            )}
+          </View>
+
+          <View style={styles.lessonHeaderOverlay}>
+            {category && (
+              <View style={[styles.categoryTag, { backgroundColor: category.color }]}>
+                <Text style={styles.categoryTagText}>{category.name}</Text>
+              </View>
+            )}
+            {isCompleted && (
+              <View style={styles.completedBadge}>
+                <Icon name="check" size={16} color="#fff" />
+              </View>
+            )}
+          </View>
+
+          {progress > 0 && !isCompleted && (
+            <View style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${progress}%` }
+                ]}
+              />
+            </View>
+          )}
+        </View>
+
+        <View style={styles.lessonContent}>
+          <Text style={styles.lessonTitle}>{lesson.title}</Text>
+          {lesson.subtitle && (
+            <Text style={styles.lessonSubtitle}>{lesson.subtitle}</Text>
+          )}
+
+          <View style={styles.lessonMeta}>
+            <View style={styles.metaItem}>
+              <Icon name="clock-outline" size={14} color="#666" />
+              <Text style={styles.metaText}>{lesson.duration || '10 min'}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Icon name="star-outline" size={14} color="#666" />
+              <Text style={styles.metaText}>{lesson.points || 0} Points</Text>
+            </View>
+            {lesson.difficulty && (
+              <View style={styles.metaItem}>
+                <Icon 
+                  name={lesson.difficulty === 'Beginner' ? 'flag-outline' : 
+                         lesson.difficulty === 'Intermediate' ? 'flag-triangle' : 'flag'} 
+                  size={14} 
+                  color="#666" 
+                />
+                <Text style={styles.metaText}>{lesson.difficulty}</Text>
+              </View>
+            )}
+          </View>
+
+          {isCompleted ? (
+            <View style={styles.completedButton}>
+              <Icon name="check-circle" size={16} color="#4CAF50" />
+              <Text style={styles.completedButtonText}>Completed</Text>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.startButton} onPress={onPress}>
+              <Text style={styles.startButtonText}>
+                {progress > 0 ? 'Continue Learning →' : 'Start Learning →'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+});
+
+// Lesson Modal Component
+const LessonModal = ({
+  lesson,
+  showQuiz,
+  showResults,
+  currentQuestionIndex,
+  selectedAnswer,
+  quizScore,
+  isVideoPlaying,
+  videoLoading,
+  videoError,
+  onClose,
+  onVideoStateChange,
+  onVideoError,
+  onAnswerSelect,
+  onNextQuestion,
+  onLessonComplete,
+  onVideoComplete,
+  onResetQuiz,
+  onOpenInYouTube,
+  extractYouTubeId,
+  activeCategoryColor
+}) => {
+  const [isPlaying, setIsPlaying] = useState(true);
+  
+  // Extract YouTube ID
+  const youtubeId = extractYouTubeId(lesson.youtubeId);
+  const hasValidVideo = youtubeId && youtubeId.length >= 11;
+
+  // Handle play/pause
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  return (
+    <View style={styles.modalContainer}>
+      {/* Header */}
+      <View style={[styles.modalHeader, { backgroundColor: activeCategoryColor }]}>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Icon name="close" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.modalTitle} numberOfLines={2}>
+          {lesson.title}
+        </Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      {!showQuiz ? (
+        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+          {/* Video Section */}
+          {hasValidVideo ? (
+            <>
+              <View style={styles.videoContainer}>
+                {/* {videoLoading && (
+                  // <View style={styles.videoLoader}>
+                  //   <ActivityIndicator size="large" color="#3a9322" />
+                  //   <Text style={styles.loadingText}>Loading video...</Text>
+                  // </View>
+                )}
+                 */}
+                {videoError ? (
+                  <View style={styles.videoErrorContainer}>
+                    <Icon name="alert-circle-outline" size={60} color="#ff6b6b" />
+                    <Text style={styles.videoErrorText}>{videoError}</Text>
+                    <TouchableOpacity
+                      style={styles.youtubeButton}
+                      onPress={() => onOpenInYouTube(youtubeId)}
+                    >
+                      <Icon name="youtube" size={20} color="#fff" />
+                      <Text style={styles.youtubeButtonText}>Open in YouTube</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.youtubeWrapper}>
+                      <YoutubePlayer
+                        height={220}
+                        play={isPlaying}
+                        videoId={youtubeId}
+                        onChangeState={onVideoStateChange}
+                        onError={onVideoError}
+                        webViewStyle={styles.youtubeWebView}
+                        webViewProps={{
+                          androidLayerType: 'hardware',
+                          allowsFullscreenVideo: true,
+                          mediaPlaybackRequiresUserAction: false,
+                        }}
+                      />
+                    </View>
+                    
+                    <View style={styles.videoControls}>
+                      <TouchableOpacity onPress={handlePlayPause} style={styles.controlButton}>
+                        <Icon name={isPlaying ? "pause" : "play"} size={24} color="#fff" />
+                        <Text style={styles.controlText}>{isPlaying ? "Pause" : "Play"}</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        style={styles.youtubeButton}
+                        onPress={() => onOpenInYouTube(youtubeId)}
+                      >
+                        <Icon name="youtube" size={20} color="#fff" />
+                        <Text style={styles.youtubeButtonText}>Open in YouTube</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+
+              <View style={styles.lessonInfo}>
+                <Text style={styles.lessonInfoTitle}>About this lesson</Text>
+                <Text style={styles.lessonInfoText}>
+                  {lesson.description || 'Watch the video to learn more about this topic.'}
+                </Text>
+
+                <View style={styles.lessonInfoMeta}>
+                  <View style={styles.infoMetaItem}>
+                    <Text style={styles.infoMetaLabel}>Duration:</Text>
+                    <Text style={styles.infoMetaValue}>{lesson.duration || '10 min'}</Text>
+                  </View>
+                  {lesson.difficulty && (
+                    <View style={styles.infoMetaItem}>
+                      <Text style={styles.infoMetaLabel}>Difficulty:</Text>
+                      <Text style={styles.infoMetaValue}>{lesson.difficulty}</Text>
+                    </View>
+                  )}
+                  <View style={styles.infoMetaItem}>
+                    <Text style={styles.infoMetaLabel}>Points:</Text>
+                    <Text style={styles.infoMetaValue}>{lesson.points || 0}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.completeVideoButton}
+                onPress={onVideoComplete}
+              >
+                <Text style={styles.completeVideoButtonText}>
+                  {lesson.quiz && lesson.quiz.length > 0
+                    ? "I've Watched the Video - Take Quiz →"
+                    : "Complete Lesson →"}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.noVideoContainer}>
+              <Icon name="video-off" size={60} color="#666" />
+              <Text style={styles.noVideoTitle}>No video available</Text>
+              <Text style={styles.noVideoText}>
+                {lesson.youtubeId 
+                  ? "The YouTube video ID is invalid. Please check the module settings."
+                  : "No video available for this lesson. Please check back later."}
+              </Text>
+              <View style={styles.lessonInfo}>
+                <Text style={styles.lessonInfoTitle}>About this lesson</Text>
+                <Text style={styles.lessonInfoText}>
+                  {lesson.description || 'No description available.'}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.completeVideoButton} onPress={onClose}>
+                <Text style={styles.completeVideoButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </ScrollView>
+      ) : !showResults ? (
+        <QuizSection
+          lesson={lesson}
+          currentQuestionIndex={currentQuestionIndex}
+          selectedAnswer={selectedAnswer}
+          onAnswerSelect={onAnswerSelect}
+          onNextQuestion={onNextQuestion}
+        />
+      ) : (
+        <QuizResults
+          lesson={lesson}
+          quizScore={quizScore}
+          onLessonComplete={onLessonComplete}
+          onResetQuiz={onResetQuiz}
+        />
+      )}
+    </View>
+  );
+};
+
+// Quiz Section Component
+const QuizSection = ({ lesson, currentQuestionIndex, selectedAnswer, onAnswerSelect, onNextQuestion }) => {
+  const currentQuestion = lesson.quiz[currentQuestionIndex];
+
+  return (
+    <View style={styles.quizContainer}>
+      <View style={styles.quizProgress}>
+        <Text style={styles.quizProgressText}>
+          Question {currentQuestionIndex + 1} of {lesson.quiz.length}
+        </Text>
+        <View style={styles.quizProgressBar}>
+          <View
+            style={[
+              styles.quizProgressFill,
+              { width: `${((currentQuestionIndex + 1) / lesson.quiz.length) * 100}%` }
+            ]}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.quizQuestion}>{currentQuestion.question}</Text>
+
+      <ScrollView
+        style={styles.answersScroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.answersContainer}>
+          {currentQuestion.options.map((option, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.answerOption,
+                selectedAnswer === index && styles.answerOptionSelected
+              ]}
+              onPress={() => onAnswerSelect(index)}
+            >
+              <View style={styles.answerRadio}>
+                {selectedAnswer === index && <View style={styles.answerRadioSelected} />}
+              </View>
+              <Text style={[
+                styles.answerText,
+                selectedAnswer === index && styles.answerTextSelected
+              ]}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+
+      <TouchableOpacity
+        style={[
+          styles.nextButton,
+          selectedAnswer === null && styles.nextButtonDisabled
+        ]}
+        onPress={onNextQuestion}
+        disabled={selectedAnswer === null}
+      >
+        <Text style={styles.nextButtonText}>
+          {currentQuestionIndex < lesson.quiz.length - 1 ? 'Next Question →' : 'Submit Quiz'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+// Quiz Results Component
+const QuizResults = ({ lesson, quizScore, onLessonComplete, onResetQuiz }) => {
+  const passingScore = Math.ceil(lesson.quiz.length * 0.6);
+  const passed = quizScore >= passingScore;
+
+  return (
+    <View style={styles.resultsContainer}>
+      <Icon 
+        name={passed ? "trophy" : "book-open-variant"} 
+        size={80} 
+        color={passed ? "#FFD700" : "#666"} 
+      />
+      <Text style={styles.resultsTitle}>
+        {passed ? '🎉 Quiz Completed!' : 'Keep Learning!'}
+      </Text>
+      <Text style={styles.resultsScore}>
+        You scored {quizScore} out of {lesson.quiz.length}
+      </Text>
+      <Text style={styles.resultsPercentage}>
+        {Math.round((quizScore / lesson.quiz.length) * 100)}%
+      </Text>
+
+      {passed ? (
+        <View style={styles.passedContainer}>
+          <Text style={styles.passedText}>✓ Passed!</Text>
+          <Text style={styles.pointsEarned}>+{lesson.points} points earned</Text>
+        </View>
+      ) : (
+        <View style={styles.failedContainer}>
+          <Text style={styles.failedText}>You need {passingScore} correct answers to pass</Text>
+          <Text style={styles.failedSubtext}>
+            Review the material and try again
+          </Text>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.finishButton} onPress={onLessonComplete}>
+        <Text style={styles.finishButtonText}>
+          {passed ? 'Continue Learning' : 'Try Again'}
+        </Text>
+      </TouchableOpacity>
+      
+      {!passed && (
+        <TouchableOpacity style={styles.resetButton} onPress={onResetQuiz}>
+          <Text style={styles.resetButtonText}>Review Video</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -837,12 +1074,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  retryButton: {
+    backgroundColor: '#3a9322',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   scrollContent: {
     paddingBottom: 20,
   },
   header: {
     backgroundColor: '#3a9322',
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -855,14 +1123,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backIcon: {
-    fontSize: 28,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   headerTitle: {
     color: '#fff',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
@@ -872,10 +1135,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  searchIcon: {
-    fontSize: 22,
-    color: '#fff',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -899,11 +1158,6 @@ const styles = StyleSheet.create({
   },
   searchClose: {
     padding: 5,
-  },
-  searchCloseText: {
-    fontSize: 18,
-    color: '#666',
-    fontWeight: 'bold',
   },
   progressCard: {
     marginHorizontal: 20,
@@ -934,6 +1188,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 15,
   },
   statItem: {
     alignItems: 'center',
@@ -954,12 +1209,33 @@ const styles = StyleSheet.create({
     height: 30,
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
+  levelContainer: {
+    marginTop: 10,
+  },
+  levelLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 5,
+  },
+  levelBar: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 5,
+  },
+  levelProgress: {
+    height: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 3,
+  },
+  pointsLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+  },
   progressRight: {
     marginLeft: 15,
     alignItems: 'center',
-  },
-  treeEmoji: {
-    fontSize: 40,
   },
   pointsText: {
     color: '#fff',
@@ -1018,9 +1294,6 @@ const styles = StyleSheet.create({
   categoryChipActive: {
     backgroundColor: '#fff',
   },
-  categoryIcon: {
-    fontSize: 18,
-  },
   categoryText: {
     fontSize: 14,
     fontWeight: '600',
@@ -1055,15 +1328,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  playIcon: {
-    fontSize: 50,
-    color: '#fff',
-    marginBottom: 10,
-  },
   videoText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 8,
   },
   lessonHeaderOverlay: {
     position: 'absolute',
@@ -1091,11 +1360,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  completedBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   progressBar: {
     position: 'absolute',
@@ -1134,25 +1398,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-  metaIcon: {
-    fontSize: 14,
-  },
   metaText: {
     fontSize: 13,
     color: '#666',
-    fontWeight: '600',
-  },
-  difficultyContainer: {
-    marginBottom: 15,
-  },
-  difficultyBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  difficultyText: {
-    fontSize: 11,
     fontWeight: '600',
   },
   startButton: {
@@ -1173,6 +1421,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#4CAF50',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
   },
   completedButtonText: {
     color: '#4CAF50',
@@ -1183,14 +1434,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
   },
-  emptyStateIcon: {
-    fontSize: 50,
-    marginBottom: 15,
-  },
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#666',
+    marginTop: 15,
     marginBottom: 8,
   },
   emptyStateText: {
@@ -1198,49 +1446,12 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
   },
-  achievementBanner: {
-    marginHorizontal: 20,
-    marginTop: 25,
-    borderRadius: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    backgroundColor: '#ff9a9e',
-  },
-  achievementContent: {
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  achievementLeft: {
-    marginRight: 15,
-  },
-  achievementIcon: {
-    fontSize: 40,
-  },
-  achievementRight: {
-    flex: 1,
-  },
-  achievementTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 5,
-  },
-  achievementText: {
-    fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
-  },
   modalContainer: {
     flex: 1,
     backgroundColor: '#fff',
   },
   modalHeader: {
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 15,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -1252,11 +1463,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  closeIcon: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
   },
   modalTitle: {
     color: '#fff',
@@ -1271,28 +1477,87 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     backgroundColor: '#000',
-    position: 'relative',
+  },
+  youtubeWrapper: {
+    backgroundColor: '#000',
+    overflow: 'hidden',
+  },
+  youtubeWebView: {
+    backgroundColor: '#000',
   },
   videoLoader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#000',
+    height: 220,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    backgroundColor: '#000',
+  },
+  videoErrorContainer: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    padding: 20,
+  },
+  videoErrorText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  videoControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+  },
+  controlButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+  },
+  controlText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  youtubeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: '#FF0000',
+    borderRadius: 20,
+  },
+  youtubeButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   noVideoContainer: {
-    padding: 40,
+    padding: 20,
     alignItems: 'center',
+  },
+  noVideoTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 15,
+    marginBottom: 10,
   },
   noVideoText: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
     marginBottom: 30,
+    lineHeight: 24,
   },
   lessonInfo: {
     padding: 20,
@@ -1437,14 +1702,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  resultsIcon: {
-    fontSize: 80,
-    marginBottom: 20,
-  },
   resultsTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#000',
+    marginTop: 20,
     marginBottom: 10,
   },
   resultsScore: {
@@ -1477,10 +1739,10 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   failedText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 18,
     color: '#FF9800',
     marginBottom: 10,
+    textAlign: 'center',
   },
   failedSubtext: {
     fontSize: 14,
@@ -1493,10 +1755,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 60,
     paddingVertical: 15,
     borderRadius: 15,
+    marginBottom: 20,
   },
   finishButtonText: {
     color: '#fff',
     fontSize: 18,
+    fontWeight: 'bold',
+  },
+  resetButton: {
+    paddingHorizontal: 40,
+    paddingVertical: 12,
+    borderWidth: 2,
+    borderColor: '#0d7a5f',
+    borderRadius: 15,
+  },
+  resetButtonText: {
+    color: '#0d7a5f',
+    fontSize: 16,
     fontWeight: 'bold',
   },
 });
