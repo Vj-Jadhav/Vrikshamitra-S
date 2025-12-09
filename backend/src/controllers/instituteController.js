@@ -14,6 +14,7 @@ import Event from "../models/Event.js";
 import PlantingTarget from "../models/plantingTargets.js";
 import PlantingRequest from "../models/PlantingRequest.js";
 import NGO from "../models/NGO.js";
+import cloudinaryUtils from "../utils/cloudinary.js";
 
 // Get institute by ID
 export const getInstituteById = async (req, res) => {
@@ -1371,6 +1372,47 @@ export const getInstitutePledges = async (req, res) => {
   }
 };
 
+
+export const uploadEventPhoto = async (req, res) => {
+  try {
+    const { eventId, caption } = req.body;
+    const file = req.file;
+
+    if (!eventId || !file) {
+      return res.status(400).json({ success: false, message: 'Event ID and Photo are required' });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinaryUtils.uploadToCloudinary(file.buffer, {
+      folder: 'event-photos'
+    });
+
+    const newPhoto = {
+      url: result.secure_url,
+      caption: caption || 'Event Photo',
+      uploadedAt: new Date()
+    };
+
+    event.photos.push(newPhoto);
+    await event.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Photo uploaded successfully',
+      data: event
+    });
+
+  } catch (error) {
+    console.error("Error uploading event photo:", error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
 export default {
   getInstituteById,
   addStudent,
@@ -1391,7 +1433,8 @@ export default {
   createInstituteEvent,
   createPlantingRequest,
   assignFacultyToEvent,
-  getInstitutePledges
+  getInstitutePledges,
+  uploadEventPhoto
 };
 
 

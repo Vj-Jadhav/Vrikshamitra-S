@@ -23,12 +23,16 @@ import {
   getPlantingTargets,
   getInstituteRequests,
   getInstitutePledges,
-  getAvailableNGOs
+  getAvailableNGOs,
+  uploadEventPhoto
 } from "../controllers/instituteController.js";
 
 import { protect } from "../middlewares/auth.js";
 
+import upload from "../middlewares/fileUpload.js";
+
 const router = express.Router();
+
 
 // Add this ABOVE the /profile route in instituteRoutes.js
 router.get("/test-route", (req, res) => {
@@ -56,6 +60,7 @@ router.post("/plant-drive/accept", protect, acceptPlantingDrive);
 router.post("/events/create", protect, createInstituteEvent);
 router.post("/planting-request/create", protect, createPlantingRequest);
 router.post("/events/assign-faculty", protect, assignFacultyToEvent);
+router.post("/events/upload-photo", protect, upload.single('photo'), uploadEventPhoto);
 
 
 // --------------------

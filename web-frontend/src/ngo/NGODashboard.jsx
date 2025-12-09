@@ -119,7 +119,7 @@ const NGODashboard = () => {
 
                 {/* Active Events Section */}
                 <section style={styles.section}>
-                    <h3 style={styles.sectionTitle}>📅 My Active Events</h3>
+                    <h3 style={styles.sectionTitle}>📅 My Active Plant Provisioning Events</h3>
                     {events.length === 0 ? (
                         <div style={styles.emptyState}>No active events.</div>
                     ) : (
@@ -139,12 +139,6 @@ const NGODashboard = () => {
                                     <p><strong>Venue:</strong> {ev.venue}</p>
                                     <p><strong>Scheduled:</strong> {new Date(ev.date).toLocaleDateString()}</p>
 
-                                    {ev.assignedFaculty ? (
-                                        <p style={styles.infoText}>👤 Faculty Assigned</p>
-                                    ) : (
-                                        <p style={styles.warningText}>⚠️ Waiting for Institute to assign Faculty</p>
-                                    )}
-
                                     {ev.deliveryStatus !== 'delivered' && (
                                         <button
                                             onClick={() => handleMarkDelivered(ev._id)}
@@ -152,6 +146,26 @@ const NGODashboard = () => {
                                         >
                                             Mark Trees Delivered
                                         </button>
+                                    )}
+
+                                    {ev.deliveryStatus === 'delivered' && (
+                                        <div style={{ marginTop: '1rem' }}>
+                                            <p style={{ color: '#2d6a4f', fontWeight: 'bold' }}>✅ Trees Delivered Successfully</p>
+                                            {ev.photos && ev.photos.length > 0 ? (
+                                                <div style={{ marginTop: '10px' }}>
+                                                    <p style={{ fontSize: '0.9rem', marginBottom: '5px' }}>📸 Plantation Photos:</p>
+                                                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                                                        {ev.photos.map((photo, idx) => (
+                                                            <a key={idx} href={photo.url} target="_blank" rel="noopener noreferrer">
+                                                                <img src={photo.url} alt="Plantation" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
+                                                            </a>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>Waiting for institute to upload photos...</p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             ))}

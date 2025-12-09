@@ -16,6 +16,11 @@ function InstitutePlantDrive() {
   const [pincodeTargets, setPincodeTargets] = useState([]);
   const [error, setError] = useState("");
 
+  // Photo upload state
+  const [activeUploadId, setActiveUploadId] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -61,6 +66,44 @@ function InstitutePlantDrive() {
 
     initializeData();
   }, []);
+
+  // Handle photo file selection
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  // Handle photo upload
+  const handleUploadPhoto = async (eventId) => {
+    if (!selectedFile) return;
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('photo', selectedFile);
+      formData.append('eventId', eventId);
+      formData.append('caption', 'Institute Plantation Photo');
+
+      const token = localStorage.getItem("token");
+      await axios.post(`${API}/api/institute/events/upload-photo`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      alert("Photo uploaded successfully!");
+      setActiveUploadId(null);
+      setSelectedFile(null);
+      fetchMyRequests(); // Refresh
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Fetch institute requests/events/pledges
   const fetchMyRequests = async () => {
@@ -622,6 +665,35 @@ function InstitutePlantDrive() {
                     </div>
                   )}
 
+                  {item.deliveryStatus === 'delivered' && (
+                    <div style={{ marginTop: '15px', borderTop: '1px solid #e2e8f0', paddingTop: '10px' }}>
+                      <p style={{ color: '#276749', fontWeight: 'bold', marginBottom: '8px' }}>✅ Trees Delivered</p>
+
+                      {/* Show existing photos if any */}
+                      {item.photos && item.photos.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                          {item.photos.map((p, i) => (
+                            <img key={i} src={p.url} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4 }} alt="Plantation" />
+                          ))}
+                        </div>
+                      )}
+
+                      {activeUploadId === item._id ? (
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                          <input type="file" onChange={handleFileChange} accept="image/*" disabled={uploading} style={{ fontSize: '0.8rem' }} />
+                          <button onClick={() => handleUploadPhoto(item._id)} disabled={uploading || !selectedFile} style={styles.requestButton}>
+                            {uploading ? '...' : 'Upload'}
+                          </button>
+                          <button onClick={() => { setActiveUploadId(null); setSelectedFile(null); }} style={styles.refreshButton}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setActiveUploadId(item._id)} style={styles.acceptButton}>
+                          📸 Upload Photo
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {item.type === 'request' && item.status === 'approved' && (
                     <div style={{ marginTop: '10px', padding: '8px', background: '#d4edda', borderRadius: '4px' }}>
                       <p style={{ margin: 0, fontSize: '0.9rem', color: '#155724', fontWeight: 'bold' }}>
@@ -630,11 +702,7 @@ function InstitutePlantDrive() {
                     </div>
                   )}
 
-                  {item.deliveryStatus === 'delivered' && (
-                    <div style={styles.deliveredBadge}>
-                      ✅ Trees Delivered Successfully
-                    </div>
-                  )}
+
                 </div>
               ))}
             </div>
