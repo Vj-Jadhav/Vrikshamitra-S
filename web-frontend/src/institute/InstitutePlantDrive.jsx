@@ -3,10 +3,10 @@ import axios from "axios";
 
 const API = process.env.REACT_APP_BASE_URL;
 
-function InstitutePlantDrive() {
+function InstitutePlantDrive({ instituteId: propInstituteId }) {
   const [loading, setLoading] = useState(true);
   const [institutePincode, setInstitutePincode] = useState(null);
-  const [instituteId, setInstituteId] = useState(null);
+  const [instituteId, setInstituteId] = useState(propInstituteId || null);
   const [instituteName, setInstituteName] = useState("");
   const [requests, setRequests] = useState([]);
   const [govTargets, setGovTargets] = useState([]);
@@ -22,6 +22,13 @@ function InstitutePlantDrive() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
+    // If we have a prop ID, ensure state matches it
+    if (propInstituteId) {
+      setInstituteId(propInstituteId);
+    }
+  }, [propInstituteId]);
+
+  useEffect(() => {
     const initializeData = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -33,19 +40,35 @@ function InstitutePlantDrive() {
 
         // Try to get from localStorage first
         const storedData = JSON.parse(localStorage.getItem("instituteData"));
-        if (storedData && storedData._id && storedData.pincode) {
+
+        // Valid if exists AND (matches propId OR no propId was passed)
+        // This prevents showing previous user's data
+        const isValidStorage = storedData && storedData._id && storedData.pincode &&
+          (!propInstituteId || storedData._id === propInstituteId);
+
+        if (isValidStorage) {
           setInstituteId(storedData._id);
           setInstitutePincode(storedData.pincode);
           setInstituteName(storedData.name || storedData.instituteName);
           setLoading(false);
         } else {
-          // Fallback: Fetch profile from API
+          // Fallback: Fetch profile from API or clear stale data
+          if (storedData && propInstituteId && storedData._id !== propInstituteId) {
+            localStorage.removeItem("instituteData"); // Clear stale data
+          }
+
           const res = await axios.get(`${API}/api/institute/profile`, {
             headers: { Authorization: `Bearer ${token}` }
           });
 
           if (res.data && res.data.success) {
             const data = res.data.data;
+
+            // Double check if the fetched data matches the expected user (if prop provided)
+            if (propInstituteId && data._id !== propInstituteId) {
+              console.warn("Fetched profile does not match logged in user ID");
+            }
+
             setInstituteId(data._id);
             setInstitutePincode(data.pincode);
             setInstituteName(data.name || data.instituteName);

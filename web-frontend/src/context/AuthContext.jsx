@@ -28,6 +28,10 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("ecoUser");
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("instituteData");
+    localStorage.removeItem("ngoUser");
   };
 
   // 6️⃣ Provide context to children
