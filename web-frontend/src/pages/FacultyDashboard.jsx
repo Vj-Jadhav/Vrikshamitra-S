@@ -88,7 +88,7 @@ export default function FacultyDashboard() {
       case "blogs":
         return <Blogs facultyData={facultyData} />;
       case "events":
-        return <EventScheduler />;
+        return <EventScheduler userId={user?._id} />;
       case "reports":
         return <Reports facultyData={facultyData} />;
       case "learning-content":

@@ -20,25 +20,25 @@ function PlantDriveManagement() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-const fetchTargets = async () => {
-  setLoading(true);
-  setError("");
-  try {
-    // Just fetch planting targets directly
-    const res = await axios.get(`${API}/api/planting-targets`);
-    
-    if (res.data && res.data.success) {
-      setTargets(res.data.data);
-    } else {
-      setError("Failed to load planting targets");
+  const fetchTargets = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      // Just fetch planting targets directly
+      const res = await axios.get(`${API}/api/planting-targets`);
+
+      if (res.data && res.data.success) {
+        setTargets(res.data.data);
+      } else {
+        setError("Failed to load planting targets");
+      }
+    } catch (err) {
+      console.error("Error fetching planting targets:", err);
+      setError("Error loading planting targets");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Error fetching planting targets:", err);
-    setError("Error loading planting targets");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   useEffect(() => {
     fetchTargets();
@@ -189,6 +189,25 @@ const fetchTargets = async () => {
     return "On Track";
   };
 
+  /* New: Planting Requests Section */
+  const [plantingRequests, setPlantingRequests] = useState([]);
+
+  const fetchPlantingRequests = async () => {
+    try {
+      const res = await axios.get(`${API}/api/government/requests`);
+      if (res.data && res.data.success) {
+        setPlantingRequests(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching planting requests:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchTargets();
+    fetchPlantingRequests();
+  }, []);
+
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -199,6 +218,59 @@ const fetchTargets = async () => {
       </header>
 
       <main style={styles.mainContent}>
+        {/* targets section... */}
+
+        {/* New Requests Section */}
+        <section style={{ ...styles.targetsSection, marginTop: '40px' }}>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>📋 Institute Planting Requests</h2>
+            <span style={styles.statItem}>Total Requests: <strong>{plantingRequests.length}</strong></span>
+          </div>
+
+          <div style={styles.tableContainer}>
+            <table style={styles.targetsTable}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>Institute</th>
+                  <th style={styles.tableHeader}>Trees</th>
+                  <th style={styles.tableHeader}>Type</th>
+                  <th style={styles.tableHeader}>Grade</th>
+                  <th style={styles.tableHeader}>Pincode</th>
+                  <th style={styles.tableHeader}>Status</th>
+                  <th style={styles.tableHeader}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plantingRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ ...styles.tableCell, textAlign: 'center' }}>No requests found</td>
+                  </tr>
+                ) : (
+                  plantingRequests.map((req, idx) => (
+                    <tr key={req._id || idx} style={styles.tableRow}>
+                      <td style={styles.tableCell}>{req.instituteName}</td>
+                      <td style={styles.tableCell}>{req.treeCount}</td>
+                      <td style={styles.tableCell}>{req.treeType || 'Mixed'}</td>
+                      <td style={styles.tableCell}>{req.targetGrade || 'N/A'}</td>
+                      <td style={styles.tableCell}>{req.pincode}</td>
+                      <td style={styles.tableCell}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.8rem',
+                          background: req.status === 'pending' ? '#fff3cd' : '#d1ecf1',
+                          color: req.status === 'pending' ? '#856404' : '#0c5460'
+                        }}>{req.status}</span>
+                      </td>
+                      <td style={styles.tableCell}>{new Date(req.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section style={styles.addTargetSection}>
           <div style={styles.card}>
             <div style={styles.cardHeader}>

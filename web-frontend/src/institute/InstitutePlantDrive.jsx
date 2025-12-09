@@ -4,443 +4,680 @@ import axios from "axios";
 const API = process.env.REACT_APP_BASE_URL;
 
 function InstitutePlantDrive() {
-  const [targets, setTargets] = useState([]);
-  const [filteredTargets, setFilteredTargets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [accepting, setAccepting] = useState(false);
-  const [creatingEvent, setCreatingEvent] = useState(false);
   const [institutePincode, setInstitutePincode] = useState(null);
+  const [instituteId, setInstituteId] = useState(null);
+  const [instituteName, setInstituteName] = useState("");
+  const [requests, setRequests] = useState([]);
+  const [govTargets, setGovTargets] = useState([]);
+  const [pledgeInputs, setPledgeInputs] = useState({});
+  const [activeTargetIds, setActiveTargetIds] = useState([]);
+  const [availableNGOs, setAvailableNGOs] = useState([]);
+  const [pincodeTargets, setPincodeTargets] = useState([]);
+  const [error, setError] = useState("");
 
-  const [eventForm, setEventForm] = useState({
-    targetId: "",
-    treesAccepted: "",
-    eventTitle: "",
-    description: "",
-    date: "",
-    venue: "",
-  });
-
-  const fetchInstituteData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      console.log("Token:", token);
-
-      // Decode the token to see what's in it
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          console.log("Token payload:", payload);
-          console.log("User ID in token:", payload.id);
-          console.log("Role in token:", payload.role);
-        } catch (e) {
-          console.error("Failed to decode token:", e);
-        }
-      }
-
-      if (!token) {
-        alert("Please login first");
-        window.location.href = "/login";
-        return;
-      }
-
-      const res = await axios.get(`${API}/api/institute/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      console.log("API Response:", res.data);
-
-      if (res.data && res.data.success && res.data.data) {
-        const pincode = res.data.data.pincode;
-        console.log("Pincode from response:", pincode);
-
-        if (pincode) {
-          setInstitutePincode(pincode);
-          return pincode;
-        } else {
-          console.warn("No pincode found. Full data:", res.data.data);
-        }
-      }
-    } catch (err) {
-      console.error("❌ Failed to fetch institute data:");
-      console.error("Status:", err.response?.status);
-      console.error("Error data:", err.response?.data);
-    }
-    return null;
-  };
-
-  // fetch govt planting targets
-  const fetchTargets = async () => {
-    setLoading(true);
-    try {
-      // First get institute pincode
-      const pincode = await fetchInstituteData();
-
-      if (!pincode) {
-        alert(
-          "Unable to fetch institute location. Please update your institute profile with a pincode."
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Try to fetch planting targets
-      try {
-        const res = await axios.get(`${API}/api/planting-targets`, {
-          params: { pincode }
-        });
-
-        // Check response structure
-        if (res.data && res.data.success && res.data.data) {
-          const allTargets = res.data.data;
-          setTargets(allTargets);
-          setFilteredTargets(allTargets); // Backend filters by pincode, so all results are relevant
-
-          if (allTargets.length === 0) {
-            // If no exact match, maybe try fetching by just area prefix manually or tell user
-            // For now, let's keep it simple as backend does exact match.
-            // If we want nearby, we'd need another API call or backend logic update.
-            // Let's stick to exact match as per request "same pincode".
-          }
-        } else {
-          console.warn(
-            "Unexpected response structure from planting-targets:",
-            res.data
-          );
-          alert("No planting drives available at the moment.");
-        }
-      } catch (targetsError) {
-        console.error("Error fetching planting targets:", targetsError);
-
-        // If the endpoint doesn't exist, show a fallback message
-        if (targetsError.response && targetsError.response.status === 404) {
-          alert(
-            "Planting targets feature is not available yet. Please check back later."
-          );
-        } else {
-          alert("Failed to load planting drives. Please try again later.");
-        }
-      }
-    } catch (err) {
-      console.error("Failed to load Plant Drive data:", err);
-      alert("Failed to load Plant Drive data");
-    } finally {
-      setLoading(false);
-    }
-  };
   useEffect(() => {
-    fetchTargets();
+    const initializeData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setLoading(false);
+          setError("No authentication token found. Please login again.");
+          return;
+        }
+
+        // Try to get from localStorage first
+        const storedData = JSON.parse(localStorage.getItem("instituteData"));
+        if (storedData && storedData._id && storedData.pincode) {
+          setInstituteId(storedData._id);
+          setInstitutePincode(storedData.pincode);
+          setInstituteName(storedData.name);
+          setLoading(false);
+        } else {
+          // Fallback: Fetch profile from API
+          const res = await axios.get(`${API}/api/institute/profile`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (res.data && res.data.success) {
+            const data = res.data.data;
+            setInstituteId(data._id);
+            setInstitutePincode(data.pincode);
+            setInstituteName(data.name || data.instituteName);
+
+            // Update localStorage
+            localStorage.setItem("instituteData", JSON.stringify(data));
+          } else {
+            setError("Failed to load institute profile");
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error initializing institute data:", err);
+        setError("Failed to initialize institute data. Please refresh the page.");
+        setLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
 
-  // If user wants to search by different pincode (optional)
-  const searchByPincode = (pincode) => {
-    if (!pincode || pincode.length !== 6) {
-      alert("Enter valid 6-digit pincode");
-      return;
-    }
-
-    const list = targets.filter((t) => t.pincode === pincode);
-    if (list.length === 0) {
-      // Show nearby pincodes
-      const pincodePrefix = pincode.substring(0, 3);
-      const nearbyList = targets.filter((t) =>
-        t.pincode.startsWith(pincodePrefix)
-      );
-      setFilteredTargets(nearbyList);
-      if (nearbyList.length === 0) {
-        alert("No drives found in this area. Showing all available drives.");
-        setFilteredTargets(targets.slice(0, 5)); // Show first 5 drives
-      }
-    } else {
-      setFilteredTargets(list);
-    }
-  };
-
-  const handleAcceptDrive = async (target) => {
-    const num = Number(eventForm.treesAccepted);
-
-    if (!num || num <= 0) {
-      alert("Enter valid number of trees to accept");
-      return;
-    }
-    if (num > target.requiredPlants) {
-      alert("Cannot accept more trees than required");
-      return;
-    }
-
-    setAccepting(true);
-
+  // Fetch institute requests/events/pledges
+  const fetchMyRequests = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
-        `${API}/api/institute/plant-drive/accept`,
-        {
-          targetId: target._id,
-          treesAccepted: num,
-        },
-        {
+      if (!instituteId || !token) return;
+
+      const [eventsRes, requestsRes, pledgesRes] = await Promise.all([
+        axios.get(`${API}/api/institute/${instituteId}/events`, {
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+        }),
+        axios.get(`${API}/api/institute/${instituteId}/requests`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API}/api/institute/${instituteId}/pledges`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-      alert("Drive accepted! Now create event.");
-      setEventForm((prev) => ({ ...prev, targetId: target._id }));
+      let combined = [];
+      const eventTargetIds = [];
+
+      if (eventsRes.data && eventsRes.data.success) {
+        combined = [...combined, ...eventsRes.data.data.map(e => {
+          if (e.targetId) eventTargetIds.push(e.targetId);
+          return { ...e, type: 'event' };
+        })];
+      }
+
+      if (requestsRes.data && requestsRes.data.success) {
+        combined = [...combined, ...requestsRes.data.data.map(r => {
+          if (r.targetId) eventTargetIds.push(r.targetId);
+          return { ...r, type: 'request' };
+        })];
+      }
+
+      setActiveTargetIds(eventTargetIds);
+
+      if (pledgesRes.data && pledgesRes.data.success) {
+        const activePledges = pledgesRes.data.data.filter(p => !eventTargetIds.includes(p._id));
+        combined = [...combined, ...activePledges.map(p => ({ ...p, type: 'pledge' }))];
+      }
+
+      combined.sort((a, b) => new Date(b.date || b.createdAt || b.deadline) - new Date(a.date || a.createdAt || a.deadline));
+      setRequests(combined);
     } catch (err) {
-      console.error(err);
-      alert("Failed to accept drive");
+      console.error("Could not fetch events/requests:", err);
     }
-
-    setAccepting(false);
   };
 
-  const handleCreateEvent = async () => {
-    const { targetId, eventTitle, description, date, venue } = eventForm;
+  // Fetch ALL government targets (from the government-added data)
+  const fetchAllGovTargets = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      // Use the correct endpoint that returns targets (optionally filtered by pincode)
+      // Since we want ALL targets initially (based on user code), we can just fetch all or fetch by pincode.
+      // The user wants 'pincodeTargets' to be filtered.
+      const res = await axios.get(`${API}/api/institute/plant-drives?pincode=${institutePincode || ''}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    if (!targetId || !eventTitle || !description || !date || !venue) {
-      alert("Fill all event fields");
-      return;
+      if (res.data && res.data.success) {
+        const allTargets = res.data.data || [];
+        setGovTargets(allTargets);
+
+        // Filter targets for institute's pincode
+        if (institutePincode) {
+          const filteredTargets = allTargets.filter(target =>
+            target.pincode && target.pincode.toString() === institutePincode.toString()
+          );
+          setPincodeTargets(filteredTargets);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching gov targets:", err);
+      setError("Failed to load government planting targets");
     }
+  };
 
-    setCreatingEvent(true);
+  // Fetch available NGOs for the institute's pincode
+  const fetchAvailableNGOs = async () => {
+    if (!institutePincode) return;
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`${API}/api/institute/events/create`, eventForm, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("Event created successfully!");
+      // Try different possible endpoints
+      let res;
 
-      // reset form
-      setEventForm({
-        targetId: "",
-        treesAccepted: "",
-        eventTitle: "",
-        description: "",
-        date: "",
-        venue: "",
-      });
+      try {
+        // Try the specific pincode endpoint
+        res = await axios.get(`${API}/api/institute/available-ngos?pincode=${institutePincode}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        // If fails, try to get all NGOs and filter on client-side
+        console.log("Falling back to all NGOs endpoint");
+        res = await axios.get(`${API}/api/ngo/available-ngos?pincode=${institutePincode}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-      // Refresh the drives list
-      fetchTargets();
+        if (res.data && res.data.success) {
+          const allNGOs = res.data.data || [];
+          // Filter NGOs by pincode
+          const filteredNGOs = allNGOs.filter(ngo =>
+            ngo.pincode && ngo.pincode.toString() === institutePincode.toString()
+          );
+          setAvailableNGOs(filteredNGOs);
+          return;
+        }
+      }
+
+      if (res.data && res.data.success) {
+        setAvailableNGOs(res.data.data || []);
+      }
     } catch (err) {
-      console.error(err);
-      alert("Failed to create event");
+      console.error("Error fetching NGOs", err);
+      // Set empty array as fallback
+      setAvailableNGOs([]);
+    }
+  };
+
+  // Handle pledge submission
+  const handlePledgeSubmit = async (targetId) => {
+    const treesAccepted = pledgeInputs[targetId];
+    if (!treesAccepted || treesAccepted <= 0) {
+      alert("Please enter a valid number of trees to pledge.");
+      return;
     }
 
-    setCreatingEvent(false);
+    try {
+      const token = localStorage.getItem("token");
+
+      // Find the target to get max allowed trees
+      const target = govTargets.find(t => t._id === targetId);
+      if (target && treesAccepted > target.requiredPlants) {
+        alert(`Cannot pledge more than ${target.requiredPlants} trees for this location.`);
+        return;
+      }
+
+      const res = await axios.post(`${API}/api/institute/plant-drive/accept`,
+        { targetId, treesAccepted },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data && res.data.success) {
+        alert("Pledge accepted successfully!");
+        fetchAllGovTargets(); // Refresh government targets
+        fetchMyRequests(); // Refresh pledges
+        setPledgeInputs(prev => {
+          const newState = { ...prev };
+          delete newState[targetId];
+          return newState;
+        });
+      } else {
+        alert(res.data?.message || "Failed to submit pledge");
+      }
+    } catch (err) {
+      console.error("Error submitting pledge:", err);
+      alert(err.response?.data?.message || "Failed to submit pledge. Please try again.");
+    }
   };
 
-  // Format date for display
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  // Handle NGO request
+  const handleRequestToNGO = async (target, pledgeInfo) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // If no NGOs available in the area
+      if (availableNGOs.length === 0) {
+        alert("No NGOs available in your area. Please try again later.");
+        return;
+      }
+
+      // For simplicity, select the first NGO
+      // You can implement a selection modal here
+      const selectedNGO = availableNGOs[0];
+
+      const payload = {
+        targetId: target._id,
+        ngoId: selectedNGO._id,
+        instituteId: instituteId,
+        instituteName: instituteName,
+        pincode: institutePincode,
+        location: target.location,
+        city: target.city,
+        treeCount: pledgeInfo.treesAccepted,
+        treeType: 'Mixed',
+        eventTitle: `Plantation Drive at ${target.location}`,
+        description: `Planting drive for government target at ${target.location}, ${target.city}`,
+        proposedDate: target.deadline,
+        date: target.deadline,
+        venue: target.location,
+        status: 'pending'
+      };
+
+      // Try creating planting request
+      let res;
+      try {
+        res = await axios.post(`${API}/api/institute/planting-request/create`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (err) {
+        // Fallback to generic request endpoint
+        console.log("Trying fallback request endpoint");
+        res = await axios.post(`${API}/api/institute/requests/create`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+
+      if (res.data && res.data.success) {
+        alert("Request sent to NGO successfully!");
+
+        // Try to create an event in the institute's events
+        try {
+          const eventPayload = {
+            ...payload,
+            ngoName: selectedNGO.name,
+            status: 'pending'
+          };
+
+          await axios.post(`${API}/api/institute/events/create`, eventPayload, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (eventErr) {
+          console.log("Event creation failed, but request was sent:", eventErr);
+        }
+
+        // Refresh data
+        fetchMyRequests();
+        fetchAllGovTargets();
+      } else {
+        alert(res.data?.message || "Failed to send request to NGO");
+      }
+    } catch (err) {
+      console.error("Error requesting NGO:", err);
+      alert(err.response?.data?.message || "Failed to send request to NGO. Please try again.");
+    }
   };
+
+  // Fetch all data when instituteId is available
+  useEffect(() => {
+    if (instituteId) {
+      fetchMyRequests();
+      fetchAllGovTargets();
+    }
+  }, [instituteId]);
+
+  // Fetch NGOs when pincode is available
+  useEffect(() => {
+    if (institutePincode) {
+      fetchAvailableNGOs();
+    }
+  }, [institutePincode]);
+
+  const getPledgeInfo = (target) => {
+    if (!instituteId || !target.acceptedBy) return null;
+    return target.acceptedBy.find(entry => entry.instituteId === instituteId);
+  };
+
+  const getStatusColor = (deadline) => {
+    if (!deadline) return "#f0f0f0";
+
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "#ffeaea";
+    if (diffDays <= 7) return "#fff3cd";
+    if (diffDays <= 30) return "#d1ecf1";
+    return "#e8f5e9";
+  };
+
+  const getStatusText = (deadline) => {
+    if (!deadline) return "No Deadline";
+
+    const today = new Date();
+    const deadlineDate = new Date(deadline);
+    const diffDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return "Overdue";
+    if (diffDays <= 7) return "Urgent";
+    if (diffDays <= 30) return "Upcoming";
+    return "On Track";
+  };
+
+  if (loading) return <div style={styles.loadingContainer}>Loading...</div>;
 
   return (
     <div style={styles.container}>
       <div style={styles.headerContainer}>
-        <h1 style={styles.header}>🌱 Institute Plantation Drive</h1>
+        <h1 style={styles.header}>Plantation Drive Management</h1>
         {institutePincode && (
           <div style={styles.pincodeBadge}>
-            📍 Pincode: <strong>{institutePincode}</strong>
+            📍 Your Pincode: <strong>{institutePincode}</strong>
+            <div style={{ fontSize: '0.8rem', marginTop: '5px' }}>
+              Available NGOs in area: {availableNGOs.length}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Loading state */}
-      {loading ? (
-        <div style={styles.loadingContainer}>
-          <div style={styles.spinner}></div>
-          <p>Loading available plantation drives...</p>
+      {error && (
+        <div style={styles.errorAlert}>
+          ⚠️ {error}
+          <button
+            onClick={() => {
+              setError("");
+              if (instituteId) {
+                fetchAllGovTargets();
+                fetchMyRequests();
+              }
+            }}
+            style={styles.retryButton}
+          >
+            Retry
+          </button>
         </div>
-      ) : (
-        <>
-          {/* Optional search for other pincodes */}
-          <div style={styles.card}>
-            <h2 style={styles.sectionTitle}>
-              Looking for drives in another area?
-            </h2>
-            <div style={styles.searchContainer}>
-              <input
-                type="text"
-                placeholder="Enter different pincode"
-                maxLength={6}
-                onChange={(e) => searchByPincode(e.target.value)}
-                style={styles.input}
-              />
-              <small style={styles.helperText}>
-                Your institute pincode: {institutePincode}
-              </small>
+      )}
+
+      <div style={styles.contentGrid}>
+        {/* Government Targets Section - Filtered by pincode */}
+        <div style={{ ...styles.card, gridColumn: '1 / -1' }}>
+          <div style={styles.sectionHeader}>
+            <h3 style={{ margin: '0', color: '#2c7a7b' }}>
+              🏛️ Government Planting Targets for Your Area
+            </h3>
+            <div style={styles.stats}>
+              <span style={styles.statItem}>
+                Total in Area: <strong>{pincodeTargets.length}</strong>
+              </span>
+              <span style={styles.statItem}>
+                Nationwide: <strong>{govTargets.length}</strong>
+              </span>
             </div>
           </div>
 
-          {/* Show filtered drives automatically */}
-          {filteredTargets.length > 0 ? (
-            <div style={styles.card}>
-              <div style={styles.drivesHeader}>
-                <h2>Available Drives Near You</h2>
-                <span style={styles.countBadge}>
-                  {filteredTargets.length} drive
-                  {filteredTargets.length > 1 ? "s" : ""} found
-                </span>
-              </div>
+          {pincodeTargets.length === 0 ? (
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}>🌱</div>
+              <p>No active government planting drives for your pincode ({institutePincode}).</p>
+              <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '10px' }}>
+                Check all targets below to see nationwide drives.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '15px' }}>
+              {pincodeTargets.map(target => {
+                const pledge = getPledgeInfo(target);
+                const hasActiveRequest = activeTargetIds.includes(target._id);
+                const remainingTrees = target.requiredPlants - (target.acceptedBy?.reduce((sum, p) => sum + (p.treesAccepted || 0), 0) || 0);
 
-              {filteredTargets.map((t) => (
-                <div key={t._id} style={styles.driveBox}>
-                  <div style={styles.driveHeader}>
-                    <h3>
-                      {t.location}, {t.city}
-                    </h3>
-                    <span style={styles.pincodeTag}>📌 {t.pincode}</span>
+                return (
+                  <div key={target._id} style={{
+                    ...styles.targetCard,
+                    backgroundColor: getStatusColor(target.deadline)
+                  }}>
+                    <div style={styles.targetHeader}>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 5px 0', color: '#2b6cb0' }}>
+                          {target.location}, {target.city}
+                        </h4>
+                        <p style={{ margin: '0', fontSize: '0.9rem', color: '#2c5282' }}>
+                          Required: <strong>{target.requiredPlants.toLocaleString()}</strong> trees
+                          {remainingTrees > 0 && (
+                            <span style={{ color: '#e53e3e', marginLeft: '10px' }}>
+                              Remaining: {remainingTrees.toLocaleString()}
+                            </span>
+                          )}
+                        </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem', color: '#2c5282' }}>
+                          Deadline: {new Date(target.deadline).toLocaleDateString()}
+                        </p>
+                        <p style={{ margin: '5px 0 0 0', fontSize: '0.8rem', color: '#666' }}>
+                          Status: <strong>{getStatusText(target.deadline)}</strong>
+                        </p>
+                      </div>
+
+                      <div style={styles.targetActions}>
+                        {pledge ? (
+                          <div style={styles.pledgeSection}>
+                            <div style={styles.pledgeBadge}>
+                              ✅ You Pledged: {pledge.treesAccepted} Trees
+                            </div>
+
+                            {hasActiveRequest ? (
+                              <div style={styles.requestSentBadge}>
+                                ✅ Request Sent to NGO
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleRequestToNGO(target, pledge)}
+                                style={styles.requestButton}
+                              >
+                                Request to NGO
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={styles.pledgeForm}>
+                            <input
+                              type="number"
+                              placeholder="Enter Qty"
+                              min="1"
+                              max={Math.min(target.requiredPlants, remainingTrees)}
+                              style={styles.pledgeInput}
+                              value={pledgeInputs[target._id] || ''}
+                              onChange={(e) => setPledgeInputs(prev => ({
+                                ...prev,
+                                [target._id]: parseInt(e.target.value) || ''
+                              }))}
+                            />
+                            <button
+                              onClick={() => handlePledgeSubmit(target._id)}
+                              style={styles.acceptButton}
+                              disabled={remainingTrees <= 0}
+                            >
+                              {remainingTrees <= 0 ? 'Fulfilled' : 'Accept'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* All Government Targets (Nationwide) */}
+        {govTargets.length > 0 && (
+          <div style={{ ...styles.card, gridColumn: '1 / -1' }}>
+            <div style={styles.sectionHeader}>
+              <h3 style={{ margin: '0', color: '#2c7a7b' }}>
+                🌍 All Government Planting Targets (Nationwide)
+              </h3>
+              <button
+                onClick={fetchAllGovTargets}
+                style={styles.refreshButton}
+              >
+                🔄 Refresh
+              </button>
+            </div>
+
+            <div style={styles.tableContainer}>
+              <table style={styles.targetsTable}>
+                <thead>
+                  <tr>
+                    <th style={styles.tableHeader}>City</th>
+                    <th style={styles.tableHeader}>Location</th>
+                    <th style={styles.tableHeader}>Pincode</th>
+                    <th style={styles.tableHeader}>Plants Required</th>
+                    <th style={styles.tableHeader}>Deadline</th>
+                    <th style={styles.tableHeader}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {govTargets.map(target => (
+                    <tr key={target._id} style={{
+                      ...styles.tableRow,
+                      backgroundColor: target.pincode === institutePincode ? '#f0fff4' : 'transparent'
+                    }}>
+                      <td style={styles.tableCell}>
+                        {target.city}
+                        {target.pincode === institutePincode &&
+                          <span style={styles.myAreaBadge}>Your Area</span>
+                        }
+                      </td>
+                      <td style={styles.tableCell}>{target.location}</td>
+                      <td style={styles.tableCell}>{target.pincode || 'N/A'}</td>
+                      <td style={styles.tableCell}>
+                        <span style={styles.plantCount}>
+                          {target.requiredPlants.toLocaleString()}
+                        </span>
+                      </td>
+                      <td style={styles.tableCell}>
+                        {target.deadline ? new Date(target.deadline).toLocaleDateString() : 'No deadline'}
+                      </td>
+                      <td style={styles.tableCell}>
+                        <span style={{
+                          ...styles.statusBadge,
+                          backgroundColor: getStatusColor(target.deadline)
+                        }}>
+                          {getStatusText(target.deadline)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Status / History List */}
+        <div style={{ ...styles.card, gridColumn: '1 / -1' }}>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>📅 Your Plantation Events & Requests</h2>
+            <button
+              onClick={fetchMyRequests}
+              style={styles.refreshButton}
+            >
+              🔄 Refresh
+            </button>
+          </div>
+
+          {requests.length === 0 ? (
+            <p style={{ color: '#666', textAlign: 'center', marginTop: '20px' }}>
+              No events or requests yet.
+            </p>
+          ) : (
+            <div style={styles.list}>
+              {requests.map(item => (
+                <div key={item._id} style={styles.listItem}>
+                  <div style={styles.itemHeader}>
+                    <strong style={{ fontSize: '1.1rem' }}>
+                      {item.title ||
+                        (item.type === 'pledge' ? `Pledge for ${item.requiredPlants} Trees` :
+                          `Request for ${item.treeCount} trees`)}
+                    </strong>
+
+                    <div style={{
+                      ...styles.statusBadge,
+                      backgroundColor: item.type === 'request' ?
+                        (item.status === 'approved' ? '#c6f6d5' :
+                          item.status === 'rejected' ? '#fed7d7' : '#fefcbf') :
+                        item.type === 'pledge' ? '#e6fffa' : '#bee3f8',
+                      color: item.type === 'request' ?
+                        (item.status === 'approved' ? '#22543d' :
+                          item.status === 'rejected' ? '#742a2a' : '#744210') :
+                        item.type === 'pledge' ? '#2c7a7b' : '#2b6cb0'
+                    }}>
+                      {item.type === 'request' ? `Request: ${item.status || 'pending'}` :
+                        item.type === 'pledge' ? 'Pledged Target' : `Event: ${item.status || 'active'}`}
+                    </div>
                   </div>
 
-                  <div style={styles.driveDetails}>
-                    <div style={styles.detailItem}>
-                      <span style={styles.label}>🌳 Required Plants:</span>
-                      <span style={styles.value}>{t.requiredPlants}</span>
-                    </div>
-                    <div style={styles.detailItem}>
-                      <span style={styles.label}>⏳ Deadline:</span>
-                      <span style={styles.value}>{formatDate(t.deadline)}</span>
-                    </div>
-                    <div style={styles.detailItem}>
-                      <span style={styles.label}>
-                        🏢 Government Department:
-                      </span>
-                      <span style={styles.value}>
-                        {t.department || "Not specified"}
-                      </span>
-                    </div>
-                  </div>
+                  {item.ngoName && (
+                    <p style={{ fontSize: '0.9rem', margin: '5px 0' }}>
+                      <strong>NGO:</strong> {item.ngoName}
+                    </p>
+                  )}
 
-                  <div style={styles.acceptSection}>
-                    <input
-                      type="number"
-                      placeholder="Trees you want to plant"
-                      value={eventForm.treesAccepted}
-                      onChange={(e) =>
-                        setEventForm({
-                          ...eventForm,
-                          treesAccepted: e.target.value,
-                        })
-                      }
-                      style={styles.numberInput}
-                      min="1"
-                      max={t.requiredPlants}
-                    />
+                  <p style={{ fontSize: '0.9rem', margin: '5px 0', color: '#4a5568' }}>
+                    <strong>Location:</strong> {item.location || item.venue || 'N/A'}
+                  </p>
 
-                    <button
-                      disabled={accepting}
-                      onClick={() => handleAcceptDrive(t)}
-                      style={styles.acceptBtn}
-                    >
-                      {accepting ? "Accepting..." : "✅ Accept Drive"}
-                    </button>
-                  </div>
+                  <p style={{ fontSize: '0.9rem', margin: '5px 0', color: '#4a5568' }}>
+                    <strong>Date:</strong> {item.date ? new Date(item.date).toLocaleDateString() :
+                      item.deadline ? new Date(item.deadline).toLocaleDateString() :
+                        item.proposedDate ? new Date(item.proposedDate).toLocaleDateString() : 'N/A'}
+                  </p>
+
+                  {item.type === 'request' && item.status === 'pending' && (
+                    <div style={{ marginTop: '10px', padding: '8px', background: '#fff3cd', borderRadius: '4px' }}>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#856404' }}>
+                        ⏳ Waiting for NGO response
+                      </p>
+                    </div>
+                  )}
+
+                  {item.type === 'request' && item.status === 'approved' && (
+                    <div style={{ marginTop: '10px', padding: '8px', background: '#d4edda', borderRadius: '4px' }}>
+                      <p style={{ margin: 0, fontSize: '0.9rem', color: '#155724', fontWeight: 'bold' }}>
+                        ✅ NGO Approved - Prepare for plantation
+                      </p>
+                    </div>
+                  )}
+
+                  {item.deliveryStatus === 'delivered' && (
+                    <div style={styles.deliveredBadge}>
+                      ✅ Trees Delivered Successfully
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          ) : (
-            <div style={styles.card}>
-              <div style={styles.noDrives}>
-                <h3>No drives found in your area</h3>
-                <p>
-                  There are currently no government plantation drives in
-                  pincode: {institutePincode}
-                </p>
-                <p>
-                  Check back later or contact local authorities for new drives.
-                </p>
-              </div>
-            </div>
           )}
-
-          {/* Create Event Form (only shows when a drive is accepted) */}
-          {eventForm.targetId && (
-            <div style={styles.card}>
-              <h2 style={styles.sectionTitle}>Create Plantation Event</h2>
-
-              <div style={styles.formGrid}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Event Title *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Green Campus Initiative 2024"
-                    value={eventForm.eventTitle}
-                    onChange={(e) =>
-                      setEventForm({ ...eventForm, eventTitle: e.target.value })
-                    }
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Event Date *</label>
-                  <input
-                    type="date"
-                    value={eventForm.date}
-                    onChange={(e) =>
-                      setEventForm({ ...eventForm, date: e.target.value })
-                    }
-                    style={styles.input}
-                    min={new Date().toISOString().split("T")[0]}
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Venue *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g., College Campus Ground"
-                    value={eventForm.venue}
-                    onChange={(e) =>
-                      setEventForm({ ...eventForm, venue: e.target.value })
-                    }
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.formGroupFull}>
-                  <label style={styles.label}>Description *</label>
-                  <textarea
-                    placeholder="Describe your plantation event..."
-                    value={eventForm.description}
-                    onChange={(e) =>
-                      setEventForm({
-                        ...eventForm,
-                        description: e.target.value,
-                      })
-                    }
-                    style={styles.textarea}
-                    rows="4"
-                  />
-                </div>
-              </div>
-
-              <button
-                disabled={creatingEvent}
-                onClick={handleCreateEvent}
-                style={styles.createButton}
-              >
-                {creatingEvent ? "Creating Event..." : "🎉 Create Event"}
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
-
-export default InstitutePlantDrive;
 
 const styles = {
   container: {
     padding: "30px",
     maxWidth: "1200px",
     margin: "0 auto",
+  },
+  loadingContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    fontSize: '1.2rem',
+    color: '#4a5568'
+  },
+  errorAlert: {
+    backgroundColor: '#fff3cd',
+    color: '#856404',
+    padding: '15px',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    border: '1px solid #ffeaa7',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  retryButton: {
+    backgroundColor: '#4a8b71',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '0.9rem'
   },
   headerContainer: {
     display: "flex",
@@ -457,195 +694,222 @@ const styles = {
   },
   pincodeBadge: {
     background: "#e8f5e9",
-    padding: "8px 16px",
-    borderRadius: "20px",
+    padding: "12px 20px",
+    borderRadius: "12px",
     fontSize: "0.9rem",
     color: "#2d6a4f",
     border: "1px solid #c8e6c9",
+    minWidth: '200px'
+  },
+  contentGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+    gap: '30px',
   },
   card: {
     background: "#fff",
     padding: "25px",
     borderRadius: "12px",
-    marginBottom: "25px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
   },
-  loadingContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "60px 20px",
-    textAlign: "center",
+  sectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px',
+    flexWrap: 'wrap',
+    gap: '15px'
   },
-  spinner: {
-    width: "50px",
-    height: "50px",
-    border: "5px solid #f3f3f3",
-    borderTop: "5px solid #2d6a4f",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-    marginBottom: "20px",
+  refreshButton: {
+    backgroundColor: '#4299e1',
+    color: 'white',
+    border: 'none',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px'
+  },
+  stats: {
+    display: 'flex',
+    gap: '20px',
+    fontSize: '0.9rem'
+  },
+  statItem: {
+    background: '#edf2f7',
+    padding: '8px 15px',
+    borderRadius: '20px',
+    color: '#4a5568'
+  },
+  emptyState: {
+    textAlign: 'center',
+    padding: '40px 20px',
+    color: '#666'
+  },
+  emptyIcon: {
+    fontSize: '3rem',
+    marginBottom: '15px'
+  },
+  targetCard: {
+    border: '1px solid #9ae6b4',
+    padding: '15px',
+    borderRadius: '8px',
+  },
+  targetHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: '10px',
+  },
+  targetActions: {
+    minWidth: '200px',
+    textAlign: 'right',
+  },
+  pledgeSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '8px',
+  },
+  pledgeBadge: {
+    padding: '8px 12px',
+    background: '#c6f6d5',
+    color: '#22543d',
+    borderRadius: '6px',
+    fontSize: '0.9rem',
+    fontWeight: 'bold',
+  },
+  requestSentBadge: {
+    fontSize: '0.85rem',
+    color: '#2b6cb0',
+    fontWeight: '600',
+    padding: '4px 8px',
+    background: '#ebf8ff',
+    borderRadius: '4px',
+  },
+  requestButton: {
+    padding: '8px 16px',
+    background: '#e53e3e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    transition: 'background 0.3s',
+  },
+  pledgeForm: {
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'flex-end',
+  },
+  pledgeInput: {
+    padding: '8px',
+    borderRadius: '4px',
+    border: '1px solid #cbd5e0',
+    width: '100px',
+    fontSize: '0.9rem',
+  },
+  acceptButton: {
+    padding: '8px 16px',
+    background: '#319795',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    fontSize: '0.9rem',
+    transition: 'background 0.3s',
   },
   sectionTitle: {
     marginTop: "0",
     color: "#2d6a4f",
     fontSize: "1.5rem",
+    marginBottom: '0'
   },
-  searchContainer: {
-    maxWidth: "400px",
+  list: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px'
   },
-  input: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    marginTop: "8px",
-    marginBottom: "8px",
-    fontSize: "16px",
-    boxSizing: "border-box",
+  listItem: {
+    padding: '15px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    background: '#fafafa'
   },
-  numberInput: {
-    padding: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ddd",
-    width: "200px",
-    marginRight: "15px",
+  itemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px',
+    flexWrap: 'wrap',
+    gap: '10px'
   },
-  textarea: {
-    width: "100%",
-    padding: "12px",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    fontSize: "16px",
-    fontFamily: "inherit",
-    boxSizing: "border-box",
+  statusBadge: {
+    padding: '5px 10px',
+    borderRadius: '15px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold',
   },
-  helperText: {
-    color: "#666",
-    fontSize: "0.85rem",
-    display: "block",
-    marginTop: "5px",
+  deliveredBadge: {
+    marginTop: '10px',
+    fontSize: '0.85rem',
+    color: '#2e7d32',
+    fontWeight: 'bold',
+    background: '#e8f5e9',
+    padding: '8px',
+    borderRadius: '6px',
+    textAlign: 'center'
   },
-  drivesHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    flexWrap: "wrap",
-    gap: "10px",
+  tableContainer: {
+    overflowX: 'auto',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0'
   },
-  countBadge: {
-    background: "#2d6a4f",
-    color: "white",
-    padding: "5px 12px",
-    borderRadius: "20px",
-    fontSize: "0.9rem",
+  targetsTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    minWidth: '600px'
   },
-  driveBox: {
-    background: "#f8fdf9",
-    padding: "20px",
-    borderRadius: "10px",
-    marginBottom: "20px",
-    border: "1px solid #e0f2e1",
+  tableHeader: {
+    padding: '12px 15px',
+    textAlign: 'left',
+    backgroundColor: '#f8f9fa',
+    borderBottom: '2px solid #dee2e6',
+    color: '#495057',
+    fontWeight: '600'
   },
-  driveHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "15px",
-    flexWrap: "wrap",
-    gap: "10px",
+  tableRow: {
+    borderBottom: '1px solid #e9ecef',
+    transition: 'background-color 0.2s'
   },
-  pincodeTag: {
-    background: "#e3f2fd",
-    color: "#1976d2",
-    padding: "4px 10px",
-    borderRadius: "15px",
-    fontSize: "0.85rem",
+  tableCell: {
+    padding: '12px 15px',
+    verticalAlign: 'middle'
   },
-  driveDetails: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "15px",
-    marginBottom: "20px",
+  plantCount: {
+    display: 'inline-block',
+    padding: '4px 10px',
+    backgroundColor: '#e8f5e9',
+    color: '#2d6a4f',
+    borderRadius: '12px',
+    fontSize: '0.85rem',
+    fontWeight: '600'
   },
-  detailItem: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-  },
-  label: {
-    fontSize: "0.9rem",
-    color: "#666",
-    fontWeight: "500",
-  },
-  value: {
-    fontSize: "1rem",
-    color: "#333",
-    fontWeight: "600",
-  },
-  acceptSection: {
-    display: "flex",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "15px",
-    marginTop: "15px",
-  },
-  acceptBtn: {
-    background: "#40916c",
-    color: "white",
-    padding: "12px 24px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "16px",
-    transition: "background 0.3s",
-    minWidth: "160px",
-  },
-  noDrives: {
-    textAlign: "center",
-    padding: "40px 20px",
-  },
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "20px",
-    marginBottom: "25px",
-  },
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  formGroupFull: {
-    gridColumn: "1 / -1",
-  },
-  createButton: {
-    background: "#2d6a4f",
-    color: "white",
-    padding: "15px 30px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "18px",
-    fontWeight: "600",
-    width: "100%",
-    maxWidth: "300px",
-    margin: "0 auto",
-    display: "block",
-    transition: "background 0.3s",
-  },
+  myAreaBadge: {
+    display: 'inline-block',
+    marginLeft: '8px',
+    padding: '2px 8px',
+    backgroundColor: '#4299e1',
+    color: 'white',
+    borderRadius: '10px',
+    fontSize: '0.7rem',
+    fontWeight: '600'
+  }
 };
 
-// Add CSS animation for spinner
-const styleSheet = document.styleSheets[0];
-styleSheet.insertRule(
-  `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`,
-  styleSheet.cssRules.length
-);
+export default InstitutePlantDrive;

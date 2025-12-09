@@ -8,56 +8,75 @@ const ngoSchema = new mongoose.Schema({
     trim: true,
     unique: true
   },
-  
+
   description: {
     type: String,
     required: true,
     trim: true
   },
-  
+
   location: {
     type: String,
     required: true
   },
-  
+
   contactPerson: {
     type: String,
     required: true
   },
-  
+
   contactEmail: {
     type: String,
     required: true,
     lowercase: true
   },
-  
+
   contactPhone: {
     type: String,
     required: true
   },
-  
+
   website: String,
-  
+
   logo: String,
-  
+
+  // Auth & Location
+  darpanId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+
+  pincode: {
+    type: String,
+    required: true,
+    trim: true
+  },
+
+  password: {
+    type: String,
+    required: true
+  },
+
   focusAreas: [{
     type: String,
     enum: ['tree-planting', 'cleanup', 'education', 'wildlife', 'sustainability', 'community']
   }],
-  
+
   resourcesAvailable: [{
     name: String,
     description: String,
     quantity: Number,
     unit: String
   }],
-  
+
   status: {
     type: String,
-    enum: ['active', 'inactive', 'suspended'],
-    default: 'active'
+    enum: ['active', 'inactive', 'suspended', 'pending', 'rejected'],
+    default: 'pending'
   },
-  
+
   createdAt: {
     type: Date,
     default: Date.now

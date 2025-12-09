@@ -1,5 +1,5 @@
 // src/pages/GovernmentDashboard.jsx
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
@@ -12,7 +12,8 @@ import RegistrationAnalytics from "../government/RegistrationAnalytics";
 import Reports from "../government/Reports";
 import SystemSettings from "../government/SystemSettings";
 import ChallengeManagement from "../government/ChallengeManagement";
-import PlantDriveManagement from "../government/PlantDriveManagement"; // Import the new component
+import PlantDriveManagement from "../government/PlantDriveManagement";
+import NGOManagement from "../government/NGOManagement";
 
 export default function GovernmentDashboard() {
   const { user, logout } = useContext(AuthContext);
@@ -22,6 +23,7 @@ export default function GovernmentDashboard() {
   const [decodedToken, setDecodedToken] = useState(null);
   const [token, setToken] = useState(null);
 
+  // Decode token safely
   useEffect(() => {
     const tk = localStorage.getItem("token");
     setToken(tk);
@@ -33,9 +35,15 @@ export default function GovernmentDashboard() {
         setDecodedToken(payload);
       } catch (err) {
         console.error("Failed to decode token:", err);
+        // Clear invalid token
+        localStorage.removeItem("token");
+        navigate("/login");
       }
+    } else {
+      // No token found, redirect to login
+      navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   const [adminData, setAdminData] = useState({
     name: user?.name || "Government Admin",
@@ -43,7 +51,7 @@ export default function GovernmentDashboard() {
     totalInstitutes: 0,
     totalUsers: 0,
     pendingApprovals: 0,
-    pendingPlantDrives: 0, // Add this field
+    pendingPlantDrives: 0,
   });
 
   const [analytics, setAnalytics] = useState(null);
@@ -55,12 +63,23 @@ export default function GovernmentDashboard() {
     navigate("/login");
   };
 
-  const fetchAdminAnalytics = async () => {
+  // Use useCallback to memoize the fetch function
+  const fetchAdminAnalytics = useCallback(async () => {
+    if (!user?._id) return;
+
     try {
       setLoadingAnalytics(true);
       setAnalyticsError(null);
 
-      // simulate network delay
+      // TODO: Replace with actual API call
+      // const response = await fetch('/api/government/analytics', {
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`
+      //   }
+      // });
+      // const data = await response.json();
+
+      // Simulate network delay
       await new Promise(res => setTimeout(res, 500));
 
       const sampleAnalytics = {
@@ -68,7 +87,7 @@ export default function GovernmentDashboard() {
           totalInstitutes: 42,
           activeInstitutes: 34,
           pendingApprovals: 6,
-          pendingPlantDrives: 8, // Add this
+          pendingPlantDrives: 8,
           totalUsers: 3100,
           growthRate: 12,
           regionalDistribution: [
@@ -78,29 +97,37 @@ export default function GovernmentDashboard() {
             { region: "West Region", count: 10 },
           ],
         },
-
         recentRegistrations: [
           {
+            id: 1,
             name: "Evergreen Technical Institute",
             location: "California, USA",
             status: "approved",
+            date: "2024-01-15",
           },
           {
+            id: 2,
             name: "Mountain View Polytechnic",
             location: "Colorado, USA",
             status: "pending",
+            date: "2024-01-14",
           },
           {
+            id: 3,
             name: "Riverbend College",
             location: "Oregon, USA",
             status: "pending",
+            date: "2024-01-13",
           },
           {
+            id: 4,
             name: "Sunrise Academy",
             location: "Texas, USA",
             status: "rejected",
+            date: "2024-01-12",
           },
         ],
+        lastUpdated: new Date().toISOString(),
       };
 
       setAnalytics(sampleAnalytics);
@@ -110,22 +137,29 @@ export default function GovernmentDashboard() {
         totalInstitutes: sampleAnalytics.stats.totalInstitutes,
         totalUsers: sampleAnalytics.stats.totalUsers,
         pendingApprovals: sampleAnalytics.stats.pendingApprovals,
-        pendingPlantDrives: sampleAnalytics.stats.pendingPlantDrives, // Update this
+        pendingPlantDrives: sampleAnalytics.stats.pendingPlantDrives,
       }));
 
     } catch (err) {
-      setAnalyticsError("Failed to load sample analytics");
+      console.error("Failed to load analytics:", err);
+      setAnalyticsError("Failed to load dashboard analytics. Please try again.");
     } finally {
       setLoadingAnalytics(false);
     }
-  };
+  }, [user?._id, token]);
 
   useEffect(() => {
     fetchAdminAnalytics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?._id]);
+  }, [fetchAdminAnalytics]);
 
-  const renderContent = () => {
+  // Memoize the rendered content to prevent unnecessary re-renders
+  const renderedContent = useMemo(() => {
+    const contentProps = {
+      token,
+      adminId: decodedToken?.id,
+      role: decodedToken?.role,
+    };
+
     switch (activeSection) {
       case "overview":
         return (
@@ -137,27 +171,21 @@ export default function GovernmentDashboard() {
           />
         );
       case "institutes":
-        return <InstituteManagement />;
+        return <InstituteManagement {...contentProps} />;
       case "users":
-        return <UserManagement />;
+        return <UserManagement {...contentProps} />;
       case "challenges":
-        return <ChallengeManagement  
-          token={token} 
-          adminId={decodedToken?.id} 
-          role={decodedToken?.role} 
-        />;
-      case "plant-drives": // Add this case
-        return <PlantDriveManagement  
-          token={token} 
-          adminId={decodedToken?.id} 
-          role={decodedToken?.role} 
-        />;
+        return <ChallengeManagement {...contentProps} />;
+      case "plant-drives":
+        return <PlantDriveManagement {...contentProps} />;
+      case "ngo-approvals":
+        return <NGOManagement token={token} />;
       case "registrations":
-        return <RegistrationAnalytics />;
+        return <RegistrationAnalytics {...contentProps} />;
       case "reports":
-        return <Reports adminData={adminData} />;
+        return <Reports {...contentProps} adminData={adminData} />;
       case "settings":
-        return <SystemSettings />;
+        return <SystemSettings {...contentProps} />;
       default:
         return (
           <OverviewAnalytics
@@ -168,7 +196,19 @@ export default function GovernmentDashboard() {
           />
         );
     }
-  };
+  }, [activeSection, analytics, loadingAnalytics, analyticsError, fetchAdminAnalytics, token, decodedToken, adminData]);
+
+  // Show loading state while checking token
+  if (!token && !decodedToken) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
@@ -182,8 +222,10 @@ export default function GovernmentDashboard() {
           onLogout={handleLogout}
         />
 
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          <div className="container mx-auto max-w-7xl">{renderContent()}</div>
+        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+          <div className="container mx-auto max-w-7xl">
+            {renderedContent}
+          </div>
         </main>
       </div>
     </div>

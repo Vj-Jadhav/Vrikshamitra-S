@@ -3,6 +3,7 @@ import express from "express";
 import {
   createPlantingTarget,
   getPlantingTargets,
+  getPlantingTargetsByPincode
 } from "../controllers/plantingTargetsController.js";
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get('/test-route', (req, res) => {
 // Your actual routes
 router.post("/create", createPlantingTarget);
 router.get("/", getPlantingTargets);
+router.get("/pincode/:pincode", getPlantingTargetsByPincode);
 
 export default router;

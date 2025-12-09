@@ -235,6 +235,19 @@ export default function Login() {
           </span>
         </p>
 
+        <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+          <p className="text-sm text-gray-600 mb-2">NGO Partner?</p>
+          <div className="flex justify-center gap-4 text-sm font-semibold">
+            <span onClick={() => navigate("/ngo/login")} className="text-green-600 cursor-pointer hover:underline">
+              NGO Login
+            </span>
+            <span className="text-gray-300">|</span>
+            <span onClick={() => navigate("/ngo/register")} className="text-green-600 cursor-pointer hover:underline">
+              Register NGO
+            </span>
+          </div>
+        </div>
+
         {/* Role-specific info */}
         {roleInfo && (
           <div

@@ -3,6 +3,7 @@ import Student from "../models/Student.js";
 import Challenge from "../models/Challenge.js";
 import Submission from "../models/Submission.js";
 import ChallengeAssignment from "../models/ChallengeAssignment.js";
+import Event from "../models/Event.js";
 import mongoose from "mongoose";
 
 /**
@@ -166,6 +167,73 @@ export const getFacultyAnalytics = async (req, res) => {
 
     } catch (error) {
         console.error("Error fetching faculty analytics:", error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+};
+
+// Get events assigned to this faculty
+export const getFacultyEvents = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: "Invalid faculty ID" });
+        }
+
+        // Find events where assignedFaculty matches
+        // Also fetch events created by this faculty (if any)
+        const events = await import("../models/Event.js").then(mod => mod.default.find({
+            $or: [
+                { assignedFaculty: id },
+                { createdBy: id }
+            ]
+        }).sort({ date: 1 }));
+
+        res.status(200).json(events);
+    } catch (error) {
+        console.error("Error fetching faculty events:", error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+};
+
+// Accept a planting request assigned to this faculty
+export const acceptPlantingRequest = async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const facultyId = req.user._id || req.user.id; // From auth middleware
+
+        const request = await import("../models/PlantingRequest.js").then(mod => mod.default.findById(requestId));
+
+        if (!request) {
+            return res.status(404).json({ message: "Request not found" });
+        }
+
+        if (request.assignedFaculty.toString() !== facultyId.toString()) {
+            return res.status(403).json({ message: "Not authorized to accept this request" });
+        }
+
+        request.facultyStatus = 'accepted';
+        await request.save();
+
+        res.status(200).json({ success: true, message: "Request accepted", data: request });
+    } catch (error) {
+        console.error("Error accepting request:", error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+};
+// Get planting requests assigned to this faculty
+export const getFacultyRequests = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const requests = await import("../models/PlantingRequest.js").then(mod => mod.default.find({
+            assignedFaculty: id,
+            facultyStatus: { $ne: 'accepted' } // Show pending or rejected? Mostly pending.
+        }).sort({ createdAt: -1 }));
+
+        res.status(200).json(requests);
+    } catch (error) {
+        console.error("Error fetching faculty requests:", error);
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };

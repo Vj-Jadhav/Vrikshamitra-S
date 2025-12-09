@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 
-import { Institute,School, College, University } from "../models/BaseInstituteSchema.js";
+import { Institute, School, College, University } from "../models/BaseInstituteSchema.js";
+import NGO from "../models/NGO.js";
+import PlantingRequest from "../models/PlantingRequest.js";
 
 export const getAllInstitutes = async (req, res) => {
   try {
@@ -82,3 +84,63 @@ export const getInstituteById = async (req, res) => {
   }
 };
 
+
+// Get Pending NGOs
+export const getPendingNGOs = async (req, res) => {
+  try {
+    const pendingNGOs = await NGO.find({ status: 'pending' }).lean();
+    res.status(200).json({ success: true, data: pendingNGOs });
+  } catch (error) {
+    console.error("Error getting pending NGOs:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch pending NGOs" });
+  }
+};
+
+// Approve NGO
+export const approveNGO = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ngo = await NGO.findByIdAndUpdate(id, { status: 'active' }, { new: true });
+
+    if (!ngo) {
+      return res.status(404).json({ success: false, message: "NGO not found" });
+    }
+
+    res.status(200).json({ success: true, message: "NGO Approved", data: ngo });
+  } catch (error) {
+    console.error("Error approving NGO:", error);
+    res.status(500).json({ success: false, message: "Failed to approve NGO" });
+  }
+};
+
+// Reject NGO
+export const rejectNGO = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ngo = await NGO.findByIdAndUpdate(id, { status: 'rejected' }, { new: true });
+
+    if (!ngo) {
+      return res.status(404).json({ success: false, message: "NGO not found" });
+    }
+
+    res.status(200).json({ success: true, message: "NGO Rejected", data: ngo });
+  } catch (error) {
+    console.error("Error rejecting NGO:", error);
+    res.status(500).json({ success: false, message: "Failed to reject NGO" });
+  }
+};
+// Get all planting requests for government
+export const getAllPlantingRequests = async (req, res) => {
+  try {
+    const requests = await PlantingRequest.find()
+      .populate('instituteId', 'name')
+      .populate('assignedFaculty', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, data: requests });
+  } catch (error) {
+    console.error("Error fetching planting requests:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch requests" });
+  }
+};

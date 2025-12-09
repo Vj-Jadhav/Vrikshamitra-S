@@ -17,7 +17,13 @@ import {
   deleteStudent,
   getInstituteEvents,
   acceptPlantingDrive,
-  createInstituteEvent
+  createInstituteEvent,
+  createPlantingRequest,
+  assignFacultyToEvent,
+  getPlantingTargets,
+  getInstituteRequests,
+  getInstitutePledges,
+  getAvailableNGOs
 } from "../controllers/instituteController.js";
 
 import { protect } from "../middlewares/auth.js";
@@ -39,10 +45,17 @@ router.get("/profile", protect, getInstituteProfile);
 // --------------------
 // Institute routes
 // --------------------
-router.get("/:instituteId", getInstituteById);
+router.get("/plant-drives", protect, getPlantingTargets); // specific route FIRST
+router.get("/available-ngos", protect, getAvailableNGOs); // specific route BEFORE dynamic
+router.get("/:instituteId", getInstituteById); // dynamic route LAST
+router.get("/:instituteId/requests", protect, getInstituteRequests);
 router.get("/:instituteId/events", getInstituteEvents);
+router.get("/:instituteId/pledges", protect, getInstitutePledges);
+
 router.post("/plant-drive/accept", protect, acceptPlantingDrive);
 router.post("/events/create", protect, createInstituteEvent);
+router.post("/planting-request/create", protect, createPlantingRequest);
+router.post("/events/assign-faculty", protect, assignFacultyToEvent);
 
 
 // --------------------

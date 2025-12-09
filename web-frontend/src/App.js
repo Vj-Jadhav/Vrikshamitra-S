@@ -15,6 +15,11 @@ import InstituteDashboard from "./pages/InstituteDashboard";
 import LoginDebug from "./components/LoginDebug";
 import PlantDriveManagement from "./government/PlantDriveManagement";
 
+// NGO Components
+const NGOLogin = React.lazy(() => import("./ngo/NGOLogin"));
+const NGODashboard = React.lazy(() => import("./ngo/NGODashboard"));
+const NGORegistration = React.lazy(() => import("./ngo/NGORegistration"));
+
 function App() {
   return (
     <AuthProvider>
@@ -65,6 +70,32 @@ function App() {
               <ProtectedRoute>
                 <InstituteDashboard />
               </ProtectedRoute>
+            }
+          />
+
+          {/* NGO Routes */}
+          <Route
+            path="/ngo/login"
+            element={
+              <React.Suspense fallback={<div>Loading...</div>}>
+                <NGOLogin />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/ngo/register"
+            element={
+              <React.Suspense fallback={<div>Loading...</div>}>
+                <NGORegistration />
+              </React.Suspense>
+            }
+          />
+          <Route
+            path="/ngo/dashboard"
+            element={
+              <React.Suspense fallback={<div>Loading...</div>}>
+                <NGODashboard />
+              </React.Suspense>
             }
           />
         </Routes>

@@ -24,6 +24,7 @@ const GovernmentSidebar = ({
     { id: "overview", icon: LayoutDashboard, label: "Dashboard Overview" },
     { id: "institutes", icon: Building, label: "Institute Management" },
     { id: "users", icon: Users, label: "User Management" },
+    { id: "ngo-approvals", icon: Building, label: "NGO Approvals" },
     { id: "challenges", icon: Crosshair, label: "Challenge Management" },
     { id: "plant-drives", icon: TreePine, label: "Plant Drive Management" }, // New item
     { id: "registrations", icon: TrendingUp, label: "Registration Analytics" },
@@ -44,7 +45,7 @@ const GovernmentSidebar = ({
             <div className="text-sm text-gray-600">Government Admin</div>
           </div>
         </div>
-        
+
         {/* Quick Stats */}
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between text-sm">
@@ -72,11 +73,10 @@ const GovernmentSidebar = ({
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
                     ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg scale-105"
                     : "text-gray-700 hover:bg-blue-50 hover:scale-102"
-                }`}
+                  }`}
               >
                 <Icon size={20} />
                 <span className="font-medium">{item.label}</span>

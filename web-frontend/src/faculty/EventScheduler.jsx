@@ -4,7 +4,7 @@ import { Calendar, Plus, X, Clock, Users, Edit, Trash2, UserCheck, Filter, Loade
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api/events";
 
-const EventScheduler = () => {
+const EventScheduler = ({ userId }) => {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +18,7 @@ const EventScheduler = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [requests, setRequests] = useState([]); // Pending requests from Institute
 
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -34,12 +35,30 @@ const EventScheduler = () => {
     email: ''
   });
 
-  // Fetch all events from backend
+  // Fetch events from backend
   const fetchEvents = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get(API_URL);
+      let url = API_URL;
+      const headers = {};
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      if (userId) {
+        // Use the new faculty events endpoint
+        // Assuming base URL logic. If API_URL is full path, we might need to adjust.
+        // Let's assume API_URL is http://localhost:5000/api/events
+        // We need http://localhost:5000/api/faculty/:id/events
+
+        // Construct URL safely
+        const baseUrl = API_URL.replace('/api/events', '/api');
+        url = `${baseUrl}/faculty/${userId}/events`;
+      }
+
+      const res = await axios.get(url, { headers });
       setEvents(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Error loading events');
@@ -49,9 +68,47 @@ const EventScheduler = () => {
     }
   };
 
+  const fetchRequests = async () => {
+    if (!userId) return;
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      // Construct URL safely
+      const baseUrl = API_URL.replace('/api/events', '/api');
+      const url = `${baseUrl}/faculty/${userId}/requests`;
+
+      const res = await axios.get(url, { headers });
+      setRequests(res.data);
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
-  }, []);
+    if (userId) fetchRequests();
+  }, [userId]);
+
+  const handleAcceptRequest = async (requestId) => {
+    if (!window.confirm("Accept this event assignment?")) return;
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const baseUrl = API_URL.replace('/api/events', '/api');
+
+      await axios.post(`${baseUrl}/faculty/request/${requestId}/accept`, {}, { headers });
+
+      alert("Request Accepted! Waiting for NGO confirmation.");
+      fetchRequests(); // Refresh requests
+      fetchEvents();   // Refresh events (if they appear there now)
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Failed to accept");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Filter and search events
   useEffect(() => {
@@ -66,7 +123,7 @@ const EventScheduler = () => {
         result = result.filter(event => new Date(`${event.date}T${event.time}`) <= new Date());
         break;
       case 'full':
-        result = result.filter(event => event.registrations.length >= event.maxParticipants);
+        result = result.filter(event => (event.registrations?.length || 0) >= event.maxParticipants);
         break;
       default:
         break;
@@ -75,7 +132,7 @@ const EventScheduler = () => {
     // Apply search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      result = result.filter(event => 
+      result = result.filter(event =>
         event.title.toLowerCase().includes(term) ||
         event.description.toLowerCase().includes(term) ||
         event.location.toLowerCase().includes(term)
@@ -84,7 +141,7 @@ const EventScheduler = () => {
 
     // Sort by date
     result.sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
-    
+
     setFilteredEvents(result);
   }, [events, filter, searchTerm]);
 
@@ -129,7 +186,7 @@ const EventScheduler = () => {
   // Delete event
   const handleDeleteEvent = async (eventId) => {
     if (!window.confirm("Are you sure you want to delete this event?")) return;
-    
+
     setActionLoading(true);
     try {
       await axios.delete(`${API_URL}/${eventId}`);
@@ -165,7 +222,7 @@ const EventScheduler = () => {
   // Remove registration
   const handleRemoveRegistration = async (eventId, regId) => {
     if (!window.confirm("Are you sure you want to remove this registration?")) return;
-    
+
     try {
       await axios.delete(`${API_URL}/${eventId}/registration/${regId}`);
       await fetchEvents();
@@ -177,6 +234,43 @@ const EventScheduler = () => {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Error removing registration');
+    }
+  };
+
+  // Handle CSV Upload
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setActionLoading(true);
+    setError('');
+    try {
+      const res = await axios.post(`${API_URL}/${selectedEvent._id}/bulk-register`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      await fetchEvents();
+      // Force refresh of selected event
+      const updatedEvent = events.find(ev => ev._id === selectedEvent._id);
+      if (updatedEvent) {
+        // If needed, update local state, but fetchEvents should handle it
+      }
+
+      setSuccess(res.data.message);
+      setShowRegistrations(false);
+      setTimeout(() => setSuccess(''), 3000);
+
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Error uploading CSV');
+    } finally {
+      setActionLoading(false);
+      e.target.value = null;
     }
   };
 
@@ -232,7 +326,7 @@ const EventScheduler = () => {
   };
 
   const isEventFull = (event) => {
-    return event.registrations.length >= event.maxParticipants;
+    return (event.registrations?.length || 0) >= event.maxParticipants;
   };
 
   const isEventPast = (event) => {
@@ -328,6 +422,38 @@ const EventScheduler = () => {
           </div>
         </div>
 
+        {/* Pending Requests Section */}
+        {requests.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-yellow-800 mb-4 flex items-center gap-2">
+              <AlertCircle size={24} />
+              Pending Event Assignments
+            </h2>
+            <div className="grid gap-4">
+              {requests.map(req => (
+                <div key={req._id} className="bg-white p-4 rounded-lg shadow-sm border border-yellow-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-800">{req.instituteName}</h3>
+                    <p className="text-gray-600">
+                      <strong>Trees:</strong> {req.treeCount} ({req.treeType}) | <strong>Class:</strong> {req.targetGrade}
+                    </p>
+                    <p className="text-gray-600">
+                      <strong>Date:</strong> {req.date ? new Date(req.date).toLocaleDateString() : 'Not set'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleAcceptRequest(req._id)}
+                    disabled={actionLoading}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    Accept Assignment
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Events List */}
         {loading ? (
           <div className="flex justify-center items-center py-12">
@@ -363,7 +489,7 @@ const EventScheduler = () => {
                         <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm">Full</span>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <p className="text-sm flex items-center gap-2 text-gray-600">
                         <Calendar size={16} />
@@ -376,11 +502,10 @@ const EventScheduler = () => {
                       <p className="text-sm flex items-center gap-2 text-blue-600">
                         📍 {event.location}
                       </p>
-                      <p className={`text-sm flex items-center gap-2 ${
-                        isEventFull(event) ? 'text-red-600' : 'text-emerald-600'
-                      }`}>
+                      <p className={`text-sm flex items-center gap-2 ${isEventFull(event) ? 'text-red-600' : 'text-emerald-600'
+                        }`}>
                         <Users size={14} />
-                        {event.registrations.length} / {event.maxParticipants} registered
+                        {event.registrations?.length || 0} / {event.maxParticipants} registered
                       </p>
                     </div>
 
@@ -398,7 +523,7 @@ const EventScheduler = () => {
                         <UserCheck size={14} /> Register
                       </button>
                     )}
-                    
+
                     <button
                       onClick={() => handleViewRegistrations(event)}
                       className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded flex items-center justify-center gap-1 transition-colors"
@@ -438,9 +563,9 @@ const EventScheduler = () => {
                 <h3 className="font-bold text-xl text-gray-900">
                   {editingEvent ? "Edit Event" : "Create Event"}
                 </h3>
-                <X 
-                  onClick={() => { setShowCreateModal(false); resetForm(); }} 
-                  className="cursor-pointer text-gray-500 hover:text-gray-700" 
+                <X
+                  onClick={() => { setShowCreateModal(false); resetForm(); }}
+                  className="cursor-pointer text-gray-500 hover:text-gray-700"
                   size={24}
                 />
               </div>
@@ -458,7 +583,7 @@ const EventScheduler = () => {
                     placeholder="Enter event title"
                     value={newEvent.title}
                     required
-                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
+                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
@@ -470,7 +595,7 @@ const EventScheduler = () => {
                   <textarea
                     placeholder="Describe your event..."
                     value={newEvent.description}
-                    onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
+                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
                     rows={3}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
@@ -485,7 +610,7 @@ const EventScheduler = () => {
                     placeholder="Event location"
                     value={newEvent.location}
                     required
-                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
@@ -500,7 +625,7 @@ const EventScheduler = () => {
                       value={newEvent.date}
                       required
                       min={currentDate}
-                      onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
+                      onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
                       className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
@@ -513,7 +638,7 @@ const EventScheduler = () => {
                       type="time"
                       value={newEvent.time}
                       required
-                      onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                      onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
                       className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                     />
                   </div>
@@ -527,22 +652,22 @@ const EventScheduler = () => {
                     type="number"
                     min="1"
                     value={newEvent.maxParticipants}
-                    onChange={(e) => setNewEvent({...newEvent, maxParticipants: parseInt(e.target.value) || 1})}
+                    onChange={(e) => setNewEvent({ ...newEvent, maxParticipants: parseInt(e.target.value) || 1 })}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => { setShowCreateModal(false); resetForm(); }}
                     className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
                     disabled={actionLoading}
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     disabled={actionLoading}
                   >
@@ -561,9 +686,9 @@ const EventScheduler = () => {
             <div className="bg-white rounded-xl p-6 w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-bold text-xl text-gray-900">Register for {selectedEvent.title}</h2>
-                <X 
-                  onClick={() => { setShowRegistrationForm(false); resetRegistrationForm(); }} 
-                  className="cursor-pointer text-gray-500 hover:text-gray-700" 
+                <X
+                  onClick={() => { setShowRegistrationForm(false); resetRegistrationForm(); }}
+                  className="cursor-pointer text-gray-500 hover:text-gray-700"
                   size={24}
                 />
               </div>
@@ -577,7 +702,7 @@ const EventScheduler = () => {
                     type="text"
                     value={registrationData.studentName}
                     required
-                    onChange={(e) => setRegistrationData({...registrationData, studentName: e.target.value})}
+                    onChange={(e) => setRegistrationData({ ...registrationData, studentName: e.target.value })}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
@@ -590,7 +715,7 @@ const EventScheduler = () => {
                     type="text"
                     value={registrationData.studentId}
                     required
-                    onChange={(e) => setRegistrationData({...registrationData, studentId: e.target.value})}
+                    onChange={(e) => setRegistrationData({ ...registrationData, studentId: e.target.value })}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
@@ -603,22 +728,22 @@ const EventScheduler = () => {
                     type="email"
                     value={registrationData.email}
                     required
-                    onChange={(e) => setRegistrationData({...registrationData, email: e.target.value})}
+                    onChange={(e) => setRegistrationData({ ...registrationData, email: e.target.value })}
                     className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   />
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => { setShowRegistrationForm(false); resetRegistrationForm(); }}
                     className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
                     disabled={actionLoading}
                   >
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     disabled={actionLoading}
                   >
@@ -639,17 +764,17 @@ const EventScheduler = () => {
                 <div>
                   <h2 className="font-bold text-2xl text-gray-900">{selectedEvent.title} - Registrations</h2>
                   <p className="text-gray-600 mt-1">
-                    {selectedEvent.registrations.length} of {selectedEvent.maxParticipants} registered
+                    {selectedEvent.registrations?.length || 0} of {selectedEvent.maxParticipants} registered
                   </p>
                 </div>
-                <X 
-                  onClick={() => setShowRegistrations(false)} 
-                  className="cursor-pointer text-gray-500 hover:text-gray-700" 
+                <X
+                  onClick={() => setShowRegistrations(false)}
+                  className="cursor-pointer text-gray-500 hover:text-gray-700"
                   size={24}
                 />
               </div>
 
-              {selectedEvent.registrations.length === 0 ? (
+              {(selectedEvent.registrations?.length || 0) === 0 ? (
                 <div className="text-center py-12">
                   <Users size={48} className="mx-auto text-gray-400 mb-4" />
                   <p className="text-gray-600 text-lg">No registrations yet.</p>
@@ -657,7 +782,7 @@ const EventScheduler = () => {
               ) : (
                 <div className="overflow-y-auto flex-1">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {selectedEvent.registrations.map(reg => (
+                    {selectedEvent.registrations?.map(reg => (
                       <div key={reg._id} className="border border-gray-200 p-4 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">

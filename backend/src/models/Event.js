@@ -21,9 +21,12 @@ const eventSchema = new mongoose.Schema({
     required: [true, "Event date is required"],
     validate: {
       validator: function (value) {
-        return value > new Date();
+        // Allow dates from the start of today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return value >= today;
       },
-      message: "Event date must be in the future"
+      message: "Event date cannot be in the past"
     }
   },
 
@@ -142,6 +145,28 @@ const eventSchema = new mongoose.Schema({
     url: String,
     type: String
   }],
+
+  registrations: [{
+    studentName: String,
+    studentId: String,
+    email: String,
+    registeredAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
+  // Delivery & Assignment
+  deliveryStatus: {
+    type: String,
+    enum: ['pending', 'delivered'],
+    default: 'pending'
+  },
+
+  assignedFaculty: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User' // Or 'Faculty' if you have a specific Faculty model, but usually User with role
+  },
 
   // Timeline
   createdAt: {

@@ -12,6 +12,8 @@ import Student from "../models/Student.js";
 import StudentChallengeProgress from "../models/StudentChallengeProgress.js";
 import Event from "../models/Event.js";
 import PlantingTarget from "../models/plantingTargets.js";
+import PlantingRequest from "../models/PlantingRequest.js";
+import NGO from "../models/NGO.js";
 
 // Get institute by ID
 export const getInstituteById = async (req, res) => {
@@ -29,7 +31,7 @@ export const getInstituteById = async (req, res) => {
     // Find institute - adjust based on your Institute model structure
     const institute = await Institute.findById(instituteId)
       .select(
-        "name email phone address type instituteType establishedYear status faculties departments"
+        "instituteName email phone address type instituteType establishedYear status faculties departments"
       )
       .lean();
 
@@ -1096,7 +1098,7 @@ export const acceptPlantingDrive = async (req, res) => {
     // Add to acceptedBy
     target.acceptedBy.push({
       instituteId,
-      instituteName: institute.name,
+      instituteName: institute.instituteName,
       treesAccepted: Number(treesAccepted),
       acceptedAt: new Date()
     });
@@ -1133,11 +1135,14 @@ export const createInstituteEvent = async (req, res) => {
     } = req.body;
 
     const instituteId = req.user._id || req.user.id;
-    const institute = await Institute.findById(instituteId);
+    const institute = await Institute.findById(instituteId).lean();
 
     if (!institute) {
       return res.status(404).json({ success: false, message: 'Institute not found' });
     }
+
+    const instName = institute.instituteName || institute.name || "Institute";
+    const creatorName = (req.user && (req.user.instituteName || req.user.name)) || instName;
 
     // Create the event
     // Note: status is pending until an NGO accepts/is assigned
@@ -1147,9 +1152,9 @@ export const createInstituteEvent = async (req, res) => {
       date,
       venue,
       instituteId,
-      instituteName: institute.name,
+      instituteName: instName,
       createdBy: req.user._id || req.user.id,
-      createdByName: req.user.name || institute.name,
+      createdByName: creatorName,
 
       // Link to target if provided
       targetId: targetId || null,
@@ -1188,6 +1193,175 @@ export const createInstituteEvent = async (req, res) => {
   }
 };
 
+
+
+// Get available NGOs by pincode
+export const getAvailableNGOs = async (req, res) => {
+  try {
+    const { pincode } = req.query;
+
+    if (!pincode) {
+      return res.status(400).json({ success: false, message: "Pincode is required" });
+    }
+
+    const ngos = await NGO.find({
+      pincode: pincode,
+      status: 'active'
+    }).select('name email phone location pincode');
+
+    res.status(200).json({ success: true, data: ngos });
+  } catch (error) {
+    console.error("Error fetching available NGOs:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const createPlantingRequest = async (req, res) => {
+  try {
+    const { instituteId, instituteName, pincode, treeType, treeCount, assignedFaculty, targetGrade, date, ngoId } = req.body;
+
+    // Validate required fields
+    if (!instituteId || !pincode || !treeType || !treeCount) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const newRequest = new PlantingRequest({
+      instituteId,
+      instituteName,
+      pincode,
+      treeType: treeType || "Mixed",
+      treeCount,
+      assignedFaculty,
+      targetGrade,
+      date,
+      status: 'pending',
+      facultyStatus: assignedFaculty ? 'pending' : 'accepted',
+      acceptedBy: ngoId || null // Assign to specific NGO if provided
+    });
+
+    await newRequest.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Planting request created successfully',
+      data: newRequest
+    });
+  } catch (error) {
+    console.error("Error in createPlantingRequest:", error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+export const assignFacultyToEvent = async (req, res) => {
+  try {
+    const { eventId, facultyId } = req.body;
+
+    if (!eventId || !facultyId) {
+      return res.status(400).json({ success: false, message: 'Event ID and Faculty ID are required' });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    event.assignedFaculty = facultyId;
+    await event.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Faculty assigned successfully',
+      data: event
+    });
+  } catch (error) {
+    console.error("Error in assignFacultyToEvent:", error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// Get planting targets (drives) for the institute's location
+export const getPlantingTargets = async (req, res) => {
+  try {
+    const { pincode } = req.query;
+
+    // If pincode is not provided, try to get it from the logged-in institute
+    let searchPincode = pincode;
+    if (!searchPincode && req.user) {
+      // Fetch institute to get pincode if not in req.user
+      const institute = await Institute.findById(req.user._id || req.user.id);
+      if (institute) {
+        searchPincode = institute.pincode; // Assuming pincode field exists on Institute
+      }
+    }
+
+    if (!searchPincode) {
+      return res.status(400).json({ success: false, message: "Pincode is required" });
+    }
+
+    const targets = await PlantingTarget.find({ pincode: searchPincode });
+
+    // Calculate total required plants
+    const totalRequired = targets.reduce((acc, curr) => acc + curr.requiredPlants, 0);
+
+    res.status(200).json({
+      success: true,
+      data: targets,
+      totalRequired
+    });
+  } catch (error) {
+    console.error("Error fetching planting targets:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
+// Get planting requests created by the institute
+export const getInstituteRequests = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+    const requests = await PlantingRequest.find({ instituteId }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: requests });
+  } catch (error) {
+    console.error("Error fetching institute requests:", error);
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+// Get pledges made by the institute
+export const getInstitutePledges = async (req, res) => {
+  try {
+    const { instituteId } = req.params;
+
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(instituteId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid institute ID",
+      });
+    }
+
+    // Find targets where this institute is in the acceptedBy array
+    const pledges = await PlantingTarget.find({
+      "acceptedBy.instituteId": instituteId
+    });
+
+    res.status(200).json({
+      success: true,
+      data: pledges
+    });
+  } catch (error) {
+    console.error("Error fetching institute pledges:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message
+    });
+  }
+};
+
 export default {
   getInstituteById,
   addStudent,
@@ -1206,4 +1380,9 @@ export default {
   getInstituteEvents,
   acceptPlantingDrive,
   createInstituteEvent,
+  createPlantingRequest,
+  assignFacultyToEvent,
+  getInstitutePledges
 };
+
+
