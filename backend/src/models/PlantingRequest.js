@@ -16,15 +16,14 @@ const plantingRequestSchema = new mongoose.Schema({
     },
     treeType: {
         type: String,
-        // required: true // Made optional for new workflow
+        default: 'Mixed'
     },
     targetGrade: {
-        type: String,
-        // required: true
+        type: String
     },
     assignedFaculty: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Faculty' // or User
+        ref: 'Faculty'
     },
     facultyStatus: {
         type: String,
@@ -50,6 +49,10 @@ const plantingRequestSchema = new mongoose.Schema({
     eventId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Event'
+    },
+    targetId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PlantingTarget'
     },
     createdAt: {
         type: Date,

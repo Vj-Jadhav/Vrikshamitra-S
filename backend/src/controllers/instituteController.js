@@ -1246,7 +1246,8 @@ export const createPlantingRequest = async (req, res) => {
       date,
       status: 'pending',
       facultyStatus: assignedFaculty ? 'pending' : 'accepted',
-      acceptedBy: ngoId || null // Assign to specific NGO if provided
+      acceptedBy: ngoId || null, // Assign to specific NGO if provided
+      targetId: req.body.targetId || null
     });
 
     await newRequest.save();

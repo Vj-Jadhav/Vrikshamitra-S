@@ -233,9 +233,7 @@ function PlantDriveManagement() {
                 <tr>
                   <th style={styles.tableHeader}>Institute</th>
                   <th style={styles.tableHeader}>Trees</th>
-                  <th style={styles.tableHeader}>Type</th>
-                  <th style={styles.tableHeader}>Grade</th>
-                  <th style={styles.tableHeader}>Pincode</th>
+                  <th style={styles.tableHeader}>Proof</th>
                   <th style={styles.tableHeader}>Status</th>
                   <th style={styles.tableHeader}>Date</th>
                 </tr>
@@ -243,28 +241,50 @@ function PlantDriveManagement() {
               <tbody>
                 {plantingRequests.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ ...styles.tableCell, textAlign: 'center' }}>No requests found</td>
+                    <td colSpan="5" style={{ ...styles.tableCell, textAlign: 'center' }}>No requests found</td>
                   </tr>
                 ) : (
-                  plantingRequests.map((req, idx) => (
-                    <tr key={req._id || idx} style={styles.tableRow}>
-                      <td style={styles.tableCell}>{req.instituteName}</td>
-                      <td style={styles.tableCell}>{req.treeCount}</td>
-                      <td style={styles.tableCell}>{req.treeType || 'Mixed'}</td>
-                      <td style={styles.tableCell}>{req.targetGrade || 'N/A'}</td>
-                      <td style={styles.tableCell}>{req.pincode}</td>
-                      <td style={styles.tableCell}>
-                        <span style={{
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '0.8rem',
-                          background: req.status === 'pending' ? '#fff3cd' : '#d1ecf1',
-                          color: req.status === 'pending' ? '#856404' : '#0c5460'
-                        }}>{req.status}</span>
-                      </td>
-                      <td style={styles.tableCell}>{new Date(req.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))
+                  plantingRequests.map((req, idx) => {
+                    const isDelivered = req.eventId?.deliveryStatus === 'delivered';
+                    const photos = req.eventId?.photos || [];
+
+                    return (
+                      <tr key={req._id || idx} style={styles.tableRow}>
+                        <td style={styles.tableCell}>
+                          <div style={{ fontWeight: 'bold' }}>{req.instituteName}</div>
+                          <div style={{ fontSize: '0.85rem', color: '#666' }}>{req.pincode}</div>
+                        </td>
+                        <td style={styles.tableCell}>{req.treeCount} ({req.treeType})</td>
+                        <td style={styles.tableCell}>
+                          {photos.length > 0 ? (
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                              {photos.slice(0, 3).map((p, i) => (
+                                <a key={i} href={p.url} target="_blank" rel="noopener noreferrer">
+                                  <img src={p.url} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} alt="Proof" />
+                                </a>
+                              ))}
+                            </div>
+                          ) : isDelivered ? (
+                            <span style={{ fontSize: '0.8rem', color: '#e63946' }}>No photos</span>
+                          ) : (
+                            <span style={{ fontSize: '0.8rem', color: '#999' }}>-</span>
+                          )}
+                        </td>
+                        <td style={styles.tableCell}>
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.8rem',
+                            background: isDelivered ? '#d4edda' : req.status === 'pending' ? '#fff3cd' : '#d1ecf1',
+                            color: isDelivered ? '#155724' : req.status === 'pending' ? '#856404' : '#0c5460'
+                          }}>
+                            {isDelivered ? 'Delivered' : req.status}
+                          </span>
+                        </td>
+                        <td style={styles.tableCell}>{new Date(req.createdAt).toLocaleDateString()}</td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>
@@ -486,9 +506,32 @@ function PlantDriveManagement() {
                         {t.pincode || "N/A"}
                       </td>
                       <td style={styles.tableCell}>
-                        <span style={styles.plantCount}>
-                          {t.requiredPlants.toLocaleString()}
-                        </span>
+                        {(() => {
+                          const delivered = plantingRequests
+                            .filter(r => {
+                              const rTargetId = r.targetId || r.eventId?.targetId;
+                              return String(rTargetId) === String(t._id) && r.eventId?.deliveryStatus === 'delivered';
+                            })
+                            .reduce((sum, r) => sum + (r.treeCount || 0), 0);
+
+                          const remaining = Math.max(0, t.requiredPlants - delivered);
+
+                          return (
+                            <div>
+                              <span style={styles.plantCount}>
+                                {remaining.toLocaleString()}
+                              </span>
+                              <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                                Required: {t.requiredPlants.toLocaleString()}
+                              </div>
+                              {delivered > 0 && (
+                                <div style={{ fontSize: '0.8rem', color: '#276749', fontWeight: 'bold' }}>
+                                  ✅ {delivered.toLocaleString()} Delivered
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td
                         style={{ ...styles.tableCell, ...styles.deadlineCell }}
@@ -518,7 +561,7 @@ function PlantDriveManagement() {
           )}
         </section>
       </main>
-    </div>
+    </div >
   );
 }
 

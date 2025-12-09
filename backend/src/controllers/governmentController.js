@@ -135,6 +135,7 @@ export const getAllPlantingRequests = async (req, res) => {
     const requests = await PlantingRequest.find()
       .populate('instituteId', 'name')
       .populate('assignedFaculty', 'name')
+      .populate('eventId', 'photos deliveryStatus plannedTrees targetId')
       .sort({ createdAt: -1 })
       .lean();
 
