@@ -85,7 +85,15 @@ export const registerNGO = async (req, res) => {
         });
 
     } catch (error) {
+
         console.error("Error in registerNGO:", error);
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: "Duplicate field value: " + JSON.stringify(error.keyValue) });
+        }
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({ success: false, message: messages.join(', ') });
+        }
         res.status(500).json({ success: false, message: "Registration failed", error: error.message });
     }
 };

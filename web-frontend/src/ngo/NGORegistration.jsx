@@ -115,9 +115,9 @@ export default function NGORegistration() {
                             />
                         </div>
                         <div>
-                            <label className="block text-gray-700 font-medium">Contact Phone</label>
+                            <label className="block text-gray-700 font-medium">Contact Phone *</label>
                             <input
-                                type="text" name="contactPhone"
+                                type="text" name="contactPhone" required
                                 className="w-full p-2 border rounded focus:ring-2 focus:ring-green-400"
                                 onChange={handleChange}
                             />
