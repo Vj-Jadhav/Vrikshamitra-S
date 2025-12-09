@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -288,19 +289,20 @@ const rewards = [
   },
 ];
 
-// Categories for filtering
-const categories = [
-  { id: 'all', name: 'All Rewards', emoji: '🏆' },
-  { id: 'food', name: 'Food & Dining', emoji: '🍔' },
-  { id: 'shopping', name: 'Shopping', emoji: '🛍️' },
-  { id: 'entertainment', name: 'Entertainment', emoji: '🎬' },
-  { id: 'fashion', name: 'Fashion', emoji: '👗' },
-  { id: 'travel', name: 'Travel', emoji: '✈️' },
-];
-
 export default function RewardsScreen({ route }) {
+  const { t } = useTranslation();
   const navigation = useNavigation();
-  
+
+  // Categories for filtering
+  const categories = [
+    { id: 'all', name: t('cat_all_rewards'), emoji: '🏆' },
+    { id: 'food', name: t('cat_food'), emoji: '🍔' },
+    { id: 'shopping', name: t('cat_shopping'), emoji: '🛍️' },
+    { id: 'entertainment', name: t('cat_entertainment'), emoji: '🎬' },
+    { id: 'fashion', name: t('cat_fashion'), emoji: '👗' },
+    { id: 'travel', name: t('cat_travel'), emoji: '✈️' },
+  ];
+
   // State management
   const [points, setPoints] = useState(0);
   const [pointsInput, setPointsInput] = useState('');
@@ -316,7 +318,7 @@ export default function RewardsScreen({ route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [studentId, setStudentId] = useState(null);
   const [authToken, setAuthToken] = useState(null);
-  
+
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(0.9))[0];
@@ -327,7 +329,7 @@ export default function RewardsScreen({ route }) {
       try {
         const storedStudentId = await AsyncStorage.getItem('studentId');
         const token = await AsyncStorage.getItem('token');
-        
+
         if (storedStudentId) {
           setStudentId(storedStudentId);
           setAuthToken(token);
@@ -385,24 +387,24 @@ export default function RewardsScreen({ route }) {
   const fetchEcoPoints = async (id, token = null) => {
     try {
       setLoading(true);
-      
+
       console.log('Fetching eco-points for student:', id);
-      
+
       // Try multiple endpoints
       const headers = {
         'Content-Type': 'application/json',
       };
-      
+
       if (token && token !== 'mock-token') {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
       let totalEcoPoints = 0;
-      
+
       try {
         // Try the main endpoint
         const response = await fetch(
-          `${API_BASE_URL}/api/students/${id}/challenges/details`, 
+          `${API_BASE_URL}/api/students/${id}/challenges/details`,
           {
             method: 'GET',
             headers: headers,
@@ -412,7 +414,7 @@ export default function RewardsScreen({ route }) {
         if (response.ok) {
           const data = await response.json();
           console.log('API Response:', data);
-          
+
           if (data.success && data.challenges) {
             // Calculate total eco-points
             data.challenges.forEach(challenge => {
@@ -424,7 +426,7 @@ export default function RewardsScreen({ route }) {
                 }
               }
             });
-            
+
             console.log('Total eco-points calculated:', totalEcoPoints);
           }
         } else {
@@ -441,7 +443,7 @@ export default function RewardsScreen({ route }) {
       }
 
       setPoints(totalEcoPoints);
-      
+
     } catch (error) {
       console.error('Error in fetchEcoPoints:', error);
       // Use mock data on error
@@ -468,7 +470,7 @@ export default function RewardsScreen({ route }) {
       showSuccessMessage(`Added ${newPoints} test EcoPoints! 🎉`);
       setPointsInput('');
     } else {
-      Alert.alert('Invalid Input', 'Please enter a valid number of points.');
+      Alert.alert(t('error'), t('enter_points_placeholder'));
     }
   };
 
@@ -480,9 +482,9 @@ export default function RewardsScreen({ route }) {
       setShowModal(true);
     } else {
       Alert.alert(
-        'Insufficient Points',
-        `You need ${reward.pointsRequired} points to redeem this reward.\nYou currently have ${points} points.`,
-        [{ text: 'OK', style: 'cancel' }]
+        t('insufficient_points'),
+        t('insufficient_points_msg').replace('{{required}}', reward.pointsRequired).replace('{{current}}', points),
+        [{ text: t('ok'), style: 'cancel' }]
       );
     }
   };
@@ -496,7 +498,7 @@ export default function RewardsScreen({ route }) {
 
   const calculateDiscountedPrice = (product) => {
     if (!selectedReward) return product.price;
-    
+
     if (selectedReward.discountFixed) {
       return Math.max(0, product.price - selectedReward.discountFixed);
     } else {
@@ -509,7 +511,7 @@ export default function RewardsScreen({ route }) {
       try {
         // Check if we have enough points
         if (points < selectedReward.pointsRequired) {
-          Alert.alert('Error', 'Not enough points to complete purchase.');
+          Alert.alert(t('error'), t('not_enough_points'));
           return;
         }
 
@@ -543,9 +545,9 @@ export default function RewardsScreen({ route }) {
             // Update points
             const newPoints = points - selectedReward.pointsRequired;
             setPoints(newPoints);
-            
+
             showSuccessMessage(
-              `🎉 Purchase Successful!\nCoupon: ${couponCode}\nOrder confirmed for ${selectedProduct.name}!`
+              `${t('purchase_successful')}\nCoupon: ${couponCode}\nOrder confirmed for ${selectedProduct.name}!`
             );
           } else {
             throw new Error('API call failed');
@@ -554,12 +556,12 @@ export default function RewardsScreen({ route }) {
           // For testing, simulate successful purchase
           const newPoints = points - selectedReward.pointsRequired;
           setPoints(newPoints);
-          
+
           showSuccessMessage(
             `🎉 TEST: Purchase Successful!\nCoupon: ${couponCode}\nOrder confirmed for ${selectedProduct.name}!`
           );
         }
-        
+
         setShowModal(false);
         setSelectedProduct(null);
         setSelectedReward(null);
@@ -568,11 +570,11 @@ export default function RewardsScreen({ route }) {
         // For testing, simulate successful purchase
         const newPoints = points - selectedReward.pointsRequired;
         setPoints(newPoints);
-        
+
         showSuccessMessage(
           `🎉 TEST MODE: Purchase Successful!\nCoupon: ${couponCode}\nOrder confirmed for ${selectedProduct.name}!`
         );
-        
+
         setShowModal(false);
         setSelectedProduct(null);
         setSelectedReward(null);
@@ -590,25 +592,25 @@ export default function RewardsScreen({ route }) {
 
   // Filtered rewards based on category and search
   const filteredRewards = rewards.filter(reward => {
-    const matchesCategory = activeCategory === 'all' || 
+    const matchesCategory = activeCategory === 'all' ||
       (reward.category && reward.category.toLowerCase() === activeCategory);
-    
+
     const safeSearchQuery = searchQuery.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       (reward.company && reward.company.toLowerCase().includes(safeSearchQuery)) ||
       (reward.description && reward.description.toLowerCase().includes(safeSearchQuery));
-    
+
     return matchesCategory && matchesSearch;
-  });
+  }); // Removed dependency on categories array which is now internal or we need to recreate it if it depends on t
 
   // Render reward card
   const renderRewardCard = ({ item }) => {
     const canRedeem = points >= item.pointsRequired;
-    
+
     return (
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.rewardCard, 
+          styles.rewardCard,
           !canRedeem && styles.lockedCard,
         ]}
       >
@@ -624,28 +626,28 @@ export default function RewardsScreen({ route }) {
             </View>
           </View>
         </View>
-        
+
         <View style={[styles.discountBadge, { backgroundColor: canRedeem ? '#4CAF50' : '#757575' }]}>
           <Text style={styles.discountText}>{item.discount}</Text>
         </View>
-        
+
         <View style={styles.rewardFooter}>
           <View style={styles.pointsRequired}>
-            <Text style={styles.pointsLabel}>Points Required:</Text>
+            <Text style={styles.pointsLabel}>{t('points_required')}</Text>
             <Text style={[styles.pointsValue, { color: canRedeem ? '#4CAF50' : '#757575' }]}>
               {item.pointsRequired}
             </Text>
           </View>
-          <Text style={styles.expirationText}>Expires in {item.expiration}</Text>
+          <Text style={styles.expirationText}>{t('expires_in')} {item.expiration}</Text>
         </View>
-        
+
         <TouchableOpacity
           style={[styles.redeemButton, canRedeem ? styles.activeButton : styles.disabledButton]}
           onPress={() => redeemReward(item)}
           disabled={!canRedeem}
         >
           <Text style={styles.redeemButtonText}>
-            {canRedeem ? '🛒 Redeem Now' : '🔒 Need More Points'}
+            {canRedeem ? `🛒 ${t('redeem_now')}` : `🔒 ${t('need_more_points')}`}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -680,18 +682,18 @@ export default function RewardsScreen({ route }) {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#3a9322" />
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🌿 EcoPoints Rewards</Text>
+          <Text style={styles.headerTitle}>🌿 {t('ecopoints_rewards')}</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3a9322" />
-          <Text style={styles.loadingText}>Loading your eco-points...</Text>
+          <Text style={styles.loadingText}>{t('loading_ecopoints')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -702,19 +704,19 @@ export default function RewardsScreen({ route }) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#3a9322" />
-        
+
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>🌿 EcoPoints Rewards</Text>
+          <Text style={styles.headerTitle}>🌿 {t('ecopoints_rewards')}</Text>
           <View style={styles.headerRight}>
             <TouchableOpacity onPress={() => navigation.navigate('RedeemedCoupons', { studentId })}>
-              <Text style={styles.historyText}>History</Text>
+              <Text style={styles.historyText}>{t('history')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -725,7 +727,7 @@ export default function RewardsScreen({ route }) {
           </View>
         )}
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -738,7 +740,7 @@ export default function RewardsScreen({ route }) {
           }
         >
           {/* Points Balance Card */}
-          <Animated.View 
+          <Animated.View
             style={[
               styles.pointsCard,
               {
@@ -753,35 +755,35 @@ export default function RewardsScreen({ route }) {
               </View>
               <View style={styles.pointsInfo}>
                 <Text style={styles.totalPoints}>{points.toLocaleString()}</Text>
-                <Text style={styles.pointsLabel}>Available EcoPoints</Text>
+                <Text style={styles.pointsLabel}>{t('available_ecopoints')}</Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.pointsHistoryButton}
                 onPress={() => navigation.navigate('PointsHistory', { studentId })}
               >
-                <Text style={styles.pointsHistoryText}>View History</Text>
+                <Text style={styles.pointsHistoryText}>{t('view_history')}</Text>
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.divider} />
-            
+
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Add points earned from activities:</Text>
+              <Text style={styles.inputLabel}>{t('add_points_label')}</Text>
               <View style={styles.inputRow}>
                 <TextInput
                   style={styles.pointsInput}
-                  placeholder="Enter points amount"
+                  placeholder={t('enter_points_placeholder')}
                   placeholderTextColor="#999"
                   keyboardType="numeric"
                   value={pointsInput}
                   onChangeText={setPointsInput}
                 />
                 <TouchableOpacity style={styles.addButton} onPress={addPoints}>
-                  <Text style={styles.addButtonText}>Add</Text>
+                  <Text style={styles.addButtonText}>{t('add')}</Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.infoNote}>
-                Note: Points added here are for testing only
+                {t('points_test_note')}
               </Text>
             </View>
           </Animated.View>
@@ -790,7 +792,7 @@ export default function RewardsScreen({ route }) {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="🔍 Search rewards..."
+              placeholder={`🔍 ${t('search_rewards')}`}
               placeholderTextColor="#999"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -881,7 +883,7 @@ export default function RewardsScreen({ route }) {
                     <Text style={styles.modalCategory}>{selectedReward?.category}</Text>
                   </View>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.closeButton}
                   onPress={() => setShowModal(false)}
                 >
@@ -910,7 +912,7 @@ export default function RewardsScreen({ route }) {
                     const isSelected = selectedProduct?.id === product.id;
                     const discountedPrice = calculateDiscountedPrice(product);
                     const savings = product.price - discountedPrice;
-                    
+
                     return (
                       <TouchableOpacity
                         key={product.id}
@@ -924,7 +926,7 @@ export default function RewardsScreen({ route }) {
                           <Text style={styles.productEmoji}>{product.emoji}</Text>
                         </View>
                         <Text style={styles.productName}>{product.name}</Text>
-                        
+
                         <View style={styles.priceContainer}>
                           <Text style={styles.originalPrice}>₹{product.price}</Text>
                           <Text style={styles.discountedPrice}>
@@ -945,39 +947,39 @@ export default function RewardsScreen({ route }) {
                 {selectedProduct && (
                   <View style={styles.checkoutSection}>
                     <Text style={styles.checkoutTitle}>Order Summary</Text>
-                    
+
                     <View style={styles.checkoutRow}>
                       <Text style={styles.checkoutLabel}>Product:</Text>
                       <Text style={styles.checkoutValue}>{selectedProduct.name}</Text>
                     </View>
-                    
+
                     <View style={styles.checkoutRow}>
                       <Text style={styles.checkoutLabel}>Original Price:</Text>
                       <Text style={styles.checkoutValue}>₹{selectedProduct.price}</Text>
                     </View>
-                    
+
                     <View style={styles.checkoutRow}>
                       <Text style={styles.checkoutLabel}>Discount:</Text>
                       <Text style={styles.discountValue}>
                         - ₹{Math.round(selectedProduct.price - calculateDiscountedPrice(selectedProduct))}
                       </Text>
                     </View>
-                    
+
                     <View style={styles.divider} />
-                    
+
                     <View style={styles.checkoutRow}>
                       <Text style={styles.totalLabel}>Total to Pay:</Text>
                       <Text style={styles.totalAmount}>
                         ₹{Math.round(calculateDiscountedPrice(selectedProduct))}
                       </Text>
                     </View>
-                    
+
                     <View style={styles.pointsDeduction}>
                       <Text style={styles.pointsDeductionText}>
                         ⚡ {selectedReward?.pointsRequired} EcoPoints will be deducted
                       </Text>
                     </View>
-                    
+
                     <View style={styles.couponCode}>
                       <Text style={styles.couponLabel}>Your Coupon Code:</Text>
                       <Text style={styles.couponCodeText}>{couponCode}</Text>
@@ -985,16 +987,16 @@ export default function RewardsScreen({ route }) {
                         📝 Show this code at checkout | 📧 Code will also be emailed
                       </Text>
                     </View>
-                    
-                    <TouchableOpacity 
-                      style={styles.checkoutButton} 
+
+                    <TouchableOpacity
+                      style={styles.checkoutButton}
                       onPress={completePurchase}
                     >
                       <Text style={styles.checkoutButtonText}>
                         ✅ Confirm Purchase ({selectedReward?.pointsRequired} points)
                       </Text>
                     </TouchableOpacity>
-                    
+
                     <Text style={styles.termsText}>
                       *Terms & Conditions apply. Points once deducted cannot be refunded.
                     </Text>

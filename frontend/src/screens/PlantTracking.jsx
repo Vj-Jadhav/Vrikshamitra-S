@@ -12,10 +12,12 @@ import {
     ActivityIndicator
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { useTranslation } from 'react-i18next';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from '../config/config.js';
 
 export default function PlantTracking({ navigation }) {
+    const { t } = useTranslation();
     const [plants, setPlants] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
@@ -78,16 +80,17 @@ export default function PlantTracking({ navigation }) {
                     setNewPlantName('');
                     setNewPlantSpecies('');
                     fetchPlants(); // Refresh list
-                    Alert.alert("Success", "Sapling planted successfully!");
+                    fetchPlants(); // Refresh list
+                    Alert.alert(t('success'), t('sapling_planted'));
                 } else {
-                    Alert.alert("Error", "Failed to add plant");
+                    Alert.alert(t('error'), t('failed_add_plant'));
                 }
             } catch (error) {
                 console.error("Add plant error:", error);
-                Alert.alert("Error", "Failed to connect to server");
+                Alert.alert(t('error'), t('server_error'));
             }
         } else {
-            Alert.alert("Missing Info", "Please enter name and species");
+            Alert.alert(t('missing_info'), t('enter_name_species'));
         }
     };
 
@@ -140,20 +143,20 @@ export default function PlantTracking({ navigation }) {
                         // Show AI Result
                         if (data.aiAnalysis) {
                             Alert.alert(
-                                "AI Analysis Complete 🤖",
+                                t('ai_analysis_complete'),
                                 `Health: ${data.aiAnalysis.health}\nGrowth: +${data.aiAnalysis.growthFactor * 100}%\n\n"${data.aiAnalysis.message}"`,
-                                [{ text: "Awesome!" }]
+                                [{ text: t('awesome') }]
                             );
                         } else {
-                            Alert.alert("Success", "Photo uploaded!");
+                            Alert.alert(t('success'), t('photo_uploaded'));
                         }
 
                     } else {
-                        Alert.alert("Error", "Upload failed");
+                        Alert.alert(t('error'), t('upload_failed'));
                     }
                 } catch (error) {
                     console.error("Upload error:", error);
-                    Alert.alert("Error", "Server error during upload");
+                    Alert.alert(t('error'), t('server_error'));
                 } finally {
                     setAnalyzing(false);
                 }
@@ -220,7 +223,7 @@ export default function PlantTracking({ navigation }) {
         return (
             <View style={styles.unlockedBadge}>
                 <Text style={styles.badgeIcon}>🛡️</Text>
-                <Text style={styles.badgeText}>Guardian</Text>
+                <Text style={styles.badgeText}>{t('guardian')}</Text>
             </View>
         );
     };
@@ -232,7 +235,7 @@ export default function PlantTracking({ navigation }) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Text style={styles.backIcon}>←</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Plant Tracker</Text>
+                <Text style={styles.headerTitle}>{t('plant_tracker')}</Text>
                 <TouchableOpacity onPress={() => setModalVisible(true)}>
                     <Text style={styles.headerAddIcon}>+</Text>
                 </TouchableOpacity>
@@ -248,32 +251,32 @@ export default function PlantTracking({ navigation }) {
                 <View style={styles.summaryCard}>
                     <View style={styles.summaryItem}>
                         <Text style={styles.summaryValue}>{plants.length}</Text>
-                        <Text style={styles.summaryLabel}>Plants</Text>
+                        <Text style={styles.summaryLabel}>{t('plants')}</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryItem}>
                         <Text style={styles.summaryValue}>
                             {plants.filter(p => isTreeGuardian(p)).length}
                         </Text>
-                        <Text style={styles.summaryLabel}>Badges</Text>
+                        <Text style={styles.summaryLabel}>{t('badges')}</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.summaryItem}>
                         <Text style={styles.summaryValue}>
                             {plants.reduce((acc, p) => acc + (p.photos ? p.photos.length : 0), 0)}
                         </Text>
-                        <Text style={styles.summaryLabel}>Photos</Text>
+                        <Text style={styles.summaryLabel}>{t('photos')}</Text>
                     </View>
                 </View>
 
-                <Text style={styles.sectionTitle}>My Garden</Text>
+                <Text style={styles.sectionTitle}>{t('my_garden')}</Text>
 
                 {loading ? (
                     <ActivityIndicator size="large" color="#3a9322" style={{ marginTop: 50 }} />
                 ) : plants.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Text style={{ fontSize: 40, marginBottom: 10 }}>🌱</Text>
-                        <Text style={{ color: '#666' }}>No plants yet. Add your first sapling!</Text>
+                        <Text style={{ color: '#666' }}>{t('no_plants')}</Text>
                     </View>
                 ) : (
                     plants.map((plant) => (
@@ -313,7 +316,7 @@ export default function PlantTracking({ navigation }) {
 
                                 <View style={styles.progressContainer}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={styles.progressLabel}>Growth Progress</Text>
+                                        <Text style={styles.progressLabel}>{t('growth_progress')}</Text>
                                         <Text style={styles.progressLabel}>{Math.round((plant.progress || 0) * 100)}%</Text>
                                     </View>
                                     <View style={styles.progressBarBg}>
@@ -336,27 +339,27 @@ export default function PlantTracking({ navigation }) {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>New Sapling</Text>
+                        <Text style={styles.modalTitle}>{t('new_sapling')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Plant Name (e.g. My Mango Tree)"
+                            placeholder={t('plant_name_placeholder')}
                             placeholderTextColor="#666"
                             value={newPlantName}
                             onChangeText={setNewPlantName}
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="Species (e.g. Mangifera indica)"
+                            placeholder={t('species_placeholder')}
                             placeholderTextColor="#666"
                             value={newPlantSpecies}
                             onChangeText={setNewPlantSpecies}
                         />
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.saveButton} onPress={handleAddPlant}>
-                                <Text style={styles.saveButtonText}>Plant It!</Text>
+                                <Text style={styles.saveButtonText}>{t('plant_it')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -384,22 +387,22 @@ export default function PlantTracking({ navigation }) {
                         {analyzing && (
                             <View style={styles.analyzingOverlay}>
                                 <ActivityIndicator size="large" color="#fff" />
-                                <Text style={styles.analyzingText}>AI is analyzing plant health...</Text>
+                                <Text style={styles.analyzingText}>{t('ai_analyzing')}</Text>
                             </View>
                         )}
 
                         <ScrollView contentContainerStyle={{ padding: 20 }}>
 
                             {/* Comparison Section */}
-                            <Text style={styles.detailsSectionTitle}>Growth Analysis</Text>
+                            <Text style={styles.detailsSectionTitle}>{t('growth_analysis')}</Text>
                             <View style={styles.comparisonCard}>
                                 <View style={styles.photoColumn}>
-                                    <Text style={styles.photoLabel}>First Planted</Text>
+                                    <Text style={styles.photoLabel}>{t('first_planted')}</Text>
                                     <View style={styles.photoFrame}>
                                         {selectedPlant.photos && selectedPlant.photos.length > 0 ? (
                                             <Image source={{ uri: getImageUrl(selectedPlant.photos[0].url) }} style={styles.compareImage} />
                                         ) : (
-                                            <Text style={styles.noPhotoText}>No Photo</Text>
+                                            <Text style={styles.noPhotoText}>{t('no_photo')}</Text>
                                         )}
                                     </View>
                                     <Text style={styles.dateLabel}>
@@ -412,12 +415,12 @@ export default function PlantTracking({ navigation }) {
                                 </View>
 
                                 <View style={styles.photoColumn}>
-                                    <Text style={styles.photoLabel}>Latest</Text>
+                                    <Text style={styles.photoLabel}>{t('latest')}</Text>
                                     <View style={styles.photoFrame}>
                                         {selectedPlant.photos && selectedPlant.photos.length > 0 ? (
                                             <Image source={{ uri: getImageUrl(selectedPlant.photos[selectedPlant.photos.length - 1].url) }} style={styles.compareImage} />
                                         ) : (
-                                            <Text style={styles.noPhotoText}>No Photo</Text>
+                                            <Text style={styles.noPhotoText}>{t('no_photo')}</Text>
                                         )}
                                     </View>
                                     <Text style={styles.dateLabel}>
@@ -428,7 +431,7 @@ export default function PlantTracking({ navigation }) {
 
                             {/* Growth Insights */}
                             <View style={styles.aiAnalysisBox}>
-                                <Text style={styles.aiTitle}>✨ Growth Insights</Text>
+                                <Text style={styles.aiTitle}>✨ {t('growth_insights')}</Text>
                                 <Text style={styles.aiText}>
                                     {(() => {
                                         // Prefer AI Analysis if available
@@ -471,12 +474,12 @@ export default function PlantTracking({ navigation }) {
                             <View style={styles.actionGrid}>
                                 <TouchableOpacity style={styles.actionBtn} onPress={handleUploadPhoto}>
                                     <Text style={styles.actionIcon}>📸</Text>
-                                    <Text style={styles.actionText}>Upload Monthly Photo</Text>
+                                    <Text style={styles.actionText}>{t('upload_monthly_photo')}</Text>
                                 </TouchableOpacity>
 
                                 {/* Status Toggle */}
                                 <View style={styles.statusContainer}>
-                                    <Text style={styles.statusLabel}>Current Status:</Text>
+                                    <Text style={styles.statusLabel}>{t('current_status')}:</Text>
                                     <View style={styles.statusOptions}>
                                         {['Excellent', 'Good', 'Needs Care'].map(s => (
                                             <TouchableOpacity
@@ -493,15 +496,15 @@ export default function PlantTracking({ navigation }) {
 
                             {/* Badge Section */}
                             <View style={styles.badgeSection}>
-                                <Text style={styles.detailsSectionTitle}>Achievements</Text>
+                                <Text style={styles.detailsSectionTitle}>{t('achievements')}</Text>
                                 <View style={[styles.bigBadgeCard, isTreeGuardian(selectedPlant) ? styles.bigBadgeUnlocked : styles.bigBadgeLocked]}>
                                     <Text style={styles.bigBadgeIcon}>{isTreeGuardian(selectedPlant) ? '🛡️' : '🔒'}</Text>
                                     <View>
-                                        <Text style={styles.bigBadgeTitle}>Tree Guardian</Text>
+                                        <Text style={styles.bigBadgeTitle}>{t('tree_guardian')}</Text>
                                         <Text style={styles.bigBadgeDesc}>
                                             {isTreeGuardian(selectedPlant)
-                                                ? "Unlocked! Your plant has thrived for over 6 months."
-                                                : `Keep caring for 6 months to unlock. Current: ${getSurvivalDurationMonths(selectedPlant.plantedDate)} mo`}
+                                                ? t('unlocked_guardian')
+                                                : t('locked_guardian', { months: getSurvivalDurationMonths(selectedPlant.plantedDate) })}
                                         </Text>
                                     </View>
                                 </View>

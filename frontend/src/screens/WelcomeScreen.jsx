@@ -2,7 +2,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ImageBackground } from 'react-native';
 import LottieView from 'lottie-react-native';   // ✅ Added
 
+import { useTranslation } from 'react-i18next';
+
 export default function WelcomeScreen({ navigation }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
 
@@ -22,7 +25,7 @@ export default function WelcomeScreen({ navigation }) {
         </View> */}
 
         {/* Welcome Heading */}
-        <Text style={styles.welcome}>Welcome to</Text>
+        <Text style={styles.welcome}>{t('welcome_to')}</Text>
 
         {/* Vrikshamitra Logo */}
         <View style={styles.titleContainer}>
@@ -47,7 +50,7 @@ export default function WelcomeScreen({ navigation }) {
           onPress={() => navigation.navigate('Login')}
           activeOpacity={0.8}
         >
-          <Text style={styles.gameButtonText}>Let’s Start!</Text>
+          <Text style={styles.gameButtonText}>{t('lets_start')}</Text>
         </TouchableOpacity>
 
       </View>

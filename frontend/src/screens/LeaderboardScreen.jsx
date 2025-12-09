@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
+
 export default function LeaderboardScreen({ navigation }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('college');
 
   // Top 3 Winners Data
@@ -42,17 +45,17 @@ export default function LeaderboardScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Leaderboard</Text>
+        <Text style={styles.headerTitle}>{t('leaderboard')}</Text>
 
         <TouchableOpacity style={styles.menuButton}>
           <Text style={styles.menuIcon}>⋯</Text>
@@ -60,48 +63,48 @@ export default function LeaderboardScreen({ navigation }) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        
+
         {/* Content Container */}
         <View style={styles.contentContainer}>
-          
+
           {/* Tabs */}
           <View style={styles.tabsContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.tab, activeTab === 'college' && styles.tabActive]}
               onPress={() => setActiveTab('college')}
             >
               <Text style={[styles.tabText, activeTab === 'college' && styles.tabTextActive]}>
-                College{'\n'}Level
+                {t('college_level')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.tab, activeTab === 'state' && styles.tabActive]}
               onPress={() => setActiveTab('state')}
             >
               <Text style={[styles.tabText, activeTab === 'state' && styles.tabTextActive]}>
-                State{'\n'}Level
+                {t('state_level')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.tab, activeTab === 'national' && styles.tabActive]}
               onPress={() => setActiveTab('national')}
             >
               <Text style={[styles.tabText, activeTab === 'national' && styles.tabTextActive]}>
-                National{'\n'}Level
+                {t('national_level')}
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.rewardsTab}>
               <Text style={styles.rewardsIcon}>🎁</Text>
-              <Text style={styles.rewardsText}>Rewards</Text>
+              <Text style={styles.rewardsText}>{t('rewards')}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Top 3 Podium */}
           <View style={styles.podiumContainer}>
-            
+
             {/* 2nd Place */}
             <View style={styles.podiumItem}>
               <View style={styles.pointsBadge}>
@@ -109,8 +112,8 @@ export default function LeaderboardScreen({ navigation }) {
                 <Text style={styles.pointsText}>{topThree[0].points}</Text>
               </View>
               <View style={styles.podiumBlock2}>
-                <Image 
-                  source={{ uri: topThree[0].avatar }} 
+                <Image
+                  source={{ uri: topThree[0].avatar }}
                   style={styles.podiumAvatar}
                 />
                 <View style={[styles.podiumRank, { backgroundColor: topThree[0].color }]}>
@@ -128,8 +131,8 @@ export default function LeaderboardScreen({ navigation }) {
                 <Text style={styles.pointsText}>{topThree[1].points}</Text>
               </View>
               <View style={styles.podiumBlock1}>
-                <Image 
-                  source={{ uri: topThree[1].avatar }} 
+                <Image
+                  source={{ uri: topThree[1].avatar }}
                   style={styles.podiumAvatar}
                 />
                 <View style={[styles.podiumRank, { backgroundColor: topThree[1].color }]}>
@@ -146,8 +149,8 @@ export default function LeaderboardScreen({ navigation }) {
                 <Text style={styles.pointsText}>{topThree[2].points}</Text>
               </View>
               <View style={styles.podiumBlock3}>
-                <Image 
-                  source={{ uri: topThree[2].avatar }} 
+                <Image
+                  source={{ uri: topThree[2].avatar }}
                   style={styles.podiumAvatar}
                 />
                 <View style={[styles.podiumRank, { backgroundColor: topThree[2].color }]}>
@@ -163,15 +166,15 @@ export default function LeaderboardScreen({ navigation }) {
             {leaderboardData.map((item, index) => (
               <View key={index} style={styles.leaderboardItem}>
                 <Text style={styles.rankNumber}>{String(item.rank).padStart(2, '0')}</Text>
-                
-                <Image 
-                  source={{ uri: item.avatar }} 
+
+                <Image
+                  source={{ uri: item.avatar }}
                   style={styles.avatarSmall}
                 />
 
                 <View style={styles.leaderboardInfo}>
                   <Text style={styles.leaderboardName}>{item.name}</Text>
-                  <Text style={styles.leaderboardPoints}>{item.points} points</Text>
+                  <Text style={styles.leaderboardPoints}>{item.points} {t('points')}</Text>
                 </View>
 
                 <View style={[
@@ -197,8 +200,8 @@ export default function LeaderboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: '#f5f5f5',
   },
 

@@ -9,7 +9,10 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_ENDPOINTS } from '../config/config.js';
 
+import { useTranslation } from 'react-i18next';
+
 export default function LoginScreen({ navigation }) {
+  const { t } = useTranslation();
   // All hooks declared at the top level - in consistent order
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,7 +62,7 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setMessage("Please fill all fields!");
+      setMessage(t('fill_all_fields'));
       return;
     }
 
@@ -141,24 +144,24 @@ export default function LoginScreen({ navigation }) {
         // Verify storage
         await checkStorage();
 
-        const studentName = data?.student?.name || data?.user?.name || "Student";
-        setMessage(`Login Successful! Welcome, ${studentName} 🌿`);
+        const studentName = data?.student?.name || data?.user?.name || t('student');
+        setMessage(`${t('login_success')} ${studentName} 🌿`);
         setTimeout(() => navigation.navigate("Home"), 1200);
       } else {
-        setMessage(data.message || "Invalid credentials!");
+        setMessage(data.message || t('invalid_credentials'));
 
         // Show specific guidance for "Student not found"
         if (data.message === "Student not found") {
           Alert.alert(
-            "Account Not Found",
-            "No student account found with this email. Students are registered by their educational institution.\n\nPlease contact your school/admin to create your account.",
-            [{ text: "OK" }]
+            t('account_not_found'),
+            t('account_not_found_msg'),
+            [{ text: t('ok') }]
           );
         }
       }
     } catch (error) {
       console.error("Login error:", error);
-      setMessage("Server error: " + error.message);
+      setMessage(t('server_error') + error.message);
     }
     setLoading(false);
   };
@@ -166,14 +169,14 @@ export default function LoginScreen({ navigation }) {
   // Step 1: Request OTP
   const handleForgotPassword = async () => {
     if (!resetEmail) {
-      Alert.alert("Error", "Please enter your student email address");
+      Alert.alert(t('error'), t('enter_student_email'));
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(resetEmail)) {
-      Alert.alert("Invalid Email", "Please enter a valid email address");
+      Alert.alert(t('invalid_email'), t('enter_valid_email'));
       return;
     }
 
@@ -219,23 +222,23 @@ export default function LoginScreen({ navigation }) {
         // Show appropriate message based on whether OTP is included
         if (data.otp) {
           Alert.alert(
-            "OTP Generated ✅",
-            `OTP has been generated: ${data.otp}\n\nUse this OTP to verify.`,
-            [{ text: "OK" }]
+            t('otp_generated'), // Assuming this matches "OTP Generated ✅" or standard
+            `OTP has been generated: ${data.otp}\n\nUse this OTP to verify.`, // Dev mode, no translation needed mostly
+            [{ text: t('ok') }]
           );
         } else {
           Alert.alert(
-            "OTP Sent ✅",
-            data.message || "OTP has been sent to your email. Please check your inbox and spam folder.",
-            [{ text: "OK" }]
+            t('otp_sent_alert_title'),
+            data.message || t('otp_sent_alert_msg'),
+            [{ text: t('ok') }]
           );
         }
       } else {
-        Alert.alert("Error", data.message || "Failed to send OTP. Please try again.");
+        Alert.alert(t('error'), data.message || t('failed_send_otp'));
       }
     } catch (error) {
       console.error("Forgot password error:", error);
-      Alert.alert("Error", "Failed to send reset request. Please try again.");
+      Alert.alert(t('error'), t('failed_send_otp'));
     }
     setResetLoading(false);
   };
@@ -243,7 +246,7 @@ export default function LoginScreen({ navigation }) {
   // Step 2: Verify OTP
   const handleVerifyOTP = async () => {
     if (!otp || otp.length !== 6) {
-      Alert.alert("Error", "Please enter a valid 6-digit OTP");
+      Alert.alert(t('error'), t('enter_valid_otp'));
       return;
     }
 
@@ -277,13 +280,13 @@ export default function LoginScreen({ navigation }) {
       if (data.success) {
         setResetToken(data.resetToken);
         setResetStep(3);
-        Alert.alert("Success", "OTP verified! Please set your new password.");
+        Alert.alert(t('success'), t('otp_verified'));
       } else {
-        Alert.alert("Error", data.message || "Invalid OTP. Please try again.");
+        Alert.alert(t('error'), data.message || t('invalid_otp'));
       }
     } catch (error) {
       console.error("Verify OTP error:", error);
-      Alert.alert("Error", "Failed to verify OTP. Please try again.");
+      Alert.alert(t('error'), t('failed_verify_otp'));
     }
     setResetLoading(false);
   };
@@ -291,17 +294,17 @@ export default function LoginScreen({ navigation }) {
   // Step 3: Reset Password
   const handleResetPassword = async () => {
     if (!newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill all password fields");
+      Alert.alert(t('error'), t('fill_password_fields'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert(t('error'), t('passwords_mismatch'));
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long");
+      Alert.alert(t('error'), t('password_too_short'));
       return;
     }
 
@@ -335,11 +338,11 @@ export default function LoginScreen({ navigation }) {
 
       if (data.success) {
         Alert.alert(
-          "Success ✅",
-          "Password has been reset successfully! You can now login with your new password.",
+          t('success'),
+          t('password_reset_success'),
           [
             {
-              text: "OK",
+              text: t('ok'),
               onPress: () => {
                 // Reset everything and close modal
                 setShowResetModal(false);
@@ -355,11 +358,11 @@ export default function LoginScreen({ navigation }) {
           ]
         );
       } else {
-        Alert.alert("Error", data.message || "Failed to reset password. Please try again.");
+        Alert.alert(t('error'), data.message || t('failed_reset_password'));
       }
     } catch (error) {
       console.error("Reset password error:", error);
-      Alert.alert("Error", "Failed to reset password. Please try again.");
+      Alert.alert(t('error'), t('failed_reset_password'));
     }
     setResetLoading(false);
   };
@@ -370,16 +373,16 @@ export default function LoginScreen({ navigation }) {
       case 1: // Enter email
         return (
           <>
-            <Text style={styles.modalTitle}>Reset Your Password 🔐</Text>
+            <Text style={styles.modalTitle}>{t('reset_password_title')}</Text>
             <Text style={styles.modalSubtitle}>
-              Enter your registered student email address. We'll send you an OTP to reset your password.
+              {t('reset_password_subtitle')}
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Student Email</Text>
+              <Text style={styles.inputLabel}>{t('student_email_label')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="student@institution.edu"
+                placeholder={t('email_placeholder')}
                 placeholderTextColor="#999"
                 value={resetEmail}
                 onChangeText={setResetEmail}
@@ -400,7 +403,7 @@ export default function LoginScreen({ navigation }) {
                 }}
                 disabled={resetLoading}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -413,7 +416,7 @@ export default function LoginScreen({ navigation }) {
                 disabled={!resetEmail || resetLoading}
               >
                 <Text style={styles.resetButtonText}>
-                  {resetLoading ? "Sending..." : "Send OTP"}
+                  {resetLoading ? t('sending') : t('send_otp')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -423,11 +426,11 @@ export default function LoginScreen({ navigation }) {
       case 2: // Enter OTP
         return (
           <>
-            <Text style={styles.modalTitle}>Enter OTP</Text>
+            <Text style={styles.modalTitle}>{t('enter_otp_title')}</Text>
             <Text style={styles.modalSubtitle}>
               {receivedOtp
-                ? `Development Mode: OTP is ${receivedOtp}\n\nEnter the OTP below:`
-                : `We've sent a 6-digit OTP to ${resetEmail}. Please enter it below.`
+                ? `Development Mode: OTP is ${receivedOtp}\n\n${t('otp_sent_msg')}`
+                : t('otp_sent_msg').replace('{email}', resetEmail)
               }
             </Text>
 
@@ -441,10 +444,10 @@ export default function LoginScreen({ navigation }) {
             ) : null}
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>OTP Code</Text>
+              <Text style={styles.inputLabel}>{t('otp_code_label')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter 6-digit OTP"
+                placeholder={t('enter_otp_placeholder')}
                 placeholderTextColor="#999"
                 value={otp}
                 onChangeText={setOtp}
@@ -460,7 +463,7 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => setResetStep(1)}
                 disabled={resetLoading}
               >
-                <Text style={styles.cancelButtonText}>Back</Text>
+                <Text style={styles.cancelButtonText}>{t('back')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -473,7 +476,7 @@ export default function LoginScreen({ navigation }) {
                 disabled={!otp || otp.length !== 6 || resetLoading}
               >
                 <Text style={styles.resetButtonText}>
-                  {resetLoading ? "Verifying..." : "Verify OTP"}
+                  {resetLoading ? t('verifying') : t('verify_otp')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -483,16 +486,16 @@ export default function LoginScreen({ navigation }) {
       case 3: // Set new password
         return (
           <>
-            <Text style={styles.modalTitle}>Set New Password</Text>
+            <Text style={styles.modalTitle}>{t('set_new_password_title')}</Text>
             <Text style={styles.modalSubtitle}>
-              Please enter your new password below.
+              {t('set_new_password_subtitle')}
             </Text>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>New Password</Text>
+              <Text style={styles.inputLabel}>{t('new_password_label')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter new password"
+                placeholder={t('new_password_placeholder')}
                 placeholderTextColor="#999"
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -502,10 +505,10 @@ export default function LoginScreen({ navigation }) {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Confirm Password</Text>
+              <Text style={styles.inputLabel}>{t('confirm_password_label')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Confirm new password"
+                placeholder={t('confirm_password_placeholder')}
                 placeholderTextColor="#999"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -520,7 +523,7 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => setResetStep(2)}
                 disabled={resetLoading}
               >
-                <Text style={styles.cancelButtonText}>Back</Text>
+                <Text style={styles.cancelButtonText}>{t('back')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -533,7 +536,7 @@ export default function LoginScreen({ navigation }) {
                 disabled={!newPassword || !confirmPassword || resetLoading}
               >
                 <Text style={styles.resetButtonText}>
-                  {resetLoading ? "Resetting..." : "Reset Password"}
+                  {resetLoading ? t('resetting') : t('reset_password_button')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -551,14 +554,14 @@ export default function LoginScreen({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>Student Login 🌱</Text>
+        <Text style={styles.title}>{t('login_title')}</Text>
 
         <View style={styles.card}>
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email</Text>
+            <Text style={styles.inputLabel}>{t('email_label')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="student@institution.edu"
+              placeholder={t('email_placeholder')}
               placeholderTextColor="#666"
               value={email}
               onChangeText={setEmail}
@@ -569,10 +572,10 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Password</Text>
+            <Text style={styles.inputLabel}>{t('password_label')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your password"
+              placeholder={t('password_placeholder')}
               placeholderTextColor="#666"
               secureTextEntry
               value={password}
@@ -590,7 +593,8 @@ export default function LoginScreen({ navigation }) {
               setResetStep(1);
             }}
           >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+
+            <Text style={styles.forgotPasswordText}>{t('forgot_password')}</Text>
           </TouchableOpacity>
 
           {message ? (
@@ -613,25 +617,25 @@ export default function LoginScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Login as Student</Text>
+              <Text style={styles.loginButtonText}>{t('login_button')}</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* Note about student registration */}
         <View style={styles.noteContainer}>
-          <Text style={styles.noteTitle}>Student Accounts</Text>
+          <Text style={styles.noteTitle}>{t('student_accounts_title')}</Text>
           <Text style={styles.noteText}>
-            • Student accounts are created by your educational institution
+            {t('student_account_note_1')}
           </Text>
           <Text style={styles.noteText}>
-            • Contact your school/admin if you need an account
+            {t('student_account_note_2')}
           </Text>
           <Text style={styles.noteText}>
-            • Use the email provided by your institution
+            {t('student_account_note_3')}
           </Text>
           <Text style={styles.noteText}>
-            • For password issues, use "Forgot Password" or contact admin
+            {t('student_account_note_4')}
           </Text>
         </View>
 
@@ -648,9 +652,9 @@ export default function LoginScreen({ navigation }) {
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#1b5e20" />
                   <Text style={styles.loadingText}>
-                    {resetStep === 1 ? "Sending OTP..." :
-                      resetStep === 2 ? "Verifying OTP..." :
-                        "Resetting password..."}
+                    {resetStep === 1 ? t('sending') :
+                      resetStep === 2 ? t('verifying') :
+                        t('resetting')}
                   </Text>
                 </View>
               )}

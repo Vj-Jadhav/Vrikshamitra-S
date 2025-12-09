@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from 'react-i18next';
 import { BASE_URL } from '../config/config.js';
 
 // Import the AwarenessPopupScreen
@@ -30,6 +31,7 @@ const defaultAvatars = [
 ];
 
 export default function HomeScreen({ navigation }) {
+  const { t } = useTranslation();
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAwarenessPopup, setShowAwarenessPopup] = useState(true);
@@ -151,7 +153,7 @@ export default function HomeScreen({ navigation }) {
         console.log("Local storage error:", localError);
         // Set default student data as final fallback
         setStudent({
-          name: "Student",
+          name: t('student'),
           points: 2571,
           rank: 3,
           photo: defaultAvatars[0],
@@ -179,7 +181,7 @@ export default function HomeScreen({ navigation }) {
 
   // Safe student data with fallbacks
   const studentData = student || {
-    name: "Student",
+    name: t('student'),
     points: 2571,
     rank: 3,
     photo: defaultAvatars[0],
@@ -209,7 +211,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.appName}>VRIKSHAMITRA</Text>
+        <Text style={styles.appName}>{t('app_name')}</Text>
 
         <View style={styles.headerRight}>
 
@@ -256,29 +258,22 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={{ paddingBottom: 90 }}
       >
 
-        {/* Welcome Card */}
         <View style={styles.welcomeCard}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.welcomeText}>Welcome,</Text>
-            <Text style={styles.userName}>
-              {loading ? "Loading..." : studentData.name}
-            </Text>
-            {studentData?.grade && (
-              <Text style={styles.studentInfo}>
-                Grade {studentData.grade} • Roll No: {studentData.rollNumber}
-              </Text>
-            )}
+          <View>
+            <Text style={styles.welcomeText}>{t('welcome')},</Text>
+            <Text style={styles.userName}>{studentData.name}</Text>
+            <Text style={styles.studentInfo}>{studentData.grade || t('student')}</Text>
           </View>
 
           <View style={styles.rankBadge}>
-            <Text style={styles.rankText}>RANK #{studentData.rank}</Text>
+            <Text style={styles.rankText}>{t('rank')} #{studentData.rank}</Text>
           </View>
 
           <Text style={styles.characterEmoji}>🌺</Text>
-        </View>
+        </View >
 
         {/* Level + EcoPoints */}
-        <View style={styles.levelContainer}>
+        < View style={styles.levelContainer} >
           <View style={styles.levelBar}>
             {["Lv 1", "Lv 2", "Lv 3", "Lv 4", "Lv 5"].map((item, index) => (
               <View
@@ -291,7 +286,7 @@ export default function HomeScreen({ navigation }) {
                 <Text
                   style={index === 1 ? styles.levelTextActive : styles.levelTextInactive}
                 >
-                  {item}
+                  {t('level')} {index + 1}
                 </Text>
               </View>
             ))}
@@ -304,13 +299,13 @@ export default function HomeScreen({ navigation }) {
           <View style={styles.ecoPointsRow}>
             <Text style={styles.coinIcon}>🪙</Text>
             <Text style={styles.ecoPointsText}>
-              {studentData.points} Eco-Points Collected
+              {studentData.points} {t('eco_points_collected')}
             </Text>
           </View>
-        </View>
+        </View >
 
         {/* Learning + Rewards */}
-        <View style={styles.moduleCardsContainer}>
+        < View style={styles.moduleCardsContainer} >
 
           <TouchableOpacity
             style={styles.learningModuleCard}
@@ -320,7 +315,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.moduleIcon}>
               <Text style={styles.moduleIconText}>▶️</Text>
             </View>
-            <Text style={styles.moduleTitle}>Learning{'\n'}Module</Text>
+            <Text style={styles.moduleTitle}>{t('learning_module')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -336,14 +331,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.rewardsIconText}>🏆</Text>
             </View>
 
-            <Text style={styles.rewardsTitle}>Rewards &{'\n'}Leaderboard</Text>
+            <Text style={styles.rewardsTitle}>{t('rewards_leaderboard')}</Text>
           </TouchableOpacity>
 
-        </View>
+        </View >
 
         {/* Categories Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+        < View style={styles.section} >
+          <Text style={styles.sectionTitle}>{t('categories')}</Text>
           <View style={styles.categoriesGrid}>
             {[
               { id: '1', title: 'AIR', image: CategoryAir, color: '#E1F5FE' },
@@ -363,16 +358,16 @@ export default function HomeScreen({ navigation }) {
               >
                 <Image source={item.image} style={styles.categoryImage} resizeMode="cover" />
                 <View style={styles.categoryTitleContainer}>
-                  <Text style={styles.categoryTitle}>{item.title}</Text>
+                  <Text style={styles.categoryTitle}>{t(item.title.toLowerCase())}</Text>
                 </View>
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+        </View >
 
         {/* Games Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fun and Educational Games</Text>
+        < View style={styles.section} >
+          <Text style={styles.sectionTitle}>{t('fun_games')}</Text>
 
           <View style={styles.gamesGrid}>
 
@@ -383,7 +378,7 @@ export default function HomeScreen({ navigation }) {
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#7FBF7F' }]}>
                 <Image source={EarthHeroes} style={styles.gameImage} />
-                <Text style={styles.gameCardText}>Earth Heroes</Text>
+                <Text style={styles.gameCardText}>{t('earth_heroes')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -394,7 +389,7 @@ export default function HomeScreen({ navigation }) {
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#6B9B6B' }]}>
                 <Image source={PlantDetective} style={styles.gameImage} />
-                <Text style={styles.gameCardText}>Plant Detective</Text>
+                <Text style={styles.gameCardText}>{t('plant_detective')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -405,7 +400,7 @@ export default function HomeScreen({ navigation }) {
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#5A8A7A' }]}>
                 <Image source={ArVr} style={styles.gameImage} />
-                <Text style={styles.gameCardText}>AR/VR Explorer</Text>
+                <Text style={styles.gameCardText}>{t('ar_vr_explorer')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -416,7 +411,7 @@ export default function HomeScreen({ navigation }) {
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#A67C7C' }]}>
                 <Image source={CommunityWatch} style={styles.gameImage} />
-                <Text style={styles.gameCardText}>Community Watch</Text>
+                <Text style={styles.gameCardText}>{t('community_watch')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -427,7 +422,7 @@ export default function HomeScreen({ navigation }) {
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#6ECF6E' }]}>
                 <Image source={require('../assets/plant_growth.png')} style={styles.gameImage} />
-                <Text style={styles.gameCardText}>My Journal</Text>
+                <Text style={styles.gameCardText}>{t('my_journal')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -438,19 +433,19 @@ export default function HomeScreen({ navigation }) {
             >
               <View style={[styles.gameCardInner, { backgroundColor: '#6ECF6E' }]}>
                 <Image source={require('../assets/plant_growth.png')} style={styles.gameImage} />
-                <Text style={styles.gameCardText}>Rewards</Text>
+                <Text style={styles.gameCardText}>{t('rewards')}</Text>
               </View>
             </TouchableOpacity>
 
 
           </View>
 
-        </View>
+        </View >
 
-      </ScrollView>
+      </ScrollView >
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      < View style={styles.bottomNav} >
 
         <TouchableOpacity
           style={[styles.navItem, styles.navItemActive]}
@@ -462,7 +457,7 @@ export default function HomeScreen({ navigation }) {
               d="M277.8 8.6c-12.3-11.4-31.3-11.4-43.5 0l-224 208c-9.6 9-12.8 22.9-8 35.1S18.8 272 32 272h16v176c0 35.3 28.7 64 64 64h288c35.3 0 64-28.7 64-64V272h16c13.2 0 25-8.1 29.8-20.3s1.6-26.2-8-35.1z"
             />
           </Svg>
-          <Text style={styles.navTextActiveHome}>Home</Text>
+          <Text style={styles.navTextActiveHome}>{t('home')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -495,8 +490,8 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.navTextInactive}>Challenges</Text>
         </TouchableOpacity>
 
-      </View>
-    </View>
+      </View >
+    </View >
   );
 }
 

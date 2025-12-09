@@ -11,22 +11,26 @@ import {
   RefreshControl,
   Modal,
   Image,
-  ImageBackground
+  Animated
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Icon } from '../components/CustomIcon'; // Changed from Ionicons to custom Icon
+import { Icon } from '../components/CustomIcon';
 import { API_ENDPOINTS } from '../config/config.js';
+import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 
 const CHALLENGES_URL = API_ENDPOINTS.CHALLENGES;
 
 const ChallengesScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [userName, setUserName] = useState("");
   const [showCertificate, setShowCertificate] = useState(false);
+  const [progressAnimation] = useState(new Animated.Value(0));
 
   const loadUserData = async () => {
     try {
@@ -41,17 +45,20 @@ const ChallengesScreen = ({ navigation }) => {
       if (token && id) {
         return { token, id, name };
       } else {
-        Alert.alert(
-          "Authentication Required",
-          "Please login to view challenges",
-          [
-            { text: "Login", onPress: () => navigation.navigate("Login") },
-            {
-              text: "Continue as Guest",
-              onPress: () => console.log("Continue as guest")
-            }
-          ]
-        );
+        // Only show alert if not loading initially to avoid double alerts
+        if (!loading) {
+          Alert.alert(
+            t('authentication_required'),
+            t('login_to_view_challenges'),
+            [
+              { text: t('login'), onPress: () => navigation.navigate("Login") },
+              {
+                text: t('continue_guest'),
+                onPress: () => console.log("Continue as guest")
+              }
+            ]
+          );
+        }
         return null;
       }
     } catch (error) {
@@ -68,7 +75,7 @@ const ChallengesScreen = ({ navigation }) => {
       const userData = await loadUserData();
 
       if (!userData) {
-        setError("Please login to view challenges");
+        // setError("Please login to view challenges");
         setLoading(false);
         return;
       }
@@ -83,25 +90,11 @@ const ChallengesScreen = ({ navigation }) => {
         }
       });
 
-      console.log("API Response success:", res.data?.success);
-      console.log("Number of challenges:", res.data?.challenges?.length);
-
-      // Log the first challenge to see ALL properties
-      if (res.data?.challenges?.length > 0) {
-        console.log("First challenge FULL object:", JSON.stringify(res.data.challenges[0], null, 2));
-        console.log("First challenge properties:", Object.keys(res.data.challenges[0]));
-        console.log("EcoPoints value:", res.data.challenges[0].ecoPoints);
-        console.log("ecoPoints value (lowercase):", res.data.challenges[0].ecopoints);
-      }
-
       if (res.data?.success && res.data.challenges) {
-        // Transform the data to ensure consistent property names
         const transformedChallenges = res.data.challenges.map(challenge => {
           return {
             ...challenge,
-            // Handle both ecoPoints and ecopoints
             ecoPoints: challenge.ecoPoints || challenge.ecopoints || 0,
-            // Ensure other properties have fallbacks
             title: challenge.title || "Untitled Challenge",
             description: challenge.description || "No description",
             category: challenge.category || "General",
@@ -111,17 +104,14 @@ const ChallengesScreen = ({ navigation }) => {
           };
         });
 
-        console.log("Transformed challenges:", transformedChallenges);
         setChallenges(transformedChallenges);
       } else {
-        console.log("Unexpected response structure:", res.data);
         setChallenges([]);
-        setError("No challenges available");
+        setError(t('no_challenges'));
       }
     } catch (err) {
       console.log("ERROR FETCHING CHALLENGES:", err.message);
-      console.log("Error details:", err.response?.data);
-      setError(err.response?.data?.message || "Failed to load challenges. Please try again.");
+      setError(err.response?.data?.message || t('server_error'));
     } finally {
       setLoading(false);
       if (isRefreshing) setRefreshing(false);
@@ -152,19 +142,41 @@ const ChallengesScreen = ({ navigation }) => {
   };
 
   const progress = calculateProgress();
+
+  useEffect(() => {
+    Animated.timing(progressAnimation, {
+      toValue: progress * 100,
+      duration: 1000,
+      useNativeDriver: false
+    }).start();
+  }, [progress]);
+
   const isCompleted = progress === 1 && challenges.length > 0;
 
   const renderProgressBar = () => (
     <View style={styles.progressContainer}>
       <View style={styles.progressHeader}>
-        <Text style={styles.progressLabel}>Your Progress</Text>
+        <Text style={styles.progressLabel}>{t('your_progress')}</Text>
         <Text style={styles.progressPercentage}>{Math.round(progress * 100)}%</Text>
       </View>
       <View style={styles.progressBarBackground}>
-        <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+        <Animated.View
+          style={[
+            styles.progressBarFill,
+            {
+              width: progressAnimation.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%']
+              })
+            }
+          ]}
+        />
       </View>
       <Text style={styles.progressSubtext}>
-        {challenges.filter(c => c.progressStatus === 'approved').length} of {challenges.length} challenges completed
+        {t('challenges_completed', {
+          completed: challenges.filter(c => c.progressStatus === 'approved').length,
+          total: challenges.length
+        })}
       </Text>
 
       {isCompleted && (
@@ -173,7 +185,7 @@ const ChallengesScreen = ({ navigation }) => {
           onPress={() => setShowCertificate(true)}
         >
           <Icon name="ribbon" size={20} color="#fff" />
-          <Text style={styles.certificateButtonText}>View Certificate</Text>
+          <Text style={styles.certificateButtonText}>{t('view_certificate')}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -191,13 +203,13 @@ const ChallengesScreen = ({ navigation }) => {
           <View style={styles.certificateBorder}>
             <View style={styles.certificateHeader}>
               <Icon name="ribbon" size={50} color="#D4AF37" />
-              <Text style={styles.certificateTitle}>Certificate of Completion</Text>
+              <Text style={styles.certificateTitle}>{t('certificate_completion')}</Text>
             </View>
 
-            <Text style={styles.certificateText}>This certifies that</Text>
-            <Text style={styles.certificateName}>{userName || "Student"}</Text>
-            <Text style={styles.certificateText}>has successfully completed all assigned challenges in</Text>
-            <Text style={styles.certificateCourse}>Vrikshamitra Eco-Program</Text>
+            <Text style={styles.certificateText}>{t('certifies_that')}</Text>
+            <Text style={styles.certificateName}>{userName || t('student')}</Text>
+            <Text style={styles.certificateText}>{t('completed_all_challenges')}</Text>
+            <Text style={styles.certificateCourse}>{t('program_name')}</Text>
 
             <View style={styles.certificateDate}>
               <Text style={styles.dateLabel}>Date: {new Date().toLocaleDateString()}</Text>
@@ -212,7 +224,7 @@ const ChallengesScreen = ({ navigation }) => {
               style={styles.closeCertButton}
               onPress={() => setShowCertificate(false)}
             >
-              <Text style={styles.closeCertText}>Close</Text>
+              <Text style={styles.closeCertText}>{t('close')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -220,34 +232,19 @@ const ChallengesScreen = ({ navigation }) => {
     </Modal>
   );
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "No deadline";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-    } catch (error) {
-      return "Invalid date";
-    }
-  };
-
   const getTimeLeft = (deadline) => {
-    if (!deadline) return "No deadline";
+    if (!deadline) return t('no_deadline');
     try {
       const now = new Date();
       const deadlineDate = new Date(deadline);
       const diffTime = deadlineDate - now;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays < 0) return "Expired";
-      if (diffDays === 0) return "Due today";
-      if (diffDays === 1) return "1 day left";
-      return `${diffDays} days left`;
+      if (diffDays < 0) return t('expired');
+      if (diffDays === 0) return t('due_today');
+      return t('days_left', { count: diffDays });
     } catch (error) {
-      return "Invalid deadline";
+      return t('unknown');
     }
   };
 
@@ -264,15 +261,10 @@ const ChallengesScreen = ({ navigation }) => {
   };
 
   const renderChallenge = ({ item, index }) => {
-    console.log(`Rendering challenge ${index + 1}:`, item.title);
-    console.log(`Challenge ${index + 1} ecoPoints:`, item.ecoPoints);
-
-    // Extract properties with debugging
     const challenge = {
       id: item._id || item.id || `challenge-${index}`,
       title: item.title || "Untitled Challenge",
       description: item.description || "No description available",
-      // Try multiple property names for ecoPoints
       ecoPoints: item.ecoPoints || item.ecopoints || item.points || 0,
       category: item.category || "General",
       difficulty: item.difficulty || "Unknown",
@@ -281,17 +273,14 @@ const ChallengesScreen = ({ navigation }) => {
       status: item.status || "active",
       requirements: item.requirements || "",
       resources: item.resources || [],
-      // Ensure these fields are passed for submission
       createdBy: item.createdBy,
-      facultyId: item.facultyId || item.createdBy, // some challenges might use one or other
-      facultyName: item.facultyName || "Institute Faculty" // Fallback name if not provided
+      facultyId: item.facultyId || item.createdBy,
+      facultyName: item.facultyName || "Institute Faculty"
     };
 
-    console.log(`Final ecoPoints value for "${challenge.title}":`, challenge.ecoPoints);
-
     const timeLeft = getTimeLeft(challenge.deadline);
-    const deadlineColor = timeLeft === "Expired" ? "#F44336" :
-      timeLeft.includes("Due today") ? "#FF9800" : "#4CAF50";
+    const deadlineColor = timeLeft === t('expired') ? "#F44336" :
+      timeLeft === t('due_today') ? "#FF9800" : "#4CAF50";
 
     return (
       <TouchableOpacity
@@ -300,12 +289,10 @@ const ChallengesScreen = ({ navigation }) => {
           { borderLeftColor: getDifficultyColor(challenge.difficulty) }
         ]}
         onPress={() => {
-          console.log("Navigating with challenge:", challenge);
           navigation.navigate("ChallengeDetailsScreen", { challenge });
         }}
         activeOpacity={0.7}
       >
-        {/* Challenge Header with Title and EcoPoints */}
         <View style={styles.cardHeader}>
           <View style={styles.titleContainer}>
             <Text style={styles.title} numberOfLines={1}>
@@ -329,7 +316,6 @@ const ChallengesScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* EcoPoints Display */}
           <View style={styles.ecopointsContainer}>
             <View style={styles.ecopointsBadge}>
               <Icon name="leaf" size={20} color="#4CAF50" />
@@ -337,16 +323,14 @@ const ChallengesScreen = ({ navigation }) => {
                 {challenge.ecoPoints || "0"}
               </Text>
             </View>
-            <Text style={styles.ecopointsLabel}>Points</Text>
+            <Text style={styles.ecopointsLabel}>{t('points')}</Text>
           </View>
         </View>
 
-        {/* Description */}
         <Text style={styles.description} numberOfLines={2}>
           {challenge.description}
         </Text>
 
-        {/* Requirements (if available) */}
         {challenge.requirements && challenge.requirements.trim() !== "" && (
           <View style={styles.requirementsContainer}>
             <Icon name="document-text" size={14} color="#666" />
@@ -356,9 +340,7 @@ const ChallengesScreen = ({ navigation }) => {
           </View>
         )}
 
-        {/* Challenge Details Row */}
         <View style={styles.detailsRow}>
-          {/* Category */}
           <View style={styles.detailItem}>
             <Icon name="pricetag" size={14} color="#666" />
             <Text style={styles.detailText}>
@@ -366,7 +348,6 @@ const ChallengesScreen = ({ navigation }) => {
             </Text>
           </View>
 
-          {/* Deadline */}
           <View style={styles.detailItem}>
             <Icon name="calendar" size={14} color={deadlineColor} />
             <Text style={[styles.detailText, { color: deadlineColor }]}>
@@ -374,26 +355,23 @@ const ChallengesScreen = ({ navigation }) => {
             </Text>
           </View>
 
-          {/* Resources Count */}
           {challenge.resources && challenge.resources.length > 0 && (
             <View style={styles.detailItem}>
               <Icon name="attach" size={14} color="#666" />
               <Text style={styles.detailText}>
-                {challenge.resources.length} resources
+                {t('resources_count', { count: challenge.resources.length })}
               </Text>
             </View>
           )}
         </View>
 
-        {/* Start Challenge Button */}
         <TouchableOpacity
           style={styles.startButton}
           onPress={() => {
-            console.log("Button pressed for:", challenge.title);
             navigation.navigate("ChallengeDetailsScreen", { challenge });
           }}
         >
-          <Text style={styles.startButtonText}>View Details</Text>
+          <Text style={styles.startButtonText}>{t('view_details')}</Text>
           <Icon name="arrow-forward" size={16} color="#fff" />
         </TouchableOpacity>
       </TouchableOpacity>
@@ -403,16 +381,16 @@ const ChallengesScreen = ({ navigation }) => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Icon name="trophy-outline" size={80} color="#e0e0e0" />
-      <Text style={styles.emptyStateTitle}>No Challenges Yet</Text>
+      <Text style={styles.emptyStateTitle}>{t('no_challenges')}</Text>
       <Text style={styles.emptyStateText}>
-        You don't have any challenges assigned yet. Check back later for new challenges!
+        {t('no_challenges_msg')}
       </Text>
       <TouchableOpacity
         style={styles.refreshButton}
         onPress={() => fetchChallenges()}
       >
         <Icon name="refresh" size={20} color="#fff" />
-        <Text style={styles.refreshButtonText}>Refresh</Text>
+        <Text style={styles.refreshButtonText}>{t('refresh')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -421,29 +399,19 @@ const ChallengesScreen = ({ navigation }) => {
     return (
       <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.loadingText}>Loading your challenges...</Text>
+        <Text style={styles.loadingText}>{t('loading_challenges')}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🌿 Eco Challenges</Text>
+        <Text style={styles.headerTitle}>🌿 {t('eco_challenges')}</Text>
         <Text style={styles.headerSubtitle}>
-          {userName ? `Welcome, ${userName}` : "Complete challenges and earn points"}
+          {userName ? t('welcome_student', { name: userName }) : t('welcome_guest')}
         </Text>
       </View>
-
-      {/* Debug Info - Remove this in production */}
-      {challenges.length > 0 && (
-        <View style={styles.debugInfo}>
-          <Text style={styles.debugText}>
-            Found {challenges.length} challenges | First challenge points: {challenges[0]?.ecoPoints || "N/A"}
-          </Text>
-        </View>
-      )}
 
       {error ? (
         <View style={styles.errorContainer}>
@@ -453,7 +421,7 @@ const ChallengesScreen = ({ navigation }) => {
             style={styles.retryButton}
             onPress={() => fetchChallenges()}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={styles.retryButtonText}>{t('try_again')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -480,10 +448,10 @@ const ChallengesScreen = ({ navigation }) => {
                 {renderProgressBar()}
                 <View style={styles.statsContainer}>
                   <Text style={styles.statsText}>
-                    You have {challenges.length} active challenge{challenges.length !== 1 ? 's' : ''}
+                    {t('active_challenges_count', { count: challenges.length, suffix: challenges.length !== 1 ? 's' : '' })}
                   </Text>
                   <Text style={styles.statsSubtext}>
-                    Total potential points: {challenges.reduce((sum, c) => sum + (c.ecoPoints || 0), 0)}
+                    {t('total_potential_points', { points: challenges.reduce((sum, c) => sum + (c.ecoPoints || 0), 0) })}
                   </Text>
                 </View>
               </View>

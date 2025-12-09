@@ -24,7 +24,10 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+import { useTranslation } from 'react-i18next';
+
 export default function LearningModuleScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const [allLessons, setAllLessons] = useState([]);
   const [completedLessons, setCompletedLessons] = useState([]);
   const [progressPercentage, setProgressPercentage] = useState(0);
@@ -43,7 +46,7 @@ export default function LearningModuleScreen({ navigation, route }) {
   const [videoLoading, setVideoLoading] = useState(true);
   const [error, setError] = useState(null);
   const [videoError, setVideoError] = useState(null);
-  
+
   // Animation values
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
@@ -60,15 +63,16 @@ export default function LearningModuleScreen({ navigation, route }) {
   });
 
   // Categories
+  // Categories
   const categories = [
-    { id: 'all', name: 'All', icon: 'earth', color: '#667eea' },
-    { id: 'climate', name: 'Climate', icon: 'thermometer', color: '#ff6b6b' },
-    { id: 'biodiversity', name: 'Biodiversity', icon: 'butterfly', color: '#4ecdc4' },
-    { id: 'pollution', name: 'Pollution', icon: 'factory', color: '#ff9ff3' },
-    { id: 'conservation', name: 'Conservation', icon: 'recycle', color: '#feca57' },
-    { id: 'sustainability', name: 'Sustainability', icon: 'leaf', color: '#1dd1a1' },
-    { id: 'water', name: 'Water', icon: 'water', color: '#54a0ff' },
-    { id: 'forest', name: 'Forest', icon: 'tree', color: '#00b894' },
+    { id: 'all', name: t('cat_all'), icon: 'earth', color: '#667eea' },
+    { id: 'climate', name: t('cat_climate'), icon: 'thermometer', color: '#ff6b6b' },
+    { id: 'biodiversity', name: t('cat_biodiversity'), icon: 'butterfly', color: '#4ecdc4' },
+    { id: 'pollution', name: t('cat_pollution'), icon: 'factory', color: '#ff9ff3' },
+    { id: 'conservation', name: t('cat_conservation'), icon: 'recycle', color: '#feca57' },
+    { id: 'sustainability', name: t('cat_sustainability'), icon: 'leaf', color: '#1dd1a1' },
+    { id: 'water', name: t('cat_water'), icon: 'water', color: '#54a0ff' },
+    { id: 'forest', name: t('cat_forest'), icon: 'tree', color: '#00b894' },
   ];
 
   // Animation on mount
@@ -92,12 +96,12 @@ export default function LearningModuleScreen({ navigation, route }) {
     try {
       const lastCompletion = await AsyncStorage.getItem("lastCompletionDate");
       if (!lastCompletion) return 0;
-      
+
       const lastDate = new Date(lastCompletion);
       const today = new Date();
       const diffTime = Math.abs(today - lastDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       return diffDays <= 1 ? 3 : 0;
     } catch (error) {
       console.error("Error getting streak:", error);
@@ -111,14 +115,14 @@ export default function LearningModuleScreen({ navigation, route }) {
       const data = await AsyncStorage.getItem("completedLessons");
       const completed = data ? JSON.parse(data) : [];
       setCompletedLessons(completed);
-      
+
       // Update user stats
       const totalPoints = allLessons.reduce((sum, lesson) => {
         return completed.includes(lesson.id) ? sum + (lesson.points || 0) : sum;
       }, 0);
-      
+
       const streak = await getStreakCount();
-      
+
       setUserStats(prev => ({
         ...prev,
         completed: completed.length,
@@ -137,9 +141,9 @@ export default function LearningModuleScreen({ navigation, route }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const res = await axios.get(BACKEND_URL);
-      
+
       if (res.data.success) {
         setAllLessons(res.data.data || []);
       } else {
@@ -147,8 +151,8 @@ export default function LearningModuleScreen({ navigation, route }) {
       }
     } catch (err) {
       console.error("Error fetching modules:", err);
-      setError("Failed to load learning modules. Please check your connection.");
-      Alert.alert("Error", "Failed to load learning modules.");
+      setError(t('failed_load_modules_msg'));
+      Alert.alert(t('error'), t('failed_load_modules'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -158,25 +162,25 @@ export default function LearningModuleScreen({ navigation, route }) {
   // Extract YouTube ID from various formats
   const extractYouTubeId = useCallback((url) => {
     if (!url) return null;
-    
+
     // If it's already a video ID (11 characters)
     if (url.length === 11 && !url.includes('/') && !url.includes('?')) {
       return url;
     }
-    
+
     // Extract from various YouTube URL formats
     const patterns = [
       /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/watch\?.*v=)([^&?\n]+)/,
       /^([a-zA-Z0-9_-]{11})$/
     ];
-    
+
     for (const pattern of patterns) {
       const match = url.match(pattern);
       if (match && match[1]) {
         return match[1];
       }
     }
-    
+
     return null;
   }, []);
 
@@ -198,15 +202,15 @@ export default function LearningModuleScreen({ navigation, route }) {
   // Calculate progress percentage
   useEffect(() => {
     if (allLessons.length === 0) return;
-    
+
     const percent = (completedLessons.length / allLessons.length) * 100;
     setProgressPercentage(Math.min(percent.toFixed(1), 100));
   }, [allLessons, completedLessons]);
 
   // Filter lessons based on category and search
   const filteredLessons = useMemo(() => {
-    let filtered = activeCategory === 'all' 
-      ? allLessons 
+    let filtered = activeCategory === 'all'
+      ? allLessons
       : allLessons.filter(lesson => lesson.category === activeCategory);
 
     if (searchQuery.trim()) {
@@ -256,7 +260,7 @@ export default function LearningModuleScreen({ navigation, route }) {
       setCompletedLessons(updated);
       await AsyncStorage.setItem("completedLessons", JSON.stringify(updated));
       await AsyncStorage.setItem("lastCompletionDate", new Date().toISOString());
-      
+
       const lesson = allLessons.find(l => l.id === lessonId);
       if (lesson) {
         setUserStats(prev => ({
@@ -267,26 +271,26 @@ export default function LearningModuleScreen({ navigation, route }) {
           level: Math.floor((prev.totalPoints + (lesson.points || 0)) / 100) + 1
         }));
       }
-      
-      Alert.alert("🎉 Lesson Complete!", `You earned ${lesson?.points || 0} points!`);
+
+      Alert.alert(t('lesson_complete'), t('you_earned_points').replace('{{points}}', lesson?.points || 0));
     }
   };
 
   // Continue button handler
   const handleContinue = () => {
     const nextModule = allLessons.find((lesson) => !completedLessons.includes(lesson.id));
-    
+
     if (nextModule) {
       handleModulePress(nextModule);
     } else {
-      Alert.alert("🎉 Congratulations!", "All modules completed!");
+      Alert.alert(t('congratulations'), t('all_modules_completed'));
     }
   };
 
   // Video state change handler
   const handleVideoStateChange = useCallback((state) => {
     console.log('Video state:', state);
-    
+
     if (state === 'ended') {
       setIsVideoPlaying(false);
       setVideoLoading(false);
@@ -361,17 +365,17 @@ export default function LearningModuleScreen({ navigation, route }) {
     if (quizScore >= passingScore) {
       await markLessonComplete(selectedLesson.id);
       Alert.alert(
-        '🎉 Congratulations!',
-        `You passed with ${quizScore}/${selectedLesson.quiz.length} correct answers!\n\nYou earned ${selectedLesson.points} points!`,
-        [{ text: 'OK', onPress: closeLesson }]
+        t('congratulations'),
+        t('quiz_result_msg').replace('{{score}}', quizScore).replace('{{total}}', selectedLesson.quiz.length).replace('{{passing}}', passingScore) + `\n\n${t('you_earned_points').replace('{{points}}', selectedLesson.points)}`,
+        [{ text: t('ok'), onPress: closeLesson }]
       );
     } else {
       Alert.alert(
-        'Keep Learning!',
-        `You scored ${quizScore}/${selectedLesson.quiz.length}. You need ${passingScore} to pass.\n\nTry watching the video again!`,
+        t('keep_learning'),
+        t('quiz_result_msg').replace('{{score}}', quizScore).replace('{{total}}', selectedLesson.quiz.length).replace('{{passing}}', passingScore) + `\n\n${t('watch_video_again')}`,
         [
-          { text: 'Retry', onPress: resetQuiz },
-          { text: 'Close', onPress: closeLesson }
+          { text: t('retry'), onPress: resetQuiz },
+          { text: t('close'), onPress: closeLesson }
         ]
       );
     }
@@ -381,9 +385,9 @@ export default function LearningModuleScreen({ navigation, route }) {
   const handleLessonCompleteNoQuiz = useCallback(async () => {
     await markLessonComplete(selectedLesson.id);
     Alert.alert(
-      '🎉 Lesson Complete!',
-      `You earned ${selectedLesson.points} points!`,
-      [{ text: 'OK', onPress: closeLesson }]
+      t('lesson_complete'),
+      t('you_earned_points').replace('{{points}}', selectedLesson.points),
+      [{ text: t('ok'), onPress: closeLesson }]
     );
   }, [selectedLesson]);
 
@@ -431,10 +435,10 @@ export default function LearningModuleScreen({ navigation, route }) {
     return (
       <View style={styles.errorContainer}>
         <Icon name="alert-circle-outline" size={60} color="#ff6b6b" />
-        <Text style={styles.errorTitle}>Unable to Load Modules</Text>
+        <Text style={styles.errorTitle}>{t('unable_load_modules')}</Text>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchModules}>
-          <Text style={styles.retryButtonText}>Try Again</Text>
+          <Text style={styles.retryButtonText}>{t('try_again')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -451,7 +455,7 @@ export default function LearningModuleScreen({ navigation, route }) {
           <Icon name="arrow-left" size={24} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Learning Modules</Text>
+        <Text style={styles.headerTitle}>{t('learning_modules')}</Text>
 
         <TouchableOpacity
           style={styles.searchButton}
@@ -466,7 +470,7 @@ export default function LearningModuleScreen({ navigation, route }) {
         <Animated.View style={[styles.searchContainer, { opacity: fadeAnim }]}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search lessons..."
+            placeholder={t('search_lessons')}
             placeholderTextColor="#999"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -500,34 +504,34 @@ export default function LearningModuleScreen({ navigation, route }) {
         >
           <View style={styles.progressContent}>
             <View style={styles.progressLeft}>
-              <Text style={styles.progressTitle}>Your Learning Journey</Text>
+              <Text style={styles.progressTitle}>{t('learning_journey')}</Text>
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <Text style={styles.statNumber}>{userStats.completed}</Text>
-                  <Text style={styles.statLabel}>Completed</Text>
+                  <Text style={styles.statLabel}>{t('completed')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statNumber}>{progressPercentage}%</Text>
-                  <Text style={styles.statLabel}>Progress</Text>
+                  <Text style={styles.statLabel}>{t('progress')}</Text>
                 </View>
                 <View style={styles.statDivider} />
                 <View style={styles.statItem}>
                   <Text style={styles.statNumber}>{userStats.streak}</Text>
-                  <Text style={styles.statLabel}>Day Streak</Text>
+                  <Text style={styles.statLabel}>{t('day_streak')}</Text>
                 </View>
               </View>
               <View style={styles.levelContainer}>
-                <Text style={styles.levelLabel}>Level {userStats.level}</Text>
+                <Text style={styles.levelLabel}>{t('level')} {userStats.level}</Text>
                 <View style={styles.levelBar}>
-                  <View 
+                  <View
                     style={[
-                      styles.levelProgress, 
+                      styles.levelProgress,
                       { width: `${(userStats.totalPoints % 100) || 0}%` }
-                    ]} 
+                    ]}
                   />
                 </View>
-                <Text style={styles.pointsLabel}>{userStats.totalPoints} points</Text>
+                <Text style={styles.pointsLabel}>{userStats.totalPoints} {t('points')}</Text>
               </View>
             </View>
             <View style={styles.progressRight}>
@@ -539,7 +543,7 @@ export default function LearningModuleScreen({ navigation, route }) {
           {/* Continue Button */}
           <TouchableOpacity onPress={handleContinue} style={styles.continueButton}>
             <Text style={styles.continueButtonText}>
-              Continue Learning →
+              {t('continue_learning')}
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -563,10 +567,10 @@ export default function LearningModuleScreen({ navigation, route }) {
                 ]}
                 onPress={() => setActiveCategory(category.id)}
               >
-                <Icon 
-                  name={category.icon} 
-                  size={18} 
-                  color={activeCategory === category.id ? category.color : '#666'} 
+                <Icon
+                  name={category.icon}
+                  size={18}
+                  color={activeCategory === category.id ? category.color : '#666'}
                 />
                 <Text style={[
                   styles.categoryText,
@@ -585,16 +589,16 @@ export default function LearningModuleScreen({ navigation, route }) {
         {/* Lessons List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Available Lessons</Text>
-            <Text style={styles.lessonCount}>{filteredLessons.length} lessons</Text>
+            <Text style={styles.sectionTitle}>{t('available_lessons')}</Text>
+            <Text style={styles.lessonCount}>{filteredLessons.length} {t('lessons_count')}</Text>
           </View>
 
           {filteredLessons.length === 0 ? (
             <View style={styles.emptyState}>
               <Icon name="book-search-outline" size={50} color="#999" />
-              <Text style={styles.emptyStateTitle}>No lessons found</Text>
+              <Text style={styles.emptyStateTitle}>{t('no_lessons_found')}</Text>
               <Text style={styles.emptyStateText}>
-                {searchQuery ? 'Try a different search term' : 'Try selecting a different category'}
+                {searchQuery ? t('try_different_search') : t('try_different_category')}
               </Text>
             </View>
           ) : (
@@ -608,6 +612,7 @@ export default function LearningModuleScreen({ navigation, route }) {
                 categories={categories}
                 fadeAnim={fadeAnim}
                 slideAnim={slideAnim}
+                t={t}
               />
             ))
           )}
@@ -654,7 +659,7 @@ export default function LearningModuleScreen({ navigation, route }) {
 }
 
 // Lesson Card Component
-const LessonCard = React.memo(({ lesson, isCompleted, progress, onPress, categories, fadeAnim, slideAnim }) => {
+const LessonCard = React.memo(({ lesson, isCompleted, progress, onPress, categories, fadeAnim, slideAnim, t }) => {
   const category = categories.find(cat => cat.id === lesson.category);
   const lessonColor = lesson.color || '#667eea';
 
@@ -680,7 +685,7 @@ const LessonCard = React.memo(({ lesson, isCompleted, progress, onPress, categor
             ) : (
               <>
                 <Icon name="play-circle-outline" size={50} color="#fff" />
-                <Text style={styles.videoText}>Watch Video</Text>
+                <Text style={styles.videoText}>{t('watch_video')}</Text>
               </>
             )}
           </View>
@@ -727,11 +732,11 @@ const LessonCard = React.memo(({ lesson, isCompleted, progress, onPress, categor
             </View>
             {lesson.difficulty && (
               <View style={styles.metaItem}>
-                <Icon 
-                  name={lesson.difficulty === 'Beginner' ? 'flag-outline' : 
-                         lesson.difficulty === 'Intermediate' ? 'flag-triangle' : 'flag'} 
-                  size={14} 
-                  color="#666" 
+                <Icon
+                  name={lesson.difficulty === 'Beginner' ? 'flag-outline' :
+                    lesson.difficulty === 'Intermediate' ? 'flag-triangle' : 'flag'}
+                  size={14}
+                  color="#666"
                 />
                 <Text style={styles.metaText}>{lesson.difficulty}</Text>
               </View>
@@ -741,12 +746,12 @@ const LessonCard = React.memo(({ lesson, isCompleted, progress, onPress, categor
           {isCompleted ? (
             <View style={styles.completedButton}>
               <Icon name="check-circle" size={16} color="#4CAF50" />
-              <Text style={styles.completedButtonText}>Completed</Text>
+              <Text style={styles.completedButtonText}>{t('completed')}</Text>
             </View>
           ) : (
             <TouchableOpacity style={styles.startButton} onPress={onPress}>
               <Text style={styles.startButtonText}>
-                {progress > 0 ? 'Continue Learning →' : 'Start Learning →'}
+                {progress > 0 ? t('continue_learning') : t('start_learning')}
               </Text>
             </TouchableOpacity>
           )}
@@ -780,7 +785,7 @@ const LessonModal = ({
   activeCategoryColor
 }) => {
   const [isPlaying, setIsPlaying] = useState(true);
-  
+
   // Extract YouTube ID
   const youtubeId = extractYouTubeId(lesson.youtubeId);
   const hasValidVideo = youtubeId && youtubeId.length >= 11;
@@ -845,14 +850,14 @@ const LessonModal = ({
                         }}
                       />
                     </View>
-                    
+
                     <View style={styles.videoControls}>
                       <TouchableOpacity onPress={handlePlayPause} style={styles.controlButton}>
                         <Icon name={isPlaying ? "pause" : "play"} size={24} color="#fff" />
                         <Text style={styles.controlText}>{isPlaying ? "Pause" : "Play"}</Text>
                       </TouchableOpacity>
-                      
-                      <TouchableOpacity 
+
+                      <TouchableOpacity
                         style={styles.youtubeButton}
                         onPress={() => onOpenInYouTube(youtubeId)}
                       >
@@ -904,7 +909,7 @@ const LessonModal = ({
               <Icon name="video-off" size={60} color="#666" />
               <Text style={styles.noVideoTitle}>No video available</Text>
               <Text style={styles.noVideoText}>
-                {lesson.youtubeId 
+                {lesson.youtubeId
                   ? "The YouTube video ID is invalid. Please check the module settings."
                   : "No video available for this lesson. Please check back later."}
               </Text>
@@ -1013,10 +1018,10 @@ const QuizResults = ({ lesson, quizScore, onLessonComplete, onResetQuiz }) => {
 
   return (
     <View style={styles.resultsContainer}>
-      <Icon 
-        name={passed ? "trophy" : "book-open-variant"} 
-        size={80} 
-        color={passed ? "#FFD700" : "#666"} 
+      <Icon
+        name={passed ? "trophy" : "book-open-variant"}
+        size={80}
+        color={passed ? "#FFD700" : "#666"}
       />
       <Text style={styles.resultsTitle}>
         {passed ? '🎉 Quiz Completed!' : 'Keep Learning!'}
@@ -1047,7 +1052,7 @@ const QuizResults = ({ lesson, quizScore, onLessonComplete, onResetQuiz }) => {
           {passed ? 'Continue Learning' : 'Try Again'}
         </Text>
       </TouchableOpacity>
-      
+
       {!passed && (
         <TouchableOpacity style={styles.resetButton} onPress={onResetQuiz}>
           <Text style={styles.resetButtonText}>Review Video</Text>

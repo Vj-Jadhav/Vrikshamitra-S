@@ -11,6 +11,7 @@ import {
   Alert
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from 'react-i18next';
 import { API_ENDPOINTS } from '../config/config.js';
 
 // Move avatars array outside component to avoid recreation
@@ -26,6 +27,7 @@ const avatars = [
 ];
 
 export default function ProfileScreen({ navigation }) {
+  const { t } = useTranslation();
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [avatarModalVisible, setAvatarModalVisible] = useState(false);
@@ -84,8 +86,8 @@ export default function ProfileScreen({ navigation }) {
 
         const studentData = {
           id: parsedData._id || parsedData.id || studentId,
-          name: parsedData.name || studentName || "Unknown",
-          email: parsedData.email || studentEmail || "No Email",
+          name: parsedData.name || studentName || t('unknown'),
+          email: parsedData.email || studentEmail || t('no_email'),
           grade: parsedData.grade || studentGrade,
           rollNumber: parsedData.rollNumber || studentRollNumber,
           photo: parsedData.photo || avatars[0].uri,
@@ -99,7 +101,7 @@ export default function ProfileScreen({ navigation }) {
         const studentData = {
           id: studentId,
           name: studentName,
-          email: studentEmail || "No Email",
+          email: studentEmail || t('no_email'),
           grade: studentGrade,
           rollNumber: studentRollNumber,
           photo: avatars[0].uri,
@@ -149,8 +151,8 @@ export default function ProfileScreen({ navigation }) {
         // Ensure we have all required fields with fallbacks
         const completeStudentData = {
           id: data._id || studentId,
-          name: data.name || "Unknown",
-          email: data.email || await AsyncStorage.getItem("studentEmail") || "No Email",
+          name: data.name || t('unknown'),
+          email: data.email || await AsyncStorage.getItem("studentEmail") || t('no_email'),
           grade: data.grade || "",
           rollNumber: data.rollNumber || "",
           photo: data.photo || avatars[0].uri,
@@ -181,8 +183,8 @@ export default function ProfileScreen({ navigation }) {
         // Ultimate fallback: create basic student object
         const basicStudent = {
           id: await AsyncStorage.getItem("studentId"),
-          name: await AsyncStorage.getItem("studentName") || "Unknown",
-          email: await AsyncStorage.getItem("studentEmail") || "No Email",
+          name: await AsyncStorage.getItem("studentName") || t('unknown'),
+          email: await AsyncStorage.getItem("studentEmail") || t('no_email'),
           grade: await AsyncStorage.getItem("studentGrade"),
           rollNumber: await AsyncStorage.getItem("studentRollNumber"),
           photo: avatars[0].uri,
@@ -297,7 +299,7 @@ export default function ProfileScreen({ navigation }) {
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Choose Your Avatar</Text>
+          <Text style={styles.modalTitle}>{t('choose_avatar')}</Text>
 
           <FlatList
             data={avatars}
@@ -324,7 +326,7 @@ export default function ProfileScreen({ navigation }) {
             style={styles.cancelButton}
             onPress={() => setAvatarModalVisible(false)}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -338,7 +340,7 @@ export default function ProfileScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={{ fontSize: 18 }}>Loading Profile...</Text>
+        <Text style={{ fontSize: 18 }}>{t('loading_profile')}</Text>
       </View>
     );
   }
@@ -346,12 +348,12 @@ export default function ProfileScreen({ navigation }) {
   if (!student) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={{ fontSize: 18, marginBottom: 10 }}>Student profile not found</Text>
+        <Text style={{ fontSize: 18, marginBottom: 10 }}>{t('profile_not_found')}</Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={fetchProfile}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>{t('retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -360,7 +362,7 @@ export default function ProfileScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Profile</Text>
+        <Text style={styles.headerText}>{t('profile')}</Text>
         <TouchableOpacity
           style={styles.profileIconContainer}
           onPress={() => setAvatarModalVisible(true)}
@@ -383,19 +385,19 @@ export default function ProfileScreen({ navigation }) {
                 defaultSource={{ uri: avatars[0].uri }}
               />
               <View style={styles.editAvatarBadge}>
-                <Text style={styles.editAvatarText}>Edit</Text>
+                <Text style={styles.editAvatarText}>{t('edit')}</Text>
               </View>
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.userName}>{student.name || "Unknown"}</Text>
-          <Text style={styles.userEmail}>{student.email || "No Email"}</Text>
+          <Text style={styles.userName}>{(student.name === 'Student' || !student.name) ? t('student') : student.name}</Text>
+          <Text style={styles.userEmail}>{student.email || t('no_email')}</Text>
 
           {/* Student Info */}
           {student.grade && (
             <View style={styles.studentInfoContainer}>
               <Text style={styles.studentInfo}>
-                Grade {student.grade} • Roll No: {student.rollNumber}
+                {t('grade')} {student.grade} • {t('roll_no')}: {student.rollNumber}
               </Text>
             </View>
           )}
@@ -403,42 +405,42 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{student.points || 0}</Text>
-              <Text style={styles.statLabel}>Eco Points</Text>
+              <Text style={styles.statLabel}>{t('eco_points')}</Text>
             </View>
 
             <View style={styles.statBox}>
               <Text style={styles.statValue}>#{student.rank || "N/A"}</Text>
-              <Text style={styles.statLabel}>Rank</Text>
+              <Text style={styles.statLabel}>{t('rank')}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.menuContainer}>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("EditProfileScreen")}>
-            <Text style={styles.menuText}>Edit Profile</Text>
+            <Text style={styles.menuText}>{t('edit_profile')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("SettingsScreen")}>
-            <Text style={styles.menuText}>Settings</Text>
+            <Text style={styles.menuText}>{t('settings')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("NotificationsScreen")}>
-            <Text style={styles.menuText}>Notifications</Text>
+            <Text style={styles.menuText}>{t('notifications')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("HelpSupportScreen")}>
-            <Text style={styles.menuText}>Help & Support</Text>
+            <Text style={styles.menuText}>{t('help_support')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("AboutScreen")}>
-            <Text style={styles.menuText}>About</Text>
+            <Text style={styles.menuText}>{t('about')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.menuItem, styles.logoutButton]}
             onPress={handleLogout}
           >
-            <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
+            <Text style={[styles.menuText, styles.logoutText]}>{t('logout')}</Text>
           </TouchableOpacity>
         </View>
 

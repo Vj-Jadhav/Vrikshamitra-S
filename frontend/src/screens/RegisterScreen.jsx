@@ -5,7 +5,10 @@ import {
   StyleSheet, KeyboardAvoidingView, ActivityIndicator
 } from 'react-native';
 
+import { useTranslation } from 'react-i18next';
+
 export default function RegisterScreen({ navigation }) {
+  const { t } = useTranslation();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,7 +27,7 @@ export default function RegisterScreen({ navigation }) {
   const handleRegister = async () => {
     if (!fullName || !email || !password) {
       setMessageType("error");
-      setMessage("⚠ Please fill all fields!");
+      setMessage(`⚠ ${t('fill_all_fields')}`);
       return;
     }
 
@@ -42,18 +45,18 @@ export default function RegisterScreen({ navigation }) {
 
       if (response.status === 201) {
         setMessageType("success");
-        setMessage("🎉 Account created successfully!");
+        setMessage(t('account_created'));
 
         setTimeout(() => navigation.navigate('Login'), 1200);
       }
       else {
         setMessageType("error");
-        setMessage(data.message || "Something went wrong!");
+        setMessage(data.message || t('something_wrong'));
       }
 
     } catch (error) {
       setMessageType("error");
-      setMessage("Server Error: " + error.message);
+      setMessage(t('server_error') + error.message);
     }
 
     setLoading(false);
@@ -63,35 +66,35 @@ export default function RegisterScreen({ navigation }) {
     <KeyboardAvoidingView style={styles.container}>
 
       {/* Title */}
-      <Text style={styles.title}>Create Account 🌿</Text>
-      <Text style={styles.subtitle}>Join Vrikshmitra and make an impact</Text>
+      <Text style={styles.title}>{t('create_account')}</Text>
+      <Text style={styles.subtitle}>{t('join_impact')}</Text>
 
       {/* Card */}
       <View style={styles.card}>
 
-        <Text style={styles.label}>Full Name</Text>
+        <Text style={styles.label}>{t('full_name')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter your full name"
+          placeholder={t('enter_full_name')}
           placeholderTextColor="#777"
           value={fullName}
           onChangeText={setFullName}
         />
 
-        <Text style={styles.label}>Email Address</Text>
+        <Text style={styles.label}>{t('email_address')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter your email"
+          placeholder={t('enter_email')}
           placeholderTextColor="#777"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
         />
 
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>{t('password_label')}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Create a password"
+          placeholder={t('create_password')}
           placeholderTextColor="#777"
           secureTextEntry
           value={password}
@@ -117,19 +120,21 @@ export default function RegisterScreen({ navigation }) {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.registerButtonText}>Register</Text>
+            <Text style={styles.registerButtonText}>{t('register')}</Text>
           )}
         </TouchableOpacity>
       </View>
 
       {/* Already Registered */}
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.loginText}>Already registered? <Text style={{ fontWeight: 'bold' }}>Login</Text></Text>
+        <Text style={styles.loginText}>{t('already_registered')} <Text style={{ fontWeight: 'bold' }}>{t('login')}</Text></Text>
       </TouchableOpacity>
 
       {/* Back */}
+
+      {/* Back */}
       <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text style={styles.backText}>← Back to Welcome</Text>
+        <Text style={styles.backText}>{t('back_to_welcome')}</Text>
       </TouchableOpacity>
 
     </KeyboardAvoidingView>
