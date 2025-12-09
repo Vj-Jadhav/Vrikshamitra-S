@@ -31,7 +31,7 @@ function InstitutePlantDrive() {
         if (storedData && storedData._id && storedData.pincode) {
           setInstituteId(storedData._id);
           setInstitutePincode(storedData.pincode);
-          setInstituteName(storedData.name);
+          setInstituteName(storedData.name || storedData.instituteName);
           setLoading(false);
         } else {
           // Fallback: Fetch profile from API

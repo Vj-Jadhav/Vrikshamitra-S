@@ -1225,9 +1225,18 @@ export const createPlantingRequest = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
+    // If instituteName is missing, fetch it
+    let finalInstituteName = instituteName;
+    if (!finalInstituteName) {
+      const institute = await Institute.findById(instituteId);
+      if (institute) {
+        finalInstituteName = institute.instituteName || institute.name;
+      }
+    }
+
     const newRequest = new PlantingRequest({
       instituteId,
-      instituteName,
+      instituteName: finalInstituteName,
       pincode,
       treeType: treeType || "Mixed",
       treeCount,
